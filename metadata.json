@@ -1,0 +1,6 @@
+{
+  "name": "Sports Tournament Manager",
+  "description": "โปรแกรมจัดการแข่งขันกีฬาและรายงานผลการแข่งขันสำหรับกีฬา คป.สอ. ปัตตานี และกีฬาทั่วไป ออกแบบสไตล์ Neo-Brutalism",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

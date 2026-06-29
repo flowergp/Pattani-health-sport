@@ -1,0 +1,68 @@
+{
+  "entities": {
+    "Match": {
+      "title": "Match",
+      "description": "รอบการแข่ง/แมตช์แข่งขัน",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sport": { "type": "string" },
+        "category": { "type": "string" },
+        "gender": { "type": "string" },
+        "group": { "type": "string" },
+        "round": { "type": "string" },
+        "court": { "type": "string" },
+        "time": { "type": "string" },
+        "date": { "type": "string" },
+        "status": { "type": "string" },
+        "teamA": { "type": "string" },
+        "teamB": { "type": "string" },
+        "scoreA": { "type": "number" },
+        "scoreB": { "type": "number" },
+        "winner": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "sport", "category", "gender", "round", "status", "teamA", "teamB", "order"]
+    },
+    "ExpenseItem": {
+      "title": "ExpenseItem",
+      "description": "รายการค่าใช้จ่าย",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "quantity": { "type": "number" },
+        "pricePerUnit": { "type": "number" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "name", "quantity", "pricePerUnit"]
+    },
+    "User": {
+      "title": "User",
+      "description": "ผู้ใช้งาน/ผู้ดูแลระบบในการแก้ไขผลการแข่งขัน",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "role": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "username", "password", "role"]
+    }
+  },
+  "firestore": {
+    "matches": {
+      "schema": "Match",
+      "description": "คอลเลกชันเก็บข้อมูลแมตช์การแข่งขัน"
+    },
+    "expenses": {
+      "schema": "ExpenseItem",
+      "description": "คอลเลกชันเก็บข้อมูลค่าใช้จ่าย"
+    },
+    "users": {
+      "schema": "User",
+      "description": "คอลเลกชันเก็บข้อมูลแอดมินสำหรับเข้าสู่ระบบ"
+    }
+  }
+}
