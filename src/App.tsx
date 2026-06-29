@@ -581,9 +581,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0A0F1D] text-[#E2E8F0] pb-16 selection:bg-[#FF5722] selection:text-white">
       
-      {/* HEADER BAR (Modern Information-Dense) */}
-      <header className="bg-[#111827] border-b border-slate-800 py-3.5 sticky top-0 z-50 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* HEADER BAR (Modern Information-Dense & Unified Navbar) */}
+      <header className="bg-[#111827] border-b border-slate-800 sticky top-0 z-50 shadow-md">
+        {/* Top bar (Logo & Admin) */}
+        <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/50">
           <div className="flex items-center gap-3">
             <div className="bg-[#1E293B] text-[#00FF66] px-3.5 py-1.5 text-2xl font-black italic border border-slate-700 hidden sm:block">
               P-SPORTS
@@ -632,6 +633,95 @@ export default function App() {
                 🔒 เข้าสู่ระบบ (Login)
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Navigation Bar (Sticky Sub-Header) */}
+        <div className="bg-[#0b101c] border-b border-slate-800/30">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-center justify-between overflow-x-auto scrollbar-none">
+              <div className="flex items-center space-x-1 overflow-x-auto scrollbar-none w-full py-1">
+                {/* Main Views */}
+                {[
+                  { id: "dashboard", label: "📊 สรุปเหรียญรางวัล", activeColor: "#3B82F6" },
+                ].map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      style={{ borderBottomColor: isActive ? tab.activeColor : 'transparent' }}
+                      className={`py-2 px-4 font-black text-xs uppercase tracking-wider border-b-2 rounded-none cursor-pointer transition-all whitespace-nowrap ${
+                        isActive
+                          ? "bg-slate-800/40 text-white"
+                          : "border-transparent text-slate-400 hover:text-white hover:bg-slate-800/20"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+
+                {/* Vertical Divider */}
+                <div className="h-6 w-[1px] bg-slate-800 mx-2 flex-shrink-0" />
+
+                {/* Sports Section Header (Desktop Only or Subtle badge) */}
+                <span className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider select-none px-2 hidden md:inline-block flex-shrink-0">
+                  SPORTS / กีฬา:
+                </span>
+
+                {/* Sports tabs */}
+                {[
+                  { id: "football", label: "⚽ ฟุตบอล", activeColor: "#F43F5E" },
+                  { id: "volleyball", label: "🏐 วอลเลย์บอล", activeColor: "#FF5722" },
+                  { id: "petanque", label: "🥎 เปตอง", activeColor: "#10B981" },
+                  { id: "track", label: "🏃 กรีฑา/วิ่ง", activeColor: "#00FF66" },
+                ].map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      style={{ borderBottomColor: isActive ? tab.activeColor : 'transparent' }}
+                      className={`py-2 px-4 font-black text-xs uppercase tracking-wider border-b-2 rounded-none cursor-pointer transition-all whitespace-nowrap ${
+                        isActive
+                          ? "bg-slate-800/40 text-white"
+                          : "border-transparent text-slate-400 hover:text-white hover:bg-slate-800/20"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+
+                {/* Vertical Divider */}
+                <div className="h-6 w-[1px] bg-slate-800 mx-2 flex-shrink-0" />
+
+                {/* Schedules & Management */}
+                {[
+                  { id: "my-schedule", label: "📅 ตารางแข่งรายอำเภอ", activeColor: "#F59E0B" },
+                  ...(isLoggedIn && currentUser?.role === "admin" ? [
+                    { id: "admins", label: "👥 จัดการผู้ดูแล", activeColor: "#A855F7" }
+                  ] : [])
+                ].map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      style={{ borderBottomColor: isActive ? tab.activeColor : 'transparent' }}
+                      className={`py-2 px-4 font-black text-xs uppercase tracking-wider border-b-2 rounded-none cursor-pointer transition-all whitespace-nowrap ${
+                        isActive
+                          ? "bg-slate-800/40 text-white"
+                          : "border-transparent text-slate-400 hover:text-white hover:bg-slate-800/20"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -704,38 +794,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {/* NAVIGATION TABS (Flat, Sharp-Angled) */}
-      <nav className="max-w-7xl mx-auto px-4 mt-8">
-        <div className="flex flex-wrap gap-1.5">
-          {[
-            { id: "dashboard", label: "📊 สรุปเหรียญรางวัล", accent: "border-t-[#3B82F6]" },
-            { id: "football", label: "⚽ ฟุตบอล", accent: "border-t-rose-500" },
-            { id: "volleyball", label: "🏐 วอลเลย์บอล", accent: "border-t-[#FF5722]" },
-            { id: "petanque", label: "🥎 เปตอง", accent: "border-t-[#10B981]" },
-            { id: "track", label: "🏃 กรีฑา/วิ่ง", accent: "border-t-[#00FF66]" },
-            { id: "my-schedule", label: "📅 ตารางแข่งรายอำเภอ", accent: "border-t-amber-500" },
-            ...(isLoggedIn && currentUser?.role === "admin" ? [
-              { id: "admins", label: "👥 จัดการผู้ดูแล", accent: "border-t-purple-500" }
-            ] : [])
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-2 px-3.5 font-bold text-xs uppercase tracking-wider border-x border-b border-slate-800 border-t-2 rounded-none cursor-pointer transition-all ${tab.accent} ${
-                  isActive 
-                    ? "bg-[#1E293B] text-white border-b-transparent border-x-slate-700" 
-                    : "bg-[#111827] text-slate-400 hover:text-white hover:bg-slate-800/40"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
 
       {/* MAIN CONTAINER */}
       <main className="max-w-7xl mx-auto px-4 mt-6">
