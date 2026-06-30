@@ -353,7 +353,10 @@ export default function App() {
             return name.includes("ธัญ");
           };
 
-          // Filter out "ธัญรักษ์" / "ธัญญารักษ์" matches and clean up ranks/participants client-side
+          let needsFirestoreSync = false;
+          const pendingUpdates: { id: string; data: Match }[] = [];
+
+          // Filter out "ธัญรักษ์" / "ธัญญารักษ์" matches and clean up ranks/participants client-side and server-side
           const cleanedMatchesList = matchesList
             .filter(m => !isThanyarak(m.teamA) && !isThanyarak(m.teamB))
             .map(m => {
@@ -371,8 +374,79 @@ export default function App() {
                   updated = true;
                 }
               }
-              return updated ? { ...m, participants, ranks } : m;
+              if (updated) {
+                const updatedMatch = { ...m, participants, ranks };
+                needsFirestoreSync = true;
+                pendingUpdates.push({ id: m.id, data: updatedMatch });
+                return updatedMatch;
+              }
+              return m;
             });
+
+          // Automatically ensure football matches have both third-place and final matches
+          let finalMatchesList = [...cleanedMatchesList];
+
+          const checkAndMigrateFootball = (genderSuffix: "women" | "men", genderThai: "หญิง" | "ชาย") => {
+            const id25 = `football_${genderSuffix}_25`;
+            const id26 = `football_${genderSuffix}_26`;
+            
+            const match25 = finalMatchesList.find(m => m.id === id25);
+            const match26 = finalMatchesList.find(m => m.id === id26);
+
+            if (match25 && match25.round === "รอบชิงชนะเลิศ" && !match26) {
+              needsFirestoreSync = true;
+              
+              const updated25: Match = {
+                ...match25,
+                round: "ชิงที่ 3",
+                time: "14.30 น.",
+                teamA: `ผู้แพ้คู่ที่ 23 ${genderThai}`,
+                teamB: `ผู้แพ้คู่ที่ 24 ${genderThai}`,
+              };
+
+              const new26: Match = {
+                id: id26,
+                sport: "football",
+                category: `ฟุตบอล${genderThai}`,
+                gender: genderThai,
+                group: "",
+                round: "รอบชิงชนะเลิศ",
+                court: "สนามที่ 1",
+                time: "15.30 น.",
+                date: "10 ก.ค. 69",
+                status: "pending",
+                teamA: `ผู้ชนะคู่ที่ 23 ${genderThai}`,
+                teamB: `ผู้ชนะคู่ที่ 24 ${genderThai}`,
+                scoreA: null,
+                scoreB: null,
+                winner: null,
+                order: match25.order + 1
+              };
+
+              finalMatchesList = finalMatchesList.map(m => m.id === id25 ? updated25 : m);
+              finalMatchesList.push(new26);
+
+              pendingUpdates.push({ id: id25, data: updated25 });
+              pendingUpdates.push({ id: id26, data: new26 });
+            }
+          };
+
+          checkAndMigrateFootball("women", "หญิง");
+          checkAndMigrateFootball("men", "ชาย");
+
+          // Write updates to Firestore if logged in
+          if (needsFirestoreSync && !isLocalFallback && isLoggedIn) {
+            try {
+              const batch = writeBatch(db);
+              pendingUpdates.forEach((upd) => {
+                batch.set(doc(db, "matches", upd.id), upd.data);
+              });
+              await batch.commit();
+              console.log("Successfully migrated football matches and cleaned up Thanyarak!");
+            } catch (err) {
+              console.error("Failed to sync migrated matches to Firestore: ", err);
+            }
+          }
 
           // If collection is completely empty, auto-populate with PDF data
           if (snapshot.empty && !isResetting) {
@@ -388,7 +462,7 @@ export default function App() {
               }
             }
           } else {
-            const sortedList = cleanedMatchesList.sort((a, b) => a.order - b.order);
+            const sortedList = finalMatchesList.sort((a, b) => a.order - b.order);
             saveMatchesLocally(sortedList);
             setLoading(false);
           }

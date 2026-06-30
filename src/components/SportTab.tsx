@@ -86,12 +86,15 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
     ? ["", ...Array.from(new Set(sportMatches.map((m) => m.category))).filter(Boolean)]
     : Array.from(new Set(sportMatches.map((m) => m.category))).filter(Boolean);
   // Get unique rounds for this sport
-  const rounds = ["all", ...Array.from(new Set(sportMatches.map((m) => m.round))).filter(r => r !== "รอบ 8 ทีม" && r !== "รอบรองชนะเลิศ" && r !== "รอบชิงชนะเลิศ" && r !== "ชิงที่ 3")];
+  const rounds = ["all", ...Array.from(new Set(sportMatches.map((m) => m.round))).filter(r => {
+    if (sport === "track") return true;
+    return r !== "รอบ 8 ทีม" && r !== "รอบรองชนะเลิศ" && r !== "รอบชิงชนะเลิศ" && r !== "ชิงที่ 3";
+  })];
 
   // Filter matches
   const filteredMatches = sportMatches.filter((m) => {
-    // Cut bracket/knockout rounds from the match schedule list (รายการแข่งขัน)
-    if (m.round === "รอบ 8 ทีม" || m.round === "รอบรองชนะเลิศ" || m.round === "รอบชิงชนะเลิศ" || m.round === "ชิงที่ 3") {
+    // Cut bracket/knockout rounds from the match schedule list (รายการแข่งขัน) (except for track)
+    if (sport !== "track" && (m.round === "รอบ 8 ทีม" || m.round === "รอบรองชนะเลิศ" || m.round === "รอบชิงชนะเลิศ" || m.round === "ชิงที่ 3")) {
       return false;
     }
 
@@ -194,8 +197,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   } else if (sport === "football") {
     qfSuffixes = ["19", "20", "21", "22"];
     sfSuffixes = ["23", "24"];
-    thirdSuffix = "";
-    finalSuffix = "25";
+    thirdSuffix = "25";
+    finalSuffix = "26";
   }
 
   // Filter matches for the active bracket category
@@ -402,7 +405,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
             }
           }
 
-          // Football Progression (19-22 QF, 23-24 SF, 25 Final)
+          // Football Progression (19-22 QF, 23-24 SF, 25 3rd, 26 Final)
           if (m.sport === "football") {
             const prefix = m.id.replace(`_${matchNum}`, "");
             if (matchNum === 19) await propagateWinner(prefix + "_23", m.winner, "teamA");
@@ -411,10 +414,14 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
             if (matchNum === 22) await propagateWinner(prefix + "_24", m.winner, "teamB");
 
             if (matchNum === 23) {
-              await propagateWinner(prefix + "_25", m.winner, "teamA"); // Final TeamA
+              const loser = m.winner === m.teamA ? m.teamB : m.teamA;
+              await propagateWinner(prefix + "_26", m.winner, "teamA"); // Final TeamA
+              await propagateWinner(prefix + "_25", loser!, "teamA"); // 3rd Place TeamA
             }
             if (matchNum === 24) {
-              await propagateWinner(prefix + "_25", m.winner, "teamB"); // Final TeamB
+              const loser = m.winner === m.teamA ? m.teamB : m.teamA;
+              await propagateWinner(prefix + "_26", m.winner, "teamB"); // Final TeamB
+              await propagateWinner(prefix + "_25", loser!, "teamB"); // 3rd Place TeamB
             }
           }
         }
@@ -882,7 +889,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
       {/* 3. Add Custom Match Form (Collapsible) placeholder to keep order clear */}
 
       {/* 4. Match List Grid */}
-      {(activeView === "all" || activeView === "matches" || selectedCategory === "" || filteredMatches.length > 0) && (
+      {activeView !== "bracket" && (activeView === "all" || activeView === "matches" || sport === "track" || selectedCategory === "") && (
         <div className="space-y-4">
           <h3 className="text-base font-black uppercase text-white tracking-wide">
             📅 รายการแข่งขันและผลลัพธ์ {selectedCategory !== "" ? `(${filteredMatches.length})` : filteredMatches.length > 0 ? `(แสดงเฉพาะ คป.สอ. ${selectedDistrict || teamSearch}) (${filteredMatches.length})` : ""}
@@ -951,38 +958,82 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                   {!isEditing ? (
                     <div className="py-4 space-y-3">
                       {isTrack ? (
-                        // Track race display
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-bold text-slate-400 font-mono block uppercase">ผู้มีสิทธิ์ร่วมแข่ง:</span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {m.participants && m.participants.length > 0 ? (
-                              m.participants.map((p) => {
-                                const rankInfo = m.ranks?.find(r => r.name === p);
-                                return (
-                                  <span
-                                    key={p}
-                                    className={`px-2 py-1 text-xs font-mono font-bold border rounded-none ${
-                                      rankInfo?.rank === 1
-                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                                        : rankInfo?.rank === 2
-                                        ? "bg-slate-300/10 text-slate-300 border-slate-400/30"
-                                        : rankInfo?.rank === 3
-                                        ? "bg-amber-700/10 text-amber-600 border-amber-700/30"
-                                        : "bg-slate-900 border-slate-800 text-slate-400"
-                                    }`}
-                                  >
-                                    {rankInfo?.rank ? `#${rankInfo.rank} ` : ""}
-                                    {p}
-                                    {rankInfo?.time ? ` (${rankInfo.time})` : ""}
+                        // Improved Track race display
+                        <div className="space-y-3">
+                          {m.round === "รอบคัดเลือก" && (
+                            <div className="text-[10px] bg-sky-950/40 border border-sky-800/60 text-sky-400 px-2.5 py-1.5 font-bold rounded-none flex items-center gap-1.5 font-sans">
+                              <span>📢 หมายเหตุ: คัดเลือกอันดับที่ 1-4 เพื่อเข้าสู่รอบชิงชนะเลิศ</span>
+                            </div>
+                          )}
+                          
+                          {isCompleted && m.ranks && m.ranks.some(r => r.rank !== undefined) ? (
+                            <div className="space-y-1.5">
+                              <span className="text-[10px] font-bold text-[#FF5722] font-mono block uppercase tracking-wider">🏆 ผลการแข่งขันอย่างเป็นทางการ:</span>
+                              <div className="border border-slate-800/80 divide-y divide-slate-800/60 bg-slate-950">
+                                {m.ranks
+                                  .filter(r => r.rank !== undefined)
+                                  .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99))
+                                  .map((r) => {
+                                    const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : `${r.rank}`;
+                                    const isQualified = m.round === "รอบคัดเลือก" && r.rank! <= 4;
+                                    return (
+                                      <div key={r.name} className="flex justify-between items-center p-2 text-xs font-mono font-semibold">
+                                        <div className="flex items-center gap-2">
+                                          <span className="w-5 text-center font-bold">{medal}</span>
+                                          <span className="text-white font-bold">{r.name}</span>
+                                          {isQualified && (
+                                            <span className="text-[9px] bg-green-950 text-green-400 border border-green-800/40 px-1 py-0.2 rounded-none font-sans font-bold">
+                                              เข้ารอบชิง 🎉
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className="text-slate-400 font-bold">{r.time || "-"}</span>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          ) : m.round === "รอบชิงชนะเลิศ" ? (
+                            <div className="space-y-2">
+                              <span className="text-[10px] font-bold text-slate-400 font-mono block uppercase">ผู้มีสิทธิ์ร่วมแข่ง:</span>
+                              <div className="text-xs italic text-slate-400 font-bold font-mono bg-slate-950/40 p-2.5 border border-slate-850/60">
+                                ⏳ รายชื่อทีมเข้ารอบชิงชนะเลิศจะแสดงเมื่อเสร็จสิ้นการแข่งขัน
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <span className="text-[10px] font-bold text-slate-400 font-mono block uppercase">ผู้มีสิทธิ์ร่วมแข่ง ({m.participants?.length || 0} ทีม):</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {m.participants && m.participants.length > 0 ? (
+                                  m.participants.map((p) => {
+                                    const rankInfo = m.ranks?.find(r => r.name === p);
+                                    return (
+                                      <span
+                                        key={p}
+                                        className={`px-2 py-1 text-xs font-mono font-bold border rounded-none ${
+                                          rankInfo?.rank === 1
+                                            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                                            : rankInfo?.rank === 2
+                                            ? "bg-slate-300/10 text-slate-300 border-slate-400/30"
+                                            : rankInfo?.rank === 3
+                                            ? "bg-amber-700/10 text-amber-600 border-amber-700/30"
+                                            : "bg-slate-900 border-slate-800 text-slate-400"
+                                        }`}
+                                      >
+                                        {rankInfo?.rank ? `#${rankInfo.rank} ` : "🏃 "}
+                                        {p}
+                                        {rankInfo?.time ? ` (${rankInfo.time})` : ""}
+                                      </span>
+                                    );
+                                  })
+                                ) : (
+                                  <span className="text-xs italic text-red-400 font-bold font-mono">
+                                    ⏳ รอดึงผลอันดับ 1-4 จากรอบคัดเลือกกลุ่ม 1 และ 2
                                   </span>
-                                );
-                              })
-                            ) : (
-                              <span className="text-xs italic text-red-400 font-bold font-mono">
-                                ⏳ รอดึงผลอันดับ 1-4 จากรอบคัดเลือกกลุ่ม 1 และ 2
-                              </span>
-                            )}
-                          </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         // Dual Sports (Petanque, Volleyball, Football)
@@ -1042,7 +1093,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                         // Edit track ranks
                         <div className="space-y-2">
                           <label className="block text-[10px] font-mono font-bold uppercase text-slate-400">
-                            จัดอันดับและสถิติเวลา (1-4 ผ่านเข้ารอบชิง):
+                            {m.round === "รอบชิงชนะเลิศ" ? "จัดอันดับและสถิติเวลา (รอบชิงชนะเลิศ):" : "จัดอันดับและสถิติเวลา (1-4 ผ่านเข้ารอบชิง):"}
                           </label>
                           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                             {m.participants?.map((team) => (
