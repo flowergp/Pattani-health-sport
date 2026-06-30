@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Match, Participant } from "../types";
 import { calculateGroupStandings } from "../utils/calcStandings";
 import { 
@@ -66,8 +66,25 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   // Get current sport's matches
   const sportMatches = matches.filter((m) => m.sport === sport);
 
+  // Reset selected category when sport changes so the auto-selector can pick the correct category of the new sport
+  useEffect(() => {
+    setSelectedCategory("");
+  }, [sport]);
+
+  // Auto-select first non-empty category for non-track sports if empty
+  useEffect(() => {
+    if (sport !== "track" && selectedCategory === "") {
+      const nonEmptyCats = Array.from(new Set(sportMatches.map((m) => m.category))).filter(Boolean);
+      if (nonEmptyCats.length > 0) {
+        setSelectedCategory(nonEmptyCats[0]);
+      }
+    }
+  }, [sport, sportMatches, selectedCategory]);
+
   // Get unique categories for this sport
-  const categories = ["", ...Array.from(new Set(sportMatches.map((m) => m.category)))];
+  const categories = sport === "track"
+    ? ["", ...Array.from(new Set(sportMatches.map((m) => m.category))).filter(Boolean)]
+    : Array.from(new Set(sportMatches.map((m) => m.category))).filter(Boolean);
   // Get unique rounds for this sport
   const rounds = ["all", ...Array.from(new Set(sportMatches.map((m) => m.round))).filter(r => r !== "รอบ 8 ทีม" && r !== "รอบรองชนะเลิศ" && r !== "รอบชิงชนะเลิศ" && r !== "ชิงที่ 3")];
 
@@ -548,7 +565,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
         </div>
 
         {/* Category segment buttons for quick access */}
-        {categories.length > 2 && (
+        {categories.length >= 1 && (
           <div className="flex flex-wrap gap-2 pt-1 pb-2 border-b border-slate-800/60">
             {categories.map((c) => {
               const isActive = selectedCategory === c;

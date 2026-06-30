@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { initializeFirestore } from "firebase/firestore";
+import { initializeFirestore, setLogLevel } from "firebase/firestore";
 
 // Config matches firebase-applet-config.json
 const firebaseConfig = {
@@ -13,6 +13,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// Silence internal Firestore SDK logs/errors in console to prevent quota alert clutter
+try {
+  setLogLevel("silent");
+} catch (e) {
+  console.log("Failed to set Firestore log level to silent: ", e);
+}
+
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true
 }, firebaseConfig.firestoreDatabaseId);

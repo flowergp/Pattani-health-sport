@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   collection, 
   onSnapshot, 
@@ -8,7 +8,8 @@ import {
   updateDoc, 
   addDoc,
   writeBatch,
-  getDocs
+  getDocs,
+  disableNetwork
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Match, ExpenseItem, AdminUser } from "./types";
@@ -18,6 +19,7 @@ import SportTab from "./components/SportTab";
 import ExpenseManager from "./components/ExpenseManager";
 import UserManager from "./components/UserManager";
 import DistrictSchedule from "./components/DistrictSchedule";
+import { calculateGroupStandings } from "./utils/calcStandings";
 import { 
   Trophy, 
   Award, 
@@ -32,14 +34,170 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
+export function resolveAllMatches(allMatches: Match[]): Match[] {
+  return allMatches.map(m => {
+    if (m.sport === "track") return m;
+    
+    let teamA = m.teamA;
+    let teamB = m.teamB;
+    let updated = false;
+
+    const regex = /ที่\s*(\d+)\s*สาย\s*([A-D])/i;
+
+    if (teamA) {
+      const matchA = teamA.match(regex);
+      if (matchA) {
+        const rankNum = parseInt(matchA[1], 10);
+        const groupLetter = matchA[2].toUpperCase();
+        const groupName = `สาย ${groupLetter}`;
+        
+        const groupMatches = allMatches.filter(
+          gm => gm.sport === m.sport && 
+                gm.group === groupName && 
+                gm.round === "รอบแรก" &&
+                gm.category === m.category
+        );
+        const hasAnyCompleted = groupMatches.some(gm => gm.status === "completed");
+        
+        if (hasAnyCompleted) {
+          const standings = calculateGroupStandings(allMatches, m.sport, groupName, m.category);
+          if (standings && standings.length >= rankNum) {
+            teamA = standings[rankNum - 1].team;
+            updated = true;
+          }
+        }
+      }
+    }
+
+    if (teamB) {
+      const matchB = teamB.match(regex);
+      if (matchB) {
+        const rankNum = parseInt(matchB[1], 10);
+        const groupLetter = matchB[2].toUpperCase();
+        const groupName = `สาย ${groupLetter}`;
+        
+        const groupMatches = allMatches.filter(
+          gm => gm.sport === m.sport && 
+                gm.group === groupName && 
+                gm.round === "รอบแรก" &&
+                gm.category === m.category
+        );
+        const hasAnyCompleted = groupMatches.some(gm => gm.status === "completed");
+        
+        if (hasAnyCompleted) {
+          const standings = calculateGroupStandings(allMatches, m.sport, groupName, m.category);
+          if (standings && standings.length >= rankNum) {
+            teamB = standings[rankNum - 1].team;
+            updated = true;
+          }
+        }
+      }
+    }
+
+    return updated ? { ...m, teamA, teamB } : m;
+  });
+}
+
+const DEFAULT_DISTRICTS = [
+  { th: "เมือง", en: "muang" },
+  { th: "หนองจิก", en: "nongchik" },
+  { th: "ยะรัง", en: "yarang" },
+  { th: "ยะหริ่ง", en: "yaring" },
+  { th: "ยะหรึ่ง", en: "yarueng" },
+  { th: "ปะนาเระ", en: "panare" },
+  { th: "มายอ", en: "mayo" },
+  { th: "แม่ลาน", en: "maelan" },
+  { th: "แม่ลาน", en: "maelarn" },
+  { th: "ไม้แก่น", en: "maikaen" },
+  { th: "โคกโพธิ์", en: "khokpho" },
+  { th: "สายบุรี", en: "saiburi" },
+  { th: "กะพ้อ", en: "kapho" },
+  { th: "ทุ่งยางแดง", en: "thungyangdaeng" },
+  { th: "สสจ.ปัตตานี", en: "ssjpattani" }
+];
+
+function getDefaultUsers(): AdminUser[] {
+  const usersList: AdminUser[] = [];
+  DEFAULT_DISTRICTS.forEach((d, idx) => {
+    // Thai username
+    const thId = `user_th_${idx}`;
+    usersList.push({
+      id: thId,
+      username: d.th,
+      password: "1234",
+      role: "editor",
+      team: d.th,
+      createdAt: new Date().toLocaleDateString("th-TH")
+    });
+
+    // English username
+    const enId = `user_en_${idx}`;
+    usersList.push({
+      id: enId,
+      username: d.en,
+      password: "1234",
+      role: "editor",
+      team: d.th,
+      createdAt: new Date().toLocaleDateString("th-TH")
+    });
+  });
+  return usersList;
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "track" | "petanque" | "volleyball" | "football" | "admins" | "my-schedule">("dashboard");
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
-  const [dbUsers, setDbUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLocalFallback, setIsLocalFallback] = useState<boolean>(() => {
+    return localStorage.getItem("pattani_local_fallback") === "true";
+  });
+  
+  const [matches, setMatches] = useState<Match[]>(() => {
+    const saved = localStorage.getItem("pattani_matches");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // ignore
+      }
+    }
+    return getInitialMatches();
+  });
+
+  const resolvedMatches = useMemo(() => {
+    return resolveAllMatches(matches);
+  }, [matches]);
+
+  const [expenses, setExpenses] = useState<ExpenseItem[]>(() => {
+    const saved = localStorage.getItem("pattani_expenses");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // ignore
+      }
+    }
+    return INITIAL_EXPENSES;
+  });
+
+  const [dbUsers, setDbUsers] = useState<AdminUser[]>(() => {
+    const saved = localStorage.getItem("pattani_users");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // ignore
+      }
+    }
+    return getDefaultUsers();
+  });
+
+  const [loading, setLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [dbError, setDbError] = useState<string | null>(null);
+  const [dbError, setDbError] = useState<string | null>(() => {
+    if (localStorage.getItem("pattani_local_fallback") === "true") {
+      return "เปิดใช้งานโหมดสำรองความปลอดภัย (Local Safety Fallback Mode) เรียบร้อยแล้ว! เนื่องจากจำนวนการใช้งานคลาวด์ Firebase ฟรีส่วนกลางเกินขีดจำกัดสำหรับวันนี้ ระบบได้ปรับเข้าสู่โหมดการทำงานในเครื่องของคุณโดยอัตโนมัติ คุณสามารถแก้ไขผลคะแนนต่างๆ ได้ตามปกติ โดยข้อมูลทั้งหมดจะจัดเก็บอยู่ในเบราว์เซอร์เครื่องนี้อย่างปลอดภัย";
+    }
+    return null;
+  });
 
   // Custom district filter state
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
@@ -102,260 +260,349 @@ export default function App() {
     }
   };
 
+  const saveMatchesLocally = (newMatches: Match[]) => {
+    const sorted = [...newMatches].sort((a, b) => a.order - b.order);
+    setMatches(sorted);
+    localStorage.setItem("pattani_matches", JSON.stringify(sorted));
+  };
+
+  const saveExpensesLocally = (newExpenses: ExpenseItem[]) => {
+    setExpenses(newExpenses);
+    localStorage.setItem("pattani_expenses", JSON.stringify(newExpenses));
+  };
+
+  const saveUsersLocally = (newUsers: AdminUser[]) => {
+    setDbUsers(newUsers);
+    localStorage.setItem("pattani_users", JSON.stringify(newUsers));
+  };
+
+  const enableLocalFallback = () => {
+    setIsLocalFallback(true);
+    localStorage.setItem("pattani_local_fallback", "true");
+    setDbError(
+      "เปิดใช้งานโหมดสำรองความปลอดภัย (Local Safety Fallback Mode) เรียบร้อยแล้ว! " +
+      "เนื่องจากจำนวนการใช้งานคลาวด์ Firebase ฟรีส่วนกลางเกินขีดจำกัดสำหรับวันนี้ " +
+      "ระบบได้ปรับเข้าสู่โหมดการทำงานในเครื่องของคุณโดยอัตโนมัติ คุณสามารถดูผลลัพธ์ ตารางการแข่งขัน " +
+      "และแก้ไขผลคะแนนต่างๆ ได้ตามปกติ โดยข้อมูลทั้งหมดจะจัดเก็บอยู่ในเบราว์เซอร์เครื่องนี้อย่างปลอดภัย"
+    );
+    disableNetwork(db).catch((err) => {
+      console.log("Failed to disable Firestore network in enableLocalFallback: ", err);
+    });
+  };
+
+  // Turn off Firestore network if local fallback is active to completely silence Quota / Connection errors
+  useEffect(() => {
+    if (localStorage.getItem("pattani_local_fallback") === "true" || isLocalFallback) {
+      disableNetwork(db).catch((err) => {
+        console.log("Failed to disable Firestore network on mount: ", err);
+      });
+    }
+  }, [isLocalFallback]);
+
   // 1. Sync matches and expenses from Firestore
   useEffect(() => {
+    // If we're already marked as local fallback, don't block with loading spinner
+    if (localStorage.getItem("pattani_local_fallback") === "true" || isLocalFallback) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setDbError(null);
 
-    // Sync matches
-    const unsubscribeMatches = onSnapshot(
-      collection(db, "matches"),
-      async (snapshot) => {
-        const matchesList: Match[] = [];
-        snapshot.forEach((doc) => {
-          matchesList.push({ ...doc.data() } as Match);
-        });
+    let unsubscribeMatches = () => {};
+    let unsubscribeExpenses = () => {};
+    let unsubscribeUsers = () => {};
 
-        const isThanyarak = (name: string | null | undefined) => {
-          if (!name) return false;
-          return name.includes("ธัญ");
-        };
+    // 3-second timeout to fall back locally if Firestore is slow or quota-exceeded
+    const timeoutId = setTimeout(() => {
+      console.warn("Firestore connection timed out (3s). Enabling local fallback.");
+      enableLocalFallback();
+      setLoading(false);
+    }, 3000);
 
-        // Filter out "ธัญรักษ์" / "ธัญญารักษ์" matches and clean up ranks/participants client-side
-        const cleanedMatchesList = matchesList
-          .filter(m => !isThanyarak(m.teamA) && !isThanyarak(m.teamB))
-          .map(m => {
-            let updated = false;
-            let participants = m.participants;
-            if (participants && participants.some(p => isThanyarak(p))) {
-              participants = participants.filter(p => !isThanyarak(p));
-              updated = true;
-            }
-            let ranks = m.ranks;
-            if (ranks) {
-              const originalLength = ranks.length;
-              ranks = ranks.filter(r => !isThanyarak(r.name));
-              if (ranks.length !== originalLength) {
+    try {
+      // Sync matches
+      unsubscribeMatches = onSnapshot(
+        collection(db, "matches"),
+        async (snapshot) => {
+          clearTimeout(timeoutId);
+          const matchesList: Match[] = [];
+          snapshot.forEach((docSnap) => {
+            matchesList.push({ ...docSnap.data() } as Match);
+          });
+
+          const isThanyarak = (name: string | null | undefined) => {
+            if (!name) return false;
+            return name.includes("ธัญ");
+          };
+
+          // Filter out "ธัญรักษ์" / "ธัญญารักษ์" matches and clean up ranks/participants client-side
+          const cleanedMatchesList = matchesList
+            .filter(m => !isThanyarak(m.teamA) && !isThanyarak(m.teamB))
+            .map(m => {
+              let updated = false;
+              let participants = m.participants;
+              if (participants && participants.some(p => isThanyarak(p))) {
+                participants = participants.filter(p => !isThanyarak(p));
                 updated = true;
               }
-            }
-            return updated ? { ...m, participants, ranks } : m;
-          });
-
-        // Background database cleanup if any "ธัญ" team is found in the database
-        const hasThanyarak = matchesList.some(
-          m => isThanyarak(m.teamA) || 
-               isThanyarak(m.teamB) || 
-               (m.participants && m.participants.some(p => isThanyarak(p))) ||
-               (m.ranks && m.ranks.some(r => isThanyarak(r.name)))
-        );
-
-        if (hasThanyarak && !isResetting) {
-          const runHealing = async () => {
-            console.log("Self-healing: removing 'ธัญรักษ์/ธัญญารักษ์' from Firestore...");
-            const toDelete: string[] = [];
-            const toUpdate: { id: string; updates: Partial<Match> }[] = [];
-
-            matchesList.forEach(m => {
-              if (isThanyarak(m.teamA) || isThanyarak(m.teamB)) {
-                toDelete.push(m.id);
-              } else {
-                let updated = false;
-                const updates: Partial<Match> = {};
-
-                if (m.participants && m.participants.some(p => isThanyarak(p))) {
-                  updates.participants = m.participants.filter(p => !isThanyarak(p));
+              let ranks = m.ranks;
+              if (ranks) {
+                const originalLength = ranks.length;
+                ranks = ranks.filter(r => !isThanyarak(r.name));
+                if (ranks.length !== originalLength) {
                   updated = true;
-                }
-
-                if (m.ranks && m.ranks.some(r => isThanyarak(r.name))) {
-                  updates.ranks = m.ranks.filter(r => !isThanyarak(r.name));
-                  updated = true;
-                }
-
-                if (updated) {
-                  toUpdate.push({ id: m.id, updates });
                 }
               }
+              return updated ? { ...m, participants, ranks } : m;
             });
 
-            try {
-              const batch = writeBatch(db);
-              toDelete.forEach(id => {
-                batch.delete(doc(db, "matches", id));
-              });
-              toUpdate.forEach(({ id, updates }) => {
-                batch.update(doc(db, "matches", id), updates);
-              });
-              await batch.commit();
-              console.log("Self-healing successful!");
-            } catch (err) {
-              console.error("Self-healing error: ", err);
-            }
-          };
-          runHealing();
-        }
+          // Background database cleanup if any "ธัญ" team is found in the database
+          const hasThanyarak = matchesList.some(
+            m => isThanyarak(m.teamA) || 
+                 isThanyarak(m.teamB) || 
+                 (m.participants && m.participants.some(p => isThanyarak(p))) ||
+                 (m.ranks && m.ranks.some(r => isThanyarak(r.name)))
+          );
 
-        // General Self-Healing and Synchronizer to keep Firestore in sync with initialData.ts
-        const defaultMatches = getInitialMatches();
-        const defaultMatchesMap = new Map(defaultMatches.map(dm => [dm.id, dm]));
+          if (hasThanyarak && !isResetting) {
+            const runHealing = async () => {
+              console.log("Self-healing: removing 'ธัญรักษ์/ธัญญารักษ์' from Firestore...");
+              const toDelete: string[] = [];
+              const toUpdate: { id: string; updates: Partial<Match> }[] = [];
 
-        const obsoleteMatches = matchesList.filter(m => !defaultMatchesMap.has(m.id));
-        const matchesInDbIds = new Set(matchesList.map(m => m.id));
-        const missingMatches = defaultMatches.filter(dm => !matchesInDbIds.has(dm.id));
+              matchesList.forEach(m => {
+                if (isThanyarak(m.teamA) || isThanyarak(m.teamB)) {
+                  toDelete.push(m.id);
+                } else {
+                  let updated = false;
+                  const updates: Partial<Match> = {};
 
-        const mismatchedMatches = matchesList.filter(m => {
-          const defM = defaultMatchesMap.get(m.id);
-          if (defM) {
-            return (
-              defM.teamA !== m.teamA ||
-              defM.teamB !== m.teamB ||
-              defM.group !== m.group ||
-              defM.court !== m.court ||
-              defM.time !== m.time ||
-              defM.sport !== m.sport ||
-              defM.category !== m.category ||
-              defM.gender !== m.gender ||
-              defM.round !== m.round ||
-              defM.date !== m.date
-            );
-          }
-          return false;
-        });
+                  if (m.participants && m.participants.some(p => isThanyarak(p))) {
+                    updates.participants = m.participants.filter(p => !isThanyarak(p));
+                    updated = true;
+                  }
 
-        const needsSyncHealing = obsoleteMatches.length > 0 || missingMatches.length > 0 || mismatchedMatches.length > 0;
+                  if (m.ranks && m.ranks.some(r => isThanyarak(r.name))) {
+                    updates.ranks = m.ranks.filter(r => !isThanyarak(r.name));
+                    updated = true;
+                  }
 
-        if (needsSyncHealing && !isResetting) {
-          const runSyncHealing = async () => {
-            console.log("Self-healing: Synchronizing database matches with defined schedule...");
-            try {
-              const batch = writeBatch(db);
-
-              // Delete obsolete matches
-              obsoleteMatches.forEach(m => {
-                console.log(`Deleting obsolete match: ${m.id}`);
-                batch.delete(doc(db, "matches", m.id));
+                  if (updated) {
+                    toUpdate.push({ id: m.id, updates });
+                  }
+                }
               });
 
-              // Add missing matches
-              missingMatches.forEach(dm => {
-                console.log(`Adding missing match: ${dm.id}`);
-                batch.set(doc(db, "matches", dm.id), dm);
-              });
-
-              // Update mismatched matches (preserve score/status/winner/sets/remarks/etc.)
-              mismatchedMatches.forEach(m => {
-                console.log(`Updating mismatched match: ${m.id}`);
-                const defM = defaultMatchesMap.get(m.id)!;
-                batch.update(doc(db, "matches", m.id), {
-                  teamA: defM.teamA,
-                  teamB: defM.teamB,
-                  group: defM.group,
-                  court: defM.court,
-                  time: defM.time,
-                  sport: defM.sport,
-                  category: defM.category,
-                  gender: defM.gender,
-                  round: defM.round,
-                  date: defM.date,
-                  order: defM.order
+              try {
+                const batch = writeBatch(db);
+                toDelete.forEach(id => {
+                  batch.delete(doc(db, "matches", id));
                 });
-              });
-
-              await batch.commit();
-              console.log("Database self-healing/synchronization completed successfully!");
-            } catch (err) {
-              console.error("Database self-healing error: ", err);
-            }
-          };
-          runSyncHealing();
-        }
-
-        // If collection is completely empty, auto-populate with PDF data
-        if (snapshot.empty && !isResetting) {
-          console.log("No matches found in Firestore. Populating with initial data...");
-          try {
-            await resetToDefaultPDFSchedule(true);
-          } catch (err: any) {
-            console.error("Error populating default matches: ", err);
-            setDbError(err.message || "Failed to seed default matches database");
+                toUpdate.forEach(({ id, updates }) => {
+                  batch.update(doc(db, "matches", id), updates);
+                });
+                await batch.commit();
+                console.log("Self-healing successful!");
+              } catch (err: any) {
+                console.error("Self-healing error: ", err);
+                if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+                  enableLocalFallback();
+                }
+              }
+            };
+            runHealing();
           }
-        } else {
-          setMatches(cleanedMatchesList.sort((a, b) => a.order - b.order));
+
+          // General Self-Healing and Synchronizer to keep Firestore in sync with initialData.ts
+          const defaultMatches = getInitialMatches();
+          const defaultMatchesMap = new Map(defaultMatches.map(dm => [dm.id, dm]));
+
+          const obsoleteMatches = matchesList.filter(m => !defaultMatchesMap.has(m.id));
+          const matchesInDbIds = new Set(matchesList.map(m => m.id));
+          const missingMatches = defaultMatches.filter(dm => !matchesInDbIds.has(dm.id));
+
+          const mismatchedMatches = matchesList.filter(m => {
+            const defM = defaultMatchesMap.get(m.id);
+            if (defM) {
+              return (
+                defM.teamA !== m.teamA ||
+                defM.teamB !== m.teamB ||
+                defM.group !== m.group ||
+                defM.court !== m.court ||
+                defM.time !== m.time ||
+                defM.sport !== m.sport ||
+                defM.category !== m.category ||
+                defM.gender !== m.gender ||
+                defM.round !== m.round ||
+                defM.date !== m.date
+              );
+            }
+            return false;
+          });
+
+          const needsSyncHealing = obsoleteMatches.length > 0 || missingMatches.length > 0 || mismatchedMatches.length > 0;
+
+          if (needsSyncHealing && !isResetting) {
+            const runSyncHealing = async () => {
+              console.log("Self-healing: Synchronizing database matches with defined schedule...");
+              try {
+                const batch = writeBatch(db);
+
+                // Delete obsolete matches
+                obsoleteMatches.forEach(m => {
+                  batch.delete(doc(db, "matches", m.id));
+                });
+
+                // Add missing matches
+                missingMatches.forEach(dm => {
+                  batch.set(doc(db, "matches", dm.id), dm);
+                });
+
+                // Update mismatched matches
+                mismatchedMatches.forEach(m => {
+                  const defM = defaultMatchesMap.get(m.id)!;
+                  batch.update(doc(db, "matches", m.id), {
+                    teamA: defM.teamA,
+                    teamB: defM.teamB,
+                    group: defM.group,
+                    court: defM.court,
+                    time: defM.time,
+                    sport: defM.sport,
+                    category: defM.category,
+                    gender: defM.gender,
+                    round: defM.round,
+                    date: defM.date,
+                    order: defM.order
+                  });
+                });
+
+                await batch.commit();
+                console.log("Database self-healing/synchronization completed successfully!");
+              } catch (err: any) {
+                console.error("Database self-healing error: ", err);
+                if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+                  enableLocalFallback();
+                }
+              }
+            };
+            runSyncHealing();
+          }
+
+          // If collection is completely empty, auto-populate with PDF data
+          if (snapshot.empty && !isResetting) {
+            console.log("No matches found in Firestore. Populating with initial data...");
+            try {
+              await resetToDefaultPDFSchedule(true);
+            } catch (err: any) {
+              console.error("Error populating default matches: ", err);
+              if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+                enableLocalFallback();
+              } else {
+                setDbError(err.message || "Failed to seed default matches database");
+              }
+            }
+          } else {
+            const sortedList = cleanedMatchesList.sort((a, b) => a.order - b.order);
+            saveMatchesLocally(sortedList);
+            setLoading(false);
+          }
+        },
+        (error: any) => {
+          clearTimeout(timeoutId);
+          console.error("Firestore matches subscription error: ", error);
+          if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+            enableLocalFallback();
+          } else {
+            setDbError("การเชื่อมต่อฐานข้อมูลล้มเหลว กำลังใช้ฐานข้อมูลในตัวเครื่องชั่วคราว");
+          }
           setLoading(false);
         }
-      },
-      (error) => {
-        console.error("Firestore matches subscription error: ", error);
-        setDbError("การเชื่อมต่อฐานข้อมูลล้มเหลว กรุณาตรวจสอบการตั้งค่า Firebase");
-        setLoading(false);
-      }
-    );
+      );
 
-    // Sync expenses
-    const unsubscribeExpenses = onSnapshot(
-      collection(db, "expenses"),
-      async (snapshot) => {
-        const expensesList: ExpenseItem[] = [];
-        snapshot.forEach((doc) => {
-          expensesList.push({ id: doc.id, ...doc.data() } as ExpenseItem);
-        });
-
-        // If empty, auto-populate
-        if (snapshot.empty && !isResetting) {
-          try {
-            await seedDefaultExpenses();
-          } catch (err) {
-            console.error("Error populating default expenses: ", err);
-          }
-        } else {
-          setExpenses(expensesList);
-        }
-      },
-      (error) => {
-        console.error("Firestore expenses subscription error: ", error);
-      }
-    );
-
-    // Sync users
-    const unsubscribeUsers = onSnapshot(
-      collection(db, "users"),
-      async (snapshot) => {
-        const usersList: AdminUser[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          usersList.push({
-            id: doc.id,
-            username: data.username || "",
-            password: data.password || "",
-            role: data.role || "editor",
-            createdAt: data.createdAt || "",
-            team: data.team || ""
+      // Sync expenses
+      unsubscribeExpenses = onSnapshot(
+        collection(db, "expenses"),
+        async (snapshot) => {
+          const expensesList: ExpenseItem[] = [];
+          snapshot.forEach((docSnap) => {
+            expensesList.push({ id: docSnap.id, ...docSnap.data() } as ExpenseItem);
           });
-        });
-        
-        if (snapshot.empty && !isResetting) {
-          console.log("No users found in Firestore. Populating with initial district users...");
-          try {
-            await seedDefaultDistrictUsers();
-          } catch (err) {
-            console.error("Error auto-seeding users: ", err);
+
+          // If empty, auto-populate
+          if (snapshot.empty && !isResetting) {
+            try {
+              await seedDefaultExpenses();
+            } catch (err: any) {
+              console.error("Error populating default expenses: ", err);
+              if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+                enableLocalFallback();
+              }
+            }
+          } else {
+            saveExpensesLocally(expensesList);
           }
-        } else {
-          setDbUsers(usersList);
+        },
+        (error: any) => {
+          console.error("Firestore expenses subscription error: ", error);
+          if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+            enableLocalFallback();
+          }
         }
-      },
-      (error) => {
-        console.error("Firestore users subscription error: ", error);
-      }
-    );
+      );
+
+      // Sync users
+      unsubscribeUsers = onSnapshot(
+        collection(db, "users"),
+        async (snapshot) => {
+          const usersList: AdminUser[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            usersList.push({
+              id: docSnap.id,
+              username: data.username || "",
+              password: data.password || "",
+              role: data.role || "editor",
+              createdAt: data.createdAt || "",
+              team: data.team || ""
+            });
+          });
+          
+          if (snapshot.empty && !isResetting) {
+            console.log("No users found in Firestore. Populating with initial district users...");
+            try {
+              await seedDefaultDistrictUsers();
+            } catch (err: any) {
+              console.error("Error auto-seeding users: ", err);
+              if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+                enableLocalFallback();
+              }
+            }
+          } else {
+            saveUsersLocally(usersList);
+          }
+        },
+        (error: any) => {
+          console.error("Firestore users subscription error: ", error);
+          if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+            enableLocalFallback();
+          }
+        }
+      );
+    } catch (e: any) {
+      console.error("Failed to connect to firestore streams: ", e);
+      enableLocalFallback();
+      setLoading(false);
+    }
 
     return () => {
+      clearTimeout(timeoutId);
       unsubscribeMatches();
       unsubscribeExpenses();
       unsubscribeUsers();
     };
-  }, []);
+  }, [db, isResetting, isLocalFallback]);
 
   // Update selected district automatically when user logs in
   useEffect(() => {
@@ -372,50 +619,72 @@ export default function App() {
     }
     setIsResetting(true);
     setLoading(true);
-    try {
-      // Fetch all existing match docs first
-      const matchesSnap = await getDocs(collection(db, "matches"));
-      const batch = writeBatch(db);
 
-      // Delete existing
-      matchesSnap.forEach((d) => {
-        batch.delete(doc(db, "matches", d.id));
-      });
-      await batch.commit();
+    // Reset locally first
+    const defaultMatches = getInitialMatches();
+    saveMatchesLocally(defaultMatches);
 
-      // Write new initial data in chunks (Firestore limit is 500 per batch)
-      const defaultMatches = getInitialMatches();
-      const chunkSize = 200;
-      for (let i = 0; i < defaultMatches.length; i += chunkSize) {
-        const chunk = defaultMatches.slice(i, i + chunkSize);
-        const writeBatchInstance = writeBatch(db);
-        chunk.forEach((match) => {
-          const matchRef = doc(db, "matches", match.id);
-          writeBatchInstance.set(matchRef, match);
+    if (!isLocalFallback) {
+      try {
+        // Fetch all existing match docs first
+        const matchesSnap = await getDocs(collection(db, "matches"));
+        const batch = writeBatch(db);
+
+        // Delete existing
+        matchesSnap.forEach((d) => {
+          batch.delete(doc(db, "matches", d.id));
         });
-        await writeBatchInstance.commit();
-      }
+        await batch.commit();
 
-      console.log("Seeded matches collection successfully!");
-    } catch (err: any) {
-      console.error("Batch seed error: ", err);
-      setDbError(err.message || "เกิดข้อผิดพลาดขณะบันทึกข้อมูลตารางการแข่งขัน");
-    } finally {
+        // Write new initial data in chunks (Firestore limit is 500 per batch)
+        const chunkSize = 200;
+        for (let i = 0; i < defaultMatches.length; i += chunkSize) {
+          const chunk = defaultMatches.slice(i, i + chunkSize);
+          const writeBatchInstance = writeBatch(db);
+          chunk.forEach((match) => {
+            const matchRef = doc(db, "matches", match.id);
+            writeBatchInstance.set(matchRef, match);
+          });
+          await writeBatchInstance.commit();
+        }
+
+        console.log("Seeded matches collection successfully!");
+      } catch (err: any) {
+        console.error("Batch seed error: ", err);
+        if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+          enableLocalFallback();
+        } else {
+          setDbError(err.message || "เกิดข้อผิดพลาดขณะบันทึกข้อมูลตารางการแข่งขัน");
+        }
+      } finally {
+        setIsResetting(false);
+        setLoading(false);
+      }
+    } else {
       setIsResetting(false);
       setLoading(false);
     }
   };
 
   const seedDefaultExpenses = async () => {
-    const batch = writeBatch(db);
-    INITIAL_EXPENSES.forEach((item) => {
-      const expRef = doc(db, "expenses", item.id);
-      batch.set(expRef, item);
-    });
-    await batch.commit();
+    if (isLocalFallback) return;
+    try {
+      const batch = writeBatch(db);
+      INITIAL_EXPENSES.forEach((item) => {
+        const expRef = doc(db, "expenses", item.id);
+        batch.set(expRef, item);
+      });
+      await batch.commit();
+    } catch (err: any) {
+      console.error("Error seeding default expenses: ", err);
+      if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+        enableLocalFallback();
+      }
+    }
   };
 
   const seedDefaultDistrictUsers = async () => {
+    if (isLocalFallback) return;
     const districts = [
       { th: "เมือง", en: "muang" },
       { th: "หนองจิก", en: "nongchik" },
@@ -461,120 +730,242 @@ export default function App() {
       });
       await batch.commit();
       console.log("Seeded default district users!");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error seeding default district users: ", err);
+      if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+        enableLocalFallback();
+      }
     }
   };
 
   const resetExpenses = async () => {
     if (!isLoggedIn) return;
-    // Delete existing
-    const snap = await getDocs(collection(db, "expenses"));
-    const batch = writeBatch(db);
-    snap.forEach((d) => {
-      batch.delete(doc(db, "expenses", d.id));
-    });
-    await batch.commit();
-    await seedDefaultExpenses();
+    
+    // Reset locally first
+    saveExpensesLocally(INITIAL_EXPENSES);
+
+    if (!isLocalFallback) {
+      try {
+        // Delete existing
+        const snap = await getDocs(collection(db, "expenses"));
+        const batch = writeBatch(db);
+        snap.forEach((d) => {
+          batch.delete(doc(db, "expenses", d.id));
+        });
+        await batch.commit();
+        await seedDefaultExpenses();
+      } catch (err: any) {
+        console.error("Error resetting expenses: ", err);
+        if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+      }
+    }
   };
 
   // 3. Score/Match updates
   const handleUpdateMatch = async (id: string, updates: Partial<Match>) => {
     if (!isLoggedIn) return;
-    try {
-      const matchRef = doc(db, "matches", id);
-      await updateDoc(matchRef, updates);
-    } catch (error) {
-      console.error("Error updating match in Firestore: ", error);
+
+    // Local-first update
+    const updatedList = matches.map((m) => m.id === id ? { ...m, ...updates } : m);
+    saveMatchesLocally(updatedList);
+
+    if (!isLocalFallback) {
+      try {
+        const matchRef = doc(db, "matches", id);
+        await updateDoc(matchRef, updates);
+      } catch (error: any) {
+        console.error("Error updating match in Firestore: ", error);
+        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+      }
     }
   };
 
   const handleAddMatch = async (newMatch: Omit<Match, "id" | "order">) => {
     if (!isLoggedIn) return;
-    try {
-      const newId = `${newMatch.sport}_custom_${Date.now()}`;
-      const orderValue = matches.length > 0 ? Math.max(...matches.map(m => m.order)) + 1 : 1;
-      const fullMatch: Match = {
-        ...newMatch,
-        id: newId,
-        order: orderValue
-      };
-      await setDoc(doc(db, "matches", newId), fullMatch);
-    } catch (error) {
-      console.error("Error adding match in Firestore: ", error);
+
+    const newId = `${newMatch.sport}_custom_${Date.now()}`;
+    const orderValue = matches.length > 0 ? Math.max(...matches.map(m => m.order)) + 1 : 1;
+    const fullMatch: Match = {
+      ...newMatch,
+      id: newId,
+      order: orderValue
+    };
+
+    // Local-first update
+    const updatedList = [...matches, fullMatch];
+    saveMatchesLocally(updatedList);
+
+    if (!isLocalFallback) {
+      try {
+        await setDoc(doc(db, "matches", newId), fullMatch);
+      } catch (error: any) {
+        console.error("Error adding match in Firestore: ", error);
+        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+      }
     }
   };
 
   // 4. Budget/Expenses actions
   const handleAddExpense = async (item: Omit<ExpenseItem, "id" | "total">) => {
     if (!isLoggedIn) return;
-    try {
-      const total = item.quantity * item.pricePerUnit;
-      const newId = `exp_custom_${Date.now()}`;
-      await setDoc(doc(db, "expenses", newId), {
-        name: item.name,
-        quantity: item.quantity,
-        pricePerUnit: item.pricePerUnit,
-        total
-      });
-    } catch (error) {
-      console.error("Error adding expense: ", error);
+
+    const total = item.quantity * item.pricePerUnit;
+    const newId = `exp_custom_${Date.now()}`;
+    const newExpense: ExpenseItem = {
+      id: newId,
+      name: item.name,
+      quantity: item.quantity,
+      pricePerUnit: item.pricePerUnit,
+      total
+    };
+
+    // Local-first update
+    const updatedList = [...expenses, newExpense];
+    saveExpensesLocally(updatedList);
+
+    if (!isLocalFallback) {
+      try {
+        await setDoc(doc(db, "expenses", newId), {
+          name: item.name,
+          quantity: item.quantity,
+          pricePerUnit: item.pricePerUnit,
+          total
+        });
+      } catch (error: any) {
+        console.error("Error adding expense: ", error);
+        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+      }
     }
   };
 
   const handleDeleteExpense = async (id: string) => {
     if (!isLoggedIn) return;
-    try {
-      await deleteDoc(doc(db, "expenses", id));
-    } catch (error) {
-      console.error("Error deleting expense: ", error);
+
+    // Local-first update
+    const updatedList = expenses.filter((e) => e.id !== id);
+    saveExpensesLocally(updatedList);
+
+    if (!isLocalFallback) {
+      try {
+        await deleteDoc(doc(db, "expenses", id));
+      } catch (error: any) {
+        console.error("Error deleting expense: ", error);
+        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+      }
     }
   };
 
   const handleUpdateExpense = async (id: string, updates: Partial<ExpenseItem>) => {
     if (!isLoggedIn) return;
-    try {
-      await updateDoc(doc(db, "expenses", id), updates);
-    } catch (error) {
-      console.error("Error updating expense: ", error);
+
+    // Local-first update
+    const updatedList = expenses.map((e) => {
+      if (e.id === id) {
+        const merged = { ...e, ...updates };
+        if (updates.quantity !== undefined || updates.pricePerUnit !== undefined) {
+          merged.total = merged.quantity * merged.pricePerUnit;
+        }
+        return merged;
+      }
+      return e;
+    });
+    saveExpensesLocally(updatedList);
+
+    if (!isLocalFallback) {
+      try {
+        await updateDoc(doc(db, "expenses", id), updates);
+      } catch (error: any) {
+        console.error("Error updating expense: ", error);
+        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+      }
     }
   };
 
   // 5. User action handlers
   const handleAddUser = async (username: string, password: string, role: "admin" | "editor") => {
     if (!isLoggedIn) return;
-    try {
-      const newId = `user_${Date.now()}`;
-      await setDoc(doc(db, "users", newId), {
-        id: newId,
-        username,
-        password,
-        role,
-        createdAt: new Date().toLocaleDateString("th-TH")
-      });
-    } catch (error: any) {
-      console.error("Error adding user: ", error);
-      throw error;
+
+    const newId = `user_${Date.now()}`;
+    const newUser: AdminUser = {
+      id: newId,
+      username,
+      password,
+      role,
+      createdAt: new Date().toLocaleDateString("th-TH")
+    };
+
+    // Local-first update
+    const updatedList = [...dbUsers, newUser];
+    saveUsersLocally(updatedList);
+
+    if (!isLocalFallback) {
+      try {
+        await setDoc(doc(db, "users", newId), {
+          id: newId,
+          username,
+          password,
+          role,
+          createdAt: newUser.createdAt
+        });
+      } catch (error: any) {
+        console.error("Error adding user: ", error);
+        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+        throw error;
+      }
     }
   };
 
   const handleDeleteUser = async (id: string) => {
     if (!isLoggedIn) return;
-    try {
-      await deleteDoc(doc(db, "users", id));
-    } catch (error: any) {
-      console.error("Error deleting user: ", error);
-      throw error;
+
+    // Local-first update
+    const updatedList = dbUsers.filter((u) => u.id !== id);
+    saveUsersLocally(updatedList);
+
+    if (!isLocalFallback) {
+      try {
+        await deleteDoc(doc(db, "users", id));
+      } catch (error: any) {
+        console.error("Error deleting user: ", error);
+        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+        throw error;
+      }
     }
   };
 
   const handleUpdateUser = async (id: string, updates: Partial<AdminUser>) => {
     if (!isLoggedIn) return;
-    try {
-      await updateDoc(doc(db, "users", id), updates);
-    } catch (error: any) {
-      console.error("Error updating user: ", error);
-      throw error;
+
+    // Local-first update
+    const updatedList = dbUsers.map((u) => u.id === id ? { ...u, ...updates } : u);
+    saveUsersLocally(updatedList);
+
+    if (!isLocalFallback) {
+      try {
+        await updateDoc(doc(db, "users", id), updates);
+      } catch (error: any) {
+        console.error("Error updating user: ", error);
+        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+        throw error;
+      }
     }
   };
 
@@ -875,7 +1266,7 @@ export default function App() {
               >
                 {activeTab === "dashboard" && (
                   <Dashboard 
-                    matches={matches} 
+                    matches={resolvedMatches} 
                     onResetData={() => resetToDefaultPDFSchedule(false)} 
                     isResetting={isResetting}
                     selectedDistrict={selectedDistrict}
@@ -885,7 +1276,7 @@ export default function App() {
                 {activeTab === "track" && (
                   <SportTab
                     sport="track"
-                    matches={matches}
+                    matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
                     onAddMatch={handleAddMatch}
                     isLoggedIn={isLoggedIn}
@@ -896,7 +1287,7 @@ export default function App() {
                 {activeTab === "petanque" && (
                   <SportTab
                     sport="petanque"
-                    matches={matches}
+                    matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
                     onAddMatch={handleAddMatch}
                     isLoggedIn={isLoggedIn}
@@ -907,7 +1298,7 @@ export default function App() {
                 {activeTab === "volleyball" && (
                   <SportTab
                     sport="volleyball"
-                    matches={matches}
+                    matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
                     onAddMatch={handleAddMatch}
                     isLoggedIn={isLoggedIn}
@@ -918,7 +1309,7 @@ export default function App() {
                 {activeTab === "football" && (
                   <SportTab
                     sport="football"
-                    matches={matches}
+                    matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
                     onAddMatch={handleAddMatch}
                     isLoggedIn={isLoggedIn}
@@ -928,7 +1319,7 @@ export default function App() {
 
                 {activeTab === "my-schedule" && (
                   <DistrictSchedule
-                    matches={matches}
+                    matches={resolvedMatches}
                     selectedDistrict={selectedDistrict}
                     onSelectDistrict={setSelectedDistrict}
                   />
