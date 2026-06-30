@@ -425,6 +425,36 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
     setEditingMatchId(null);
   };
 
+  const handleClearScore = async (m: Match) => {
+    if (!isLoggedIn) return;
+    
+    if (!window.confirm(`คุณแน่ใจหรือไม่ที่จะเคลียร์คะแนนและผลแข่งขันของคู่นี้กลับเป็นค่าเริ่มต้น?`)) {
+      return;
+    }
+
+    const updates: Partial<Match> = {
+      status: "pending",
+      scoreA: null,
+      scoreB: null,
+      winner: null
+    };
+
+    if (sport === "volleyball") {
+      updates.sets = [
+        { scoreA: 0, scoreB: 0 },
+        { scoreA: 0, scoreB: 0 },
+        { scoreA: 0, scoreB: 0 }
+      ];
+    }
+
+    if (sport === "track") {
+      updates.ranks = [];
+    }
+
+    await onUpdateMatch(m.id, updates);
+    setEditingMatchId(null);
+  };
+
   const propagateWinner = async (targetMatchId: string, winnerName: string, slot: "teamA" | "teamB") => {
     // Check if target match exists
     const target = matches.find(m => m.id === targetMatchId);
@@ -641,8 +671,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
               {[
                 { id: "all", label: "✨ แสดงทั้งหมด", desc: "รวมทุกส่วน" },
                 { id: "standings", label: "📊 ตารางคะแนน", desc: "รอบแบ่งกลุ่ม" },
-                { id: "bracket", label: "🏆 ผังประกบคู่", desc: "รอบน็อคเอ้าท์" },
-                { id: "matches", label: "📋 รายการแข่งขัน", desc: "และผลลัพธ์" }
+                { id: "matches", label: "📋 รายการแข่งขัน", desc: "และผลลัพธ์" },
+                { id: "bracket", label: "🏆 ผังประกบคู่", desc: "รอบน็อคเอ้าท์" }
               ].map((tab) => {
                 const isActive = activeView === tab.id;
                 return (
@@ -737,139 +767,6 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
           </div>
         )}
       </div>
-
-      {/* 2. Knockout Bracket Display Card */}
-      {sport !== "track" && activeBracketCategory && (activeView === "all" || activeView === "bracket") && (
-        <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <Award size={20} className="text-[#FF5722]" />
-              <h2 className="text-base font-black uppercase tracking-wide text-white">
-                ผังประกบคู่รอบน็อคเอ้าท์ (Knockout Bracket)
-              </h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="bg-[#FF5722] text-white text-xs font-mono px-3 py-1 font-bold uppercase rounded-none">
-                {activeBracketCategory}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-              <p className="text-xs text-slate-400 font-semibold font-mono">
-                💡 คลิกที่คู่แข่งขันในผังเพื่อเลื่อนหน้าจอไปยังการบันทึกคะแนน/แก้ไขผลลัพธ์ของคู่นั้นโดยตรง
-              </p>
-
-              {!hasAnyKnockout ? (
-                <div className="border border-dashed border-slate-800 bg-slate-900/40 p-6 text-center rounded-none">
-                  <AlertCircle className="mx-auto text-slate-500 mb-2" size={24} />
-                  <p className="text-sm font-black text-slate-300">
-                    ไม่พบข้อมูลโปรแกรมการแข่งขันรอบน็อคเอ้าท์สำหรับ <span className="text-[#FF5722]">{activeBracketCategory}</span> ในขณะนี้
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1 font-semibold">
-                    (โปรแกรมจะเริ่มแสดงเมื่อถึงรอบ 8 ทีม หรือรอบรองชนะเลิศ)
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto pb-4">
-                  {/* Bracket Flow Row Container */}
-                  <div className="flex gap-6 md:gap-12 min-w-[700px] pt-4 justify-between items-stretch">
-                    
-                    {/* 1. QUARTERFINALS COLUMN */}
-                    {hasQF && (
-                      <div className="flex-1 min-w-[220px] flex flex-col justify-around py-2 space-y-8">
-                        <div className="text-center font-bold text-[10px] uppercase bg-slate-900 text-slate-300 py-1.5 border border-slate-800 rounded-none font-mono">
-                          รอบ 8 ทีม (Quarterfinals)
-                        </div>
-                        
-                        {/* Match 1 & 2 Pair */}
-                        <div className="space-y-4 bg-[#151F32] p-2.5 border border-slate-800 rounded-none relative">
-                          <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-[#FF5722] font-black text-xs z-10">
-                            →
-                          </div>
-                          <span className="text-[8px] font-mono bg-slate-900 text-[#FF5722] px-1.5 py-0.5 border border-slate-800 font-bold uppercase block w-fit rounded-none">
-                            สายบนคู่ที่ 1 & 2
-                          </span>
-                          {renderBracketMatch(koMap[qfSuffixes[0]])}
-                          {renderBracketMatch(koMap[qfSuffixes[1]])}
-                        </div>
-
-                        {/* Match 3 & 4 Pair */}
-                        <div className="space-y-4 bg-[#151F32] p-2.5 border border-slate-800 rounded-none relative">
-                          <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-[#FF5722] font-black text-xs z-10">
-                            →
-                          </div>
-                          <span className="text-[8px] font-mono bg-slate-900 text-[#FF5722] px-1.5 py-0.5 border border-slate-800 font-bold uppercase block w-fit rounded-none">
-                            สายล่างคู่ที่ 3 & 4
-                          </span>
-                          {renderBracketMatch(koMap[qfSuffixes[2]])}
-                          {renderBracketMatch(koMap[qfSuffixes[3]])}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 2. SEMIFINALS COLUMN */}
-                    {hasSF && (
-                      <div className="flex-1 min-w-[220px] flex flex-col justify-around py-2 space-y-8">
-                        <div className="text-center font-bold text-[10px] uppercase bg-slate-900 text-slate-300 py-1.5 border border-slate-800 rounded-none font-mono">
-                          รอบรองชนะเลิศ (Semifinals)
-                        </div>
-
-                        {/* SF 1 Card Container */}
-                        <div className="flex flex-col justify-center h-1/2 min-h-[140px] relative">
-                          <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-[#FF5722] font-black text-xs z-10">
-                            →
-                          </div>
-                          <span className="text-[8px] font-mono bg-slate-900 text-[#00FF66] px-1.5 py-0.5 border border-slate-800 font-bold uppercase block w-fit mb-1 rounded-none">
-                            รอบรองคู่ที่ 1
-                          </span>
-                          {renderBracketMatch(koMap[sfSuffixes[0]])}
-                        </div>
-
-                        {/* SF 2 Card Container */}
-                        <div className="flex flex-col justify-center h-1/2 min-h-[140px] relative">
-                          <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-[#FF5722] font-black text-xs z-10">
-                            →
-                          </div>
-                          <span className="text-[8px] font-mono bg-slate-900 text-[#00FF66] px-1.5 py-0.5 border border-slate-800 font-bold uppercase block w-fit mb-1 rounded-none">
-                            รอบรองคู่ที่ 2
-                          </span>
-                          {renderBracketMatch(koMap[sfSuffixes[1]])}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 3. FINALS & 3RD PLACE COLUMN */}
-                    <div className="flex-1 min-w-[220px] flex flex-col justify-around py-2 space-y-8">
-                      <div className="text-center font-bold text-[10px] uppercase bg-slate-900 text-slate-300 py-1.5 border border-slate-800 rounded-none font-mono">
-                        รอบชิงชนะเลิศ (Medal Matches)
-                      </div>
-
-                      {/* Gold Match */}
-                      <div className="flex flex-col justify-center min-h-[120px] bg-amber-500/5 p-2.5 border border-amber-500/20 rounded-none">
-                        <span className="text-[8px] font-mono bg-amber-500/10 text-amber-400 px-2 py-1 border border-amber-500/30 font-black uppercase block w-fit mb-2 rounded-none">
-                          🏆 รอบชิงชนะเลิศ (เหรียญทอง)
-                        </span>
-                        {renderBracketMatch(koMap[finalSuffix])}
-                      </div>
-
-                      {/* Bronze Match */}
-                      {koMap[thirdSuffix] && (
-                        <div className="flex flex-col justify-center min-h-[120px] bg-slate-900/20 p-2.5 border border-slate-800 rounded-none">
-                          <span className="text-[8px] font-mono bg-slate-800 text-slate-300 px-2 py-1 border border-slate-700 font-black uppercase block w-fit mb-2 rounded-none">
-                            🥉 ชิงอันดับที่ 3 (เหรียญทองแดง)
-                          </span>
-                          {renderBracketMatch(koMap[thirdSuffix])}
-                        </div>
-                      )}
-                    </div>
-
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
       {/* 2. Add Custom Match Form (Collapsible) */}
       {showAddForm && (
@@ -1249,13 +1146,20 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                         </div>
                       )}
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => handleSaveEdit(m)}
                           className="flex-1 py-1.5 bg-[#FF5722] hover:bg-[#E04E1D] text-white font-bold text-xs uppercase rounded-none transition-all cursor-pointer border-0"
                         >
                           บันทึกข้อมูล
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleClearScore(m)}
+                          className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase rounded-none transition-all cursor-pointer border-0 flex items-center gap-1"
+                        >
+                          🔄 เคลียร์สกอร์
                         </button>
                         <button
                           type="button"
@@ -1310,6 +1214,139 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
         )}
       </div>
       )}
+
+      {/* 2. Knockout Bracket Display Card */}
+      {sport !== "track" && activeBracketCategory && (activeView === "all" || activeView === "bracket") && (
+        <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <Award size={20} className="text-[#FF5722]" />
+              <h2 className="text-base font-black uppercase tracking-wide text-white">
+                ผังประกบคู่รอบน็อคเอ้าท์ (Knockout Bracket)
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="bg-[#FF5722] text-white text-xs font-mono px-3 py-1 font-bold uppercase rounded-none">
+                {activeBracketCategory}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+              <p className="text-xs text-slate-400 font-semibold font-mono">
+                💡 คลิกที่คู่แข่งขันในผังเพื่อเลื่อนหน้าจอไปยังการบันทึกคะแนน/แก้ไขผลลัพธ์ของคู่นั้นโดยตรง
+              </p>
+
+              {!hasAnyKnockout ? (
+                <div className="border border-dashed border-slate-800 bg-slate-900/40 p-6 text-center rounded-none">
+                  <AlertCircle className="mx-auto text-slate-500 mb-2" size={24} />
+                  <p className="text-sm font-black text-slate-300">
+                    ไม่พบข้อมูลโปรแกรมการแข่งขันรอบน็อคเอ้าท์สำหรับ <span className="text-[#FF5722]">{activeBracketCategory}</span> ในขณะนี้
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1 font-semibold">
+                    (โปรแกรมจะเริ่มแสดงเมื่อถึงรอบ 8 ทีม หรือรอบรองชนะเลิศ)
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto pb-4">
+                  {/* Bracket Flow Row Container */}
+                  <div className="flex gap-6 md:gap-12 min-w-[700px] pt-4 justify-between items-stretch">
+                    
+                    {/* 1. QUARTERFINALS COLUMN */}
+                    {hasQF && (
+                      <div className="flex-1 min-w-[220px] flex flex-col justify-around py-2 space-y-8">
+                        <div className="text-center font-bold text-[10px] uppercase bg-slate-900 text-slate-300 py-1.5 border border-slate-800 rounded-none font-mono">
+                          รอบ 8 ทีม (Quarterfinals)
+                        </div>
+                        
+                        {/* Match 1 & 2 Pair */}
+                        <div className="space-y-4 bg-[#151F32] p-2.5 border border-slate-800 rounded-none relative">
+                          <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-[#FF5722] font-black text-xs z-10">
+                            →
+                          </div>
+                          <span className="text-[8px] font-mono bg-slate-900 text-[#FF5722] px-1.5 py-0.5 border border-slate-800 font-bold uppercase block w-fit rounded-none">
+                            สายบนคู่ที่ 1 & 2
+                          </span>
+                          {renderBracketMatch(koMap[qfSuffixes[0]])}
+                          {renderBracketMatch(koMap[qfSuffixes[1]])}
+                        </div>
+
+                        {/* Match 3 & 4 Pair */}
+                        <div className="space-y-4 bg-[#151F32] p-2.5 border border-slate-800 rounded-none relative">
+                          <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-[#FF5722] font-black text-xs z-10">
+                            →
+                          </div>
+                          <span className="text-[8px] font-mono bg-slate-900 text-[#FF5722] px-1.5 py-0.5 border border-slate-800 font-bold uppercase block w-fit rounded-none">
+                            สายล่างคู่ที่ 3 & 4
+                          </span>
+                          {renderBracketMatch(koMap[qfSuffixes[2]])}
+                          {renderBracketMatch(koMap[qfSuffixes[3]])}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. SEMIFINALS COLUMN */}
+                    {hasSF && (
+                      <div className="flex-1 min-w-[220px] flex flex-col justify-around py-2 space-y-8">
+                        <div className="text-center font-bold text-[10px] uppercase bg-slate-900 text-slate-300 py-1.5 border border-slate-800 rounded-none font-mono">
+                          รอบรองชนะเลิศ (Semifinals)
+                        </div>
+
+                        {/* SF 1 Card Container */}
+                        <div className="flex flex-col justify-center h-1/2 min-h-[140px] relative">
+                          <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-[#FF5722] font-black text-xs z-10">
+                            →
+                          </div>
+                          <span className="text-[8px] font-mono bg-slate-900 text-[#00FF66] px-1.5 py-0.5 border border-slate-800 font-bold uppercase block w-fit mb-1 rounded-none">
+                            รอบรองคู่ที่ 1
+                          </span>
+                          {renderBracketMatch(koMap[sfSuffixes[0]])}
+                        </div>
+
+                        {/* SF 2 Card Container */}
+                        <div className="flex flex-col justify-center h-1/2 min-h-[140px] relative">
+                          <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-[#FF5722] font-black text-xs z-10">
+                            →
+                          </div>
+                          <span className="text-[8px] font-mono bg-slate-900 text-[#00FF66] px-1.5 py-0.5 border border-slate-800 font-bold uppercase block w-fit mb-1 rounded-none">
+                            รอบรองคู่ที่ 2
+                          </span>
+                          {renderBracketMatch(koMap[sfSuffixes[1]])}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. FINALS & 3RD PLACE COLUMN */}
+                    <div className="flex-1 min-w-[220px] flex flex-col justify-around py-2 space-y-8">
+                      <div className="text-center font-bold text-[10px] uppercase bg-slate-900 text-slate-300 py-1.5 border border-slate-800 rounded-none font-mono">
+                        รอบชิงชนะเลิศ (Medal Matches)
+                      </div>
+
+                      {/* Gold Match */}
+                      <div className="flex flex-col justify-center min-h-[120px] bg-amber-500/5 p-2.5 border border-amber-500/20 rounded-none">
+                        <span className="text-[8px] font-mono bg-amber-500/10 text-amber-400 px-2 py-1 border border-amber-500/30 font-black uppercase block w-fit mb-2 rounded-none">
+                          🏆 รอบชิงชนะเลิศ (เหรียญทอง)
+                        </span>
+                        {renderBracketMatch(koMap[finalSuffix])}
+                      </div>
+
+                      {/* Bronze Match */}
+                      {koMap[thirdSuffix] && (
+                        <div className="flex flex-col justify-center min-h-[120px] bg-slate-900/20 p-2.5 border border-slate-800 rounded-none">
+                          <span className="text-[8px] font-mono bg-slate-800 text-slate-300 px-2 py-1 border border-slate-700 font-black uppercase block w-fit mb-2 rounded-none">
+                            🥉 ชิงอันดับที่ 3 (เหรียญทองแดง)
+                          </span>
+                          {renderBracketMatch(koMap[thirdSuffix])}
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       {/* 5. Hidden editing match modal (e.g. for "รอบ 8 ทีม" that are not in filteredMatches) */}
       {(() => {
@@ -1416,13 +1453,20 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                 )}
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => handleSaveEdit(hiddenEditingMatch)}
                   className="flex-1 py-2 bg-[#FF5722] hover:bg-[#E04E1D] text-white font-bold text-xs uppercase rounded-none transition-all cursor-pointer border-0"
                 >
                   บันทึกข้อมูล
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleClearScore(hiddenEditingMatch)}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase rounded-none transition-all cursor-pointer border-0 flex items-center gap-1"
+                >
+                  🔄 เคลียร์สกอร์
                 </button>
                 <button
                   type="button"

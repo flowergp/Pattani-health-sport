@@ -91,3 +91,336 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background-color: #FF5722;
 }
+
+/* LIGHT THEME OVERRIDES (PREMIUM GLASSMORPHISM STYLE WITH LIQUID GLASS FEEL) */
+.theme-light {
+  background: radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.6) 0, transparent 50%),
+              radial-gradient(at 50% 0%, rgba(238, 242, 246, 0.8) 0, transparent 50%),
+              radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.05) 0, transparent 50%),
+              radial-gradient(at 0% 100%, rgba(253, 244, 255, 0.7) 0, transparent 50%),
+              radial-gradient(at 100% 100%, rgba(224, 242, 254, 0.7) 0, transparent 50%),
+              #F1F5F9 !important;
+  background-attachment: fixed !important;
+  color: #0F172A !important;
+}
+
+/* Base tailwind arbitrary background class overrides for premium light glassmorphism style */
+.theme-light .bg-\[\#0A0F1D\],
+.theme-light .bg-\[\#0a0f1d\],
+.theme-light .bg-\[\#0A0F1D\]\/90,
+.theme-light .bg-\[\#0a0f1d\]\/90,
+.theme-light .bg-\[\#0F172A\],
+.theme-light .bg-\[\#0f172a\],
+.theme-light .bg-\[\#0F172A\]\/90,
+.theme-light .bg-\[\#0f172a\]\/90,
+.theme-light .bg-\[\#0b101c\],
+.theme-light .bg-\[\#0b101c\]\/50,
+.theme-light .bg-\[\#0B101C\],
+.theme-light .bg-\[\#0B101C\]\/50 {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(24px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(210%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.06) !important;
+}
+
+.theme-light .bg-\[\#111827\],
+.theme-light .bg-\[\#111827\]\/80,
+.theme-light .bg-\[\#151F32\],
+.theme-light .bg-\[\#151f32\],
+.theme-light .bg-\[\#1E293B\],
+.theme-light .bg-\[\#1e293b\],
+.theme-light .bg-\[\#1E293B\]\/50,
+.theme-light .bg-\[\#1e293b\]\/50,
+.theme-light .bg-slate-700,
+.theme-light .bg-slate-800,
+.theme-light .bg-slate-900,
+.theme-light .bg-slate-950,
+.theme-light .bg-slate-900\/40,
+.theme-light .bg-slate-900\/20,
+.theme-light .bg-slate-800\/20,
+.theme-light .bg-slate-800\/30,
+.theme-light .bg-slate-800\/40,
+.theme-light .bg-slate-800\/50,
+.theme-light .bg-slate-800\/80 {
+  background-color: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(24px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(210%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  box-shadow: 0 12px 40px 0 rgba(148, 163, 184, 0.08) !important;
+}
+
+/* Specific header adjustments */
+.theme-light header {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(30px) saturate(220%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(220%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 4px 30px rgba(15, 23, 42, 0.03) !important;
+}
+
+/* Card components */
+.theme-light .data-card,
+.theme-light .neo-card {
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(24px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(210%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.65) !important;
+  box-shadow: 0 16px 48px -10px rgba(15, 23, 42, 0.08),
+              inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+  color: #0F172A !important;
+}
+
+.theme-light .neo-btn {
+  background-color: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  color: #0F172A !important;
+  box-shadow: 0 4px 15px -3px rgba(15, 23, 42, 0.04),
+              inset 0 1px 1px rgba(255, 255, 255, 0.9) !important;
+}
+
+.theme-light .neo-btn:hover {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  border-color: #FF5722 !important;
+  box-shadow: 0 6px 20px -3px rgba(255, 87, 34, 0.2),
+              inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+}
+
+/* Borders */
+.theme-light .border-slate-800,
+.theme-light .border-slate-800\/50,
+.theme-light .border-slate-800\/30,
+.theme-light .border-slate-700,
+.theme-light .border-slate-900 {
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Text overrides for maximum accessibility and readability */
+.theme-light .text-white,
+.theme-light .text-slate-100,
+.theme-light .text-slate-200 {
+  color: #0F172A !important;
+}
+
+.theme-light .text-\[\#E2E8F0\],
+.theme-light .text-slate-300,
+.theme-light .text-gray-300,
+.theme-light .text-gray-200,
+.theme-light .text-slate-300\/90 {
+  color: #1E293B !important;
+}
+
+.theme-light .text-slate-400,
+.theme-light .text-slate-400\/80,
+.theme-light .text-gray-400,
+.theme-light .text-slate-400\/90 {
+  color: #334155 !important;
+}
+
+.theme-light .text-slate-500,
+.theme-light .text-gray-500 {
+  color: #475569 !important;
+}
+
+.theme-light .text-white\/60,
+.theme-light .text-slate-300\/60,
+.theme-light .text-slate-400\/60,
+.theme-light .text-slate-500\/60 {
+  color: #475569 !important;
+}
+
+.theme-light .text-slate-300\/80 {
+  color: #334155 !important;
+}
+
+.theme-light .text-emerald-400 {
+  color: #047857 !important; /* Dark rich green for light mode */
+}
+
+.theme-light .text-amber-400,
+.theme-light .text-amber-300 {
+  color: #D97706 !important; /* Darker amber gold */
+}
+
+.theme-light .text-blue-400 {
+  color: #1D4ED8 !important; /* Accessible royal blue */
+}
+
+.theme-light .text-indigo-400 {
+  color: #4338CA !important; /* Accessible dark indigo */
+}
+
+.theme-light .text-red-400 {
+  color: #B91C1C !important; /* Strong accessible crimson red */
+}
+
+.theme-light .text-purple-400,
+.theme-light .text-[#A855F7] {
+  color: #6D28D9 !important; /* Rich deep purple */
+}
+
+/* Neon/Electric green #00FF66 overrides for Light Theme */
+.theme-light .text-\[\#00FF66\],
+.theme-light [class*="text-[#00FF66]"] {
+  color: #047857 !important; /* Strong accessible green */
+}
+
+.theme-light .bg-\[\#00FF66\],
+.theme-light [class*="bg-[#00FF66]"] {
+  background-color: #047857 !important;
+  color: #ffffff !important;
+}
+
+.theme-light .bg-\[\#00FF66\]\/10,
+.theme-light [class*="bg-[#00FF66]/10"] {
+  background-color: rgba(4, 120, 87, 0.12) !important;
+}
+
+.theme-light .bg-\[\#00FF66\]\/5,
+.theme-light [class*="bg-[#00FF66]/5"] {
+  background-color: rgba(4, 120, 87, 0.05) !important;
+}
+
+.theme-light .border-\[\#00FF66\],
+.theme-light [class*="border-[#00FF66]"] {
+  border-color: #059669 !important;
+}
+
+.theme-light .border-\[\#00FF66\]\/30,
+.theme-light [class*="border-[#00FF66]/30"] {
+  border-color: rgba(5, 150, 105, 0.35) !important;
+}
+
+.theme-light .border-\[\#00FF66\]\/20,
+.theme-light [class*="border-[#00FF66]/20"] {
+  border-color: rgba(5, 150, 105, 0.25) !important;
+}
+
+.theme-light .border-\[\#00FF66\]\/40,
+.theme-light [class*="border-[#00FF66]/40"] {
+  border-color: rgba(5, 150, 105, 0.45) !important;
+}
+
+.theme-light .border-\[\#00FF66\]\/60,
+.theme-light [class*="border-[#00FF66]/60"] {
+  border-color: rgba(5, 150, 105, 0.6) !important;
+}
+
+/* Emerald overrides for Light Theme */
+.theme-light .bg-emerald-950,
+.theme-light .bg-emerald-950\/40,
+.theme-light .bg-emerald-950\/20,
+.theme-light [class*="bg-emerald-950"] {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+.theme-light .border-emerald-900,
+.theme-light .border-emerald-900\/60,
+.theme-light .border-emerald-900\/30,
+.theme-light .border-emerald-500\/30,
+.theme-light [class*="border-emerald"] {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+/* Red overrides (avoid dark red bg/text in light theme) */
+.theme-light .bg-red-950,
+.theme-light .bg-red-950\/40,
+.theme-light .bg-red-950\/20,
+.theme-light [class*="bg-red-950"] {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.theme-light .border-red-900,
+.theme-light .border-red-900\/60,
+.theme-light .border-red-800,
+.theme-light [class*="border-red"] {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+.theme-light .bg-slate-900\/50 {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.theme-light .bg-slate-950\/40 {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Admin/Editor components style overrides */
+.theme-light select,
+.theme-light input[type="text"],
+.theme-light input[type="password"],
+.theme-light input[type="number"],
+.theme-light input[type="datetime-local"],
+.theme-light textarea {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #0F172A !important;
+  border-color: rgba(255, 255, 255, 0.75) !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+}
+
+.theme-light select:focus,
+.theme-light input:focus,
+.theme-light textarea:focus {
+  border-color: #FF5722 !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.15) !important;
+  outline: none;
+}
+
+/* Scrollbar in Light Mode */
+.theme-light::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.3);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.theme-light::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+}
+
+.theme-light::-webkit-scrollbar-thumb:hover {
+  background-color: #FF5722;
+}
+
+/* Modal box and login box fixes */
+.theme-light .bg-slate-900\/95,
+.theme-light .bg-slate-950\/95 {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(30px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(210%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 24px 60px -15px rgba(15, 23, 42, 0.15) !important;
+}
+
+/* Secondary background accents */
+.theme-light .bg-slate-800\/40 {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+.theme-light .bg-[#0b101c] {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+.theme-light .bg-[#151F32] {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+}
+.theme-light .bg-[#1E293B] {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Force standard tags like h1, h2, h3, p, span to behave properly in light mode */
+.theme-light h1,
+.theme-light h2,
+.theme-light h3,
+.theme-light h4,
+.theme-light h5,
+.theme-light h6 {
+  color: #0F172A !important;
+}
+
+.theme-light label {
+  color: #334155 !important;
+}

@@ -242,21 +242,6 @@ export default function DistrictSchedule({
               แสดงเฉพาะโปรแกรมแข่งขันของหน่วยงาน/อำเภอที่ท่านเลือก เพื่อการติดตามทีมของตนเองอย่างรวดเร็วและเป็นระบบ
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-mono text-slate-400 font-bold hidden sm:inline">เลือกอำเภอ:</span>
-            <select
-              value={selectedDistrict}
-              onChange={(e) => onSelectDistrict(e.target.value)}
-              className="p-2.5 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-black focus:outline-none focus:border-[#FF5722] rounded-none min-w-[220px]"
-            >
-              <option value="">⚠️ โปรดเลือกอำเภอ / สังกัด</option>
-              {TEAM_NAMES.map((name) => (
-                <option key={name} value={name}>
-                  {name === "สสจ.ปัตตานี" ? "สสจ.ปัตตานี 🏥" : `อ. ${name}`}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {/* If no district is selected */}
@@ -265,10 +250,10 @@ export default function DistrictSchedule({
             <AlertCircle className="mx-auto text-amber-500 animate-pulse" size={40} />
             <h3 className="text-base font-black uppercase tracking-wide">ยังไม่ได้เลือกอำเภอ / สังกัด</h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto font-medium">
-              กรุณาเลือกอำเภอของคุณจากกล่องตัวเลือกด้านบน เพื่อระบุกลุ่มเป้าหมาย จากนั้นระบบจะสร้างตารางการแข่ง สรุปเหรียญรางวัล และสถิติต่างๆ เฉพาะทีมของคุณขึ้นมาโดยอัตโนมัติ
+              กรุณาเลือกอำเภอของคุณจากกล่องตัวเลือก "เลือกอำเภอ / สังกัดเพื่อติดตามการแข่งขัน" ด้านบนสุดของหน้าจอ หรือคลิกเลือกปุ่มอำเภอด้านล่าง เพื่อระบุกลุ่มเป้าหมาย จากนั้นระบบจะสร้างตารางการแข่ง สรุปเหรียญรางวัล และสถิติต่างๆ เฉพาะทีมของคุณขึ้นมาโดยอัตโนมัติ
             </p>
             <div className="flex flex-wrap justify-center gap-2 pt-4">
-              {TEAM_NAMES.slice(0, 8).map(name => (
+              {TEAM_NAMES.slice(0, 15).map(name => (
                 <button
                   key={name}
                   onClick={() => onSelectDistrict(name)}
@@ -277,7 +262,6 @@ export default function DistrictSchedule({
                   {name}
                 </button>
               ))}
-              <span className="text-slate-600 text-xs self-center">...</span>
             </div>
           </div>
         )}

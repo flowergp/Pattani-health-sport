@@ -202,6 +202,22 @@ export default function App() {
   // Custom district filter state
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
 
+  // Theme state: dark or light
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    return (localStorage.getItem("pattani_theme") as "dark" | "light") || "dark";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("pattani_theme", theme);
+    if (theme === "light") {
+      document.documentElement.classList.add("theme-light");
+      document.documentElement.classList.remove("theme-dark");
+    } else {
+      document.documentElement.classList.add("theme-dark");
+      document.documentElement.classList.remove("theme-light");
+    }
+  }, [theme]);
+
   // Admin authentication state
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem("isLoggedIn") === "true";
@@ -838,7 +854,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0F1D] text-[#E2E8F0] pb-16 selection:bg-[#FF5722] selection:text-white">
+    <div className={`min-h-screen ${theme === "light" ? "theme-light" : ""} bg-[#0A0F1D] text-[#E2E8F0] pb-16 selection:bg-[#FF5722] selection:text-white transition-colors duration-200`}>
       
       {/* HEADER BAR (Modern Information-Dense & Unified Navbar) */}
       <header className="bg-[#111827] border-b border-slate-800 sticky top-0 z-50 shadow-md">
@@ -863,6 +879,14 @@ export default function App() {
 
           {/* Quick Realtime connection badge & Admin status */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="px-3.5 py-1.5 bg-[#1E293B] hover:bg-[#334155] border border-slate-800 text-xs font-black uppercase cursor-pointer rounded-none transition-all flex items-center gap-1.5 text-slate-200 hover:text-white"
+              title="สลับโหมดมืด/สว่าง"
+            >
+              {theme === "dark" ? "☀️ โหมดสว่าง" : "🌙 โหมดมืด"}
+            </button>
+
             <div className="bg-[#1E293B] border border-slate-800 px-4 py-1.5 flex items-center font-mono text-[11px] text-slate-300">
               <span className="relative flex h-2 w-2 mr-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

@@ -73,13 +73,11 @@ export default function Dashboard({ matches, onResetData, isResetting, selectedD
             <div className="inline-block bg-slate-800 text-[#00FF66] px-3 py-1 font-mono text-xs border border-slate-700 uppercase tracking-wider rounded-none">
               Pattani Public Health 2026
             </div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-none text-white">
-              ระบบจัดการแข่งขันกีฬา<br />คป.สอ. ปัตตานีเกมส์ 2569
+            <h1 className="text-2xl md:text-4xl font-black tracking-tight leading-none text-white">
+              คป.สอ. ปัตตานีเกมส์ 2569
             </h1>
-            <p className="text-slate-300 max-w-lg font-bold text-sm md:text-base">
-              โปรแกรมจัดการ แข่งขัน กรีฑา เปตอง วอลเลย์บอล และฟุตบอล คป.สอ. ปัตตานี 
-              ระหว่างวันที่ 6 - 10 กรกฎาคม 2569 ณ สนามกีฬาจังหวัดปัตตานี 
-              ควบคุมคะแนน บันทึกผู้ชนะ และรายงานตารางเหรียญรางวัลแบบเรียลไทม์
+            <p className="text-slate-300 max-w-lg text-xs md:text-sm">
+              ระบบจัดการแข่งขันกีฬา บันทึกผล และรายงานตารางเหรียญรางวัลแบบเรียลไทม์
             </p>
           </div>
           <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-slate-800/80 z-10">
