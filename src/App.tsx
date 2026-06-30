@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { 
   collection, 
   onSnapshot, 
@@ -217,6 +217,27 @@ export default function App() {
       document.documentElement.classList.remove("theme-light");
     }
   }, [theme]);
+
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        document.documentElement.style.setProperty(
+          "--header-height",
+          `${headerRef.current.offsetHeight}px`
+        );
+      }
+    };
+
+    updateHeaderHeight();
+
+    if (headerRef.current) {
+      const observer = new ResizeObserver(updateHeaderHeight);
+      observer.observe(headerRef.current);
+      return () => observer.disconnect();
+    }
+  }, []);
 
   // Admin authentication state
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
@@ -931,7 +952,7 @@ export default function App() {
     <div className={`min-h-screen ${theme === "light" ? "theme-light" : ""} bg-[#0A0F1D] text-[#E2E8F0] pb-16 selection:bg-[#FF5722] selection:text-white transition-colors duration-200`}>
       
       {/* HEADER BAR (Modern Information-Dense & Unified Navbar) */}
-      <header className="bg-[#111827] border-b border-slate-800 sticky top-0 z-50 shadow-md">
+      <header ref={headerRef} className="bg-[#111827] border-b border-slate-800 sticky top-0 z-50 shadow-md">
         {/* Top bar (Logo & Admin) */}
         <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/50">
           <div className="flex items-center gap-3">

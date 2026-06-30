@@ -624,53 +624,9 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
           </div>
         )}
 
-        {/* Filters bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">ประเภทการแข่ง</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c === "" ? (sport === "track" ? "✨ แสดงทั้งหมด" : "⚠️ กรุณาเลือกประเภท") : c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">รอบการแข่งขัน</label>
-            <select
-              value={selectedRound}
-              onChange={(e) => setSelectedRound(e.target.value)}
-              className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
-            >
-              {rounds.map((r) => (
-                <option key={r} value={r}>
-                  {r === "all" ? "🏆 แสดงทุกรอบ" : r}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">ค้นหาชื่อทีม</label>
-            <input
-              type="text"
-              value={teamSearch}
-              onChange={(e) => setTeamSearch(e.target.value)}
-              placeholder="ค้นหาชื่อ คป.สอ. หรือทีม..."
-              className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none placeholder-slate-500"
-            />
-          </div>
-        </div>
-
         {/* 🛠️ Selectable View Options */}
         {sport !== "track" && (
-          <div className="pt-4 border-t border-slate-800/80">
+          <div className="pt-2">
             <span className="block text-[10px] font-bold uppercase text-slate-400 mb-2 flex items-center gap-1.5 font-mono">
               🖥️ เลือกมุมมองที่ต้องการแสดงผล (Select display section):
             </span>
@@ -701,79 +657,123 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
             </div>
           </div>
         )}
-
-        {/* Group Standings (ONLY for Petanque, Volleyball, Football) inside the Filter Card */}
-        {sport !== "track" && selectedCategory !== "" && (activeView === "all" || activeView === "standings") && (
-          <div className="space-y-4 pt-4 border-t border-slate-800/80 mt-4">
-            {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
-              const catMatches = sportMatches.filter(m => m.category === cat);
-              const catGroups = Array.from(new Set(catMatches.filter(m => m.round === "รอบแรก" && m.group).map(m => m.group))).sort();
-              
-              // Check if there are any standings in this category
-              const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat).length > 0);
-              if (!hasStandings) return null;
-
-              return (
-                <div key={cat} className="border border-slate-800 bg-[#151F32] p-4 space-y-3 rounded-none">
-                  <div className="flex items-center gap-1.5 border-b border-slate-800 pb-2">
-                    <Table size={16} className="text-[#FF5722]" />
-                    <h3 className="text-sm font-black uppercase text-white">
-                      ตารางคะแนนรอบแบ่งกลุ่ม - <span className="text-[#00FF66]">{cat}</span>
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {catGroups.map((grpName) => {
-                      const standings = calculateGroupStandings(matches, sport, grpName, cat);
-                      if (standings.length === 0) return null;
-
-                      return (
-                        <div key={grpName} className="border border-slate-800/80 bg-[#111827] p-3 space-y-2 rounded-none">
-                          <div className="bg-[#FF5722] text-white py-0.5 px-2 inline-block font-mono text-[9px] font-bold uppercase rounded-none">
-                            {grpName}
-                          </div>
-                          <div className="overflow-x-auto border border-slate-800/60">
-                            <table className="w-full text-left font-sans text-[11px]">
-                              <thead>
-                                <tr className="bg-slate-900 text-slate-300 border-b border-slate-800 font-mono">
-                                  <th className="py-1.5 px-2 font-bold">ทีม</th>
-                                  <th className="py-1.5 px-1 text-center font-mono">แข่ง</th>
-                                  <th className="py-1.5 px-1 text-center font-mono">ชนะ</th>
-                                  <th className="py-1.5 px-1 text-center font-mono">แพ้</th>
-                                  <th className="py-1.5 px-1 text-center font-mono">+/-</th>
-                                  <th className="py-1.5 px-2 text-center bg-[#FF5722]/10 text-[#FF5722] font-mono font-bold">คะแนน</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {standings.map((st, i) => (
-                                  <tr key={st.team} className="border-b border-slate-800/60 font-semibold bg-transparent hover:bg-slate-800/20 text-slate-300">
-                                    <td className="py-1.5 px-2 font-bold flex items-center gap-1 text-white">
-                                      <span className="font-mono text-slate-500">{i + 1}.</span> {st.team}
-                                    </td>
-                                    <td className="py-1.5 px-1 text-center font-mono">{st.played}</td>
-                                    <td className="py-1.5 px-1 text-center font-mono text-emerald-400">{st.won}</td>
-                                    <td className="py-1.5 px-1 text-center font-mono text-red-400">{st.lost}</td>
-                                    <td className={`py-1.5 px-1 text-center font-mono font-bold ${st.scoreDiff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                      {st.scoreDiff > 0 ? `+${st.scoreDiff}` : st.scoreDiff}
-                                    </td>
-                                    <td className="py-1.5 px-2 text-center bg-[#FF5722]/5 font-mono font-black text-[11px] border-l border-slate-800/60 text-[#FF5722]">
-                                      {st.points}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
+
+      {/* 2. Sticky Filters Bar (Stays fixed below the header) */}
+      <div className="sticky top-[var(--header-height,104px)] z-40 bg-[#111827] border border-slate-800 p-4 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-none text-white transition-all">
+        <div>
+          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">ประเภทการแข่ง</label>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+          >
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c === "" ? (sport === "track" ? "✨ แสดงทั้งหมด" : "⚠️ กรุณาเลือกประเภท") : c}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">รอบการแข่งขัน</label>
+          <select
+            value={selectedRound}
+            onChange={(e) => setSelectedRound(e.target.value)}
+            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+          >
+            {rounds.map((r) => (
+              <option key={r} value={r}>
+                {r === "all" ? "🏆 แสดงทุกรอบ" : r}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">ค้นหาชื่อทีม</label>
+          <input
+            type="text"
+            value={teamSearch}
+            onChange={(e) => setTeamSearch(e.target.value)}
+            placeholder="ค้นหาชื่อ คป.สอ. หรือทีม..."
+            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none placeholder-slate-500"
+          />
+        </div>
+      </div>
+
+      {/* 3. Group Standings Section (Only for Petanque, Volleyball, Football) */}
+      {sport !== "track" && selectedCategory !== "" && (activeView === "all" || activeView === "standings") && (
+        <div className="space-y-4">
+          {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
+            const catMatches = sportMatches.filter(m => m.category === cat);
+            const catGroups = Array.from(new Set(catMatches.filter(m => m.round === "รอบแรก" && m.group).map(m => m.group))).sort();
+            
+            // Check if there are any standings in this category
+            const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat).length > 0);
+            if (!hasStandings) return null;
+
+            return (
+              <div key={cat} className="border border-slate-800 bg-[#151F32] p-4 space-y-3 rounded-none">
+                <div className="flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                  <Table size={16} className="text-[#FF5722]" />
+                  <h3 className="text-sm font-black uppercase text-white">
+                    ตารางคะแนนรอบแบ่งกลุ่ม - <span className="text-[#00FF66]">{cat}</span>
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {catGroups.map((grpName) => {
+                    const standings = calculateGroupStandings(matches, sport, grpName, cat);
+                    if (standings.length === 0) return null;
+
+                    return (
+                      <div key={grpName} className="border border-slate-800/80 bg-[#111827] p-3 space-y-2 rounded-none">
+                        <div className="bg-[#FF5722] text-white py-0.5 px-2 inline-block font-mono text-[9px] font-bold uppercase rounded-none">
+                          {grpName}
+                        </div>
+                        <div className="overflow-x-auto border border-slate-800/60">
+                          <table className="w-full text-left font-sans text-[11px]">
+                            <thead>
+                              <tr className="bg-slate-900 text-slate-300 border-b border-slate-800 font-mono">
+                                <th className="py-1.5 px-2 font-bold">ทีม</th>
+                                <th className="py-1.5 px-1 text-center font-mono">แข่ง</th>
+                                <th className="py-1.5 px-1 text-center font-mono">ชนะ</th>
+                                <th className="py-1.5 px-1 text-center font-mono">แพ้</th>
+                                <th className="py-1.5 px-1 text-center font-mono">+/-</th>
+                                <th className="py-1.5 px-2 text-center bg-[#FF5722]/10 text-[#FF5722] font-mono font-bold">คะแนน</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {standings.map((st, i) => (
+                                <tr key={st.team} className="border-b border-slate-800/60 font-semibold bg-transparent hover:bg-slate-800/20 text-slate-300">
+                                  <td className="py-1.5 px-2 font-bold flex items-center gap-1 text-white">
+                                    <span className="font-mono text-slate-500">{i + 1}.</span> {st.team}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center font-mono">{st.played}</td>
+                                  <td className="py-1.5 px-1 text-center font-mono text-emerald-400">{st.won}</td>
+                                  <td className="py-1.5 px-1 text-center font-mono text-red-400">{st.lost}</td>
+                                  <td className={`py-1.5 px-1 text-center font-mono font-bold ${st.scoreDiff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    {st.scoreDiff > 0 ? `+${st.scoreDiff}` : st.scoreDiff}
+                                  </td>
+                                  <td className="py-1.5 px-2 text-center bg-[#FF5722]/5 font-mono font-black text-[11px] border-l border-slate-800/60 text-[#FF5722]">
+                                    {st.points}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* 2. Add Custom Match Form (Collapsible) */}
       {showAddForm && (
