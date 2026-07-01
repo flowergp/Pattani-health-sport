@@ -16,7 +16,8 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
-  Printer
+  Printer,
+  Download
 } from "lucide-react";
 
 // Helper to parse Thai date (e.g. "10 ก.ค. 69") to a comparable number
@@ -84,12 +85,53 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   const handleExportPDF = () => {
     setShowPreview(false);
     setIsExporting(true);
-    setTimeout(() => {
-      window.print();
-    }, 500);
-    setTimeout(() => {
-      setIsExporting(false);
-    }, 4000);
+
+    const loadHtml2Pdf = (): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        if ((window as any).html2pdf) {
+          resolve((window as any).html2pdf);
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+        script.crossOrigin = "anonymous";
+        script.onload = () => {
+          resolve((window as any).html2pdf);
+        };
+        script.onerror = (e) => reject(e);
+        document.body.appendChild(script);
+      });
+    };
+
+    loadHtml2Pdf()
+      .then((html2pdf) => {
+        const element = document.getElementById("sport-pdf-content");
+        if (element) {
+          const opt = {
+            margin:       [10, 10, 10, 10], // margin in mm
+            filename:     `ตารางแข่งขัน_${sport}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+          html2pdf().set(opt).from(element).save()
+            .then(() => {
+              setIsExporting(false);
+            })
+            .catch((err: any) => {
+              console.error("PDF generation failed:", err);
+              setIsExporting(false);
+            });
+        } else {
+          setIsExporting(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load html2pdf.js:", err);
+        setIsExporting(false);
+        // Fallback
+        window.print();
+      });
   };
 
   // For adding a custom match
@@ -2005,15 +2047,15 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                 onClick={handleExportPDF}
                 className="py-1.5 px-4 bg-[#00FF66] text-slate-950 hover:bg-[#00E55C] font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/10 transition-all cursor-pointer rounded-none flex items-center gap-1"
               >
-                <Printer size={13} className="stroke-[3]" />
-                พิมพ์ตอนนี้ / ดาวน์โหลด PDF
+                <Download size={13} className="stroke-[3]" />
+                ดาวน์โหลดไฟล์ PDF
               </button>
             </div>
           </div>
 
           {/* Interactive Simulation Content of the A4 paper page on the screen */}
           <div className="flex-grow max-w-4xl w-full mx-auto bg-slate-950/40 border border-slate-850 p-2 md:p-6 shadow-2xl mb-4 overflow-y-auto">
-            <div className="bg-white text-black p-8 md:p-12 shadow-inner min-h-[1123px] font-sans border border-gray-300 max-w-[210mm] mx-auto text-left relative">
+            <div id="sport-pdf-content" className="bg-white text-black p-8 md:p-12 shadow-inner min-h-[1123px] font-sans border border-gray-300 max-w-[210mm] mx-auto text-left relative">
               {/* Decorative print border simulation */}
               <div className="absolute top-2 right-2 text-[8px] font-mono text-gray-400 select-none font-bold">A4 Paper Simulation Preview</div>
               
