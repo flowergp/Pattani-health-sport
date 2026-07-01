@@ -30,6 +30,7 @@ export interface Match {
   ranks?: Participant[]; // Result ranking: [{name: 'สายบุรี', rank: 1}, {name: 'มายอ', rank: 2}]
   
   order: number; // For sorting
+  isPotential?: boolean; // For marking potential district matches (e.g. finals)
 }
 
 export interface TeamStanding {

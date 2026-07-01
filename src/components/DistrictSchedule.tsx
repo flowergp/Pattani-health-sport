@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Match, Medal, Participant } from "../types";
 import { TEAM_NAMES } from "../initialData";
 import { calculateMedals } from "../utils/calcMedals";
@@ -62,6 +62,29 @@ function parseTimeToMinutes(timeStr: string): number {
   return hours * 60 + minutes;
 }
 
+// Helper to check if category is similar
+function isSameCategory(catA: string, catB: string): boolean {
+  const norm = (s: string) => (s || "").replace(/\s+/g, "").toLowerCase();
+  const nA = norm(catA);
+  const nB = norm(catB);
+  if (nA === nB) return true;
+  // Loose petanque category matching
+  if (nA.includes("ชาย") && nB.includes("ชาย") && (nA.includes("เปตอง") || nB.includes("เปตอง") || nA.includes("ชายคู่") || nB.includes("ชายคู่"))) return true;
+  if (nA.includes("หญิง") && nB.includes("หญิง") && (nA.includes("เปตอง") || nB.includes("เปตอง") || nA.includes("หญิงคู่") || nB.includes("หญิงคู่"))) return true;
+  if (nA.includes("ผสม") && nB.includes("ผสม") && (nA.includes("เปตอง") || nB.includes("เปตอง"))) return true;
+  return false;
+}
+
+const bracketSports = [
+  { id: "football_men", label: "⚽ ฟุตบอลชาย", sport: "football", category: "ฟุตบอลชาย" },
+  { id: "football_women", label: "⚽ ฟุตบอลหญิง", sport: "football", category: "ฟุตบอลหญิง" },
+  { id: "volley_men", label: "🏐 วอลเลย์บอลชาย", sport: "volleyball", category: "ทีมชาย" },
+  { id: "volley_women", label: "🏐 วอลเลย์บอลหญิง", sport: "volleyball", category: "ทีมหญิง" },
+  { id: "petanque_men", label: "🥎 เปตองชายคู่", sport: "petanque", category: "ทั่วไป ชายคู่" },
+  { id: "petanque_women", label: "🥎 เปตองหญิงคู่", sport: "petanque", category: "ทั่วไป หญิงคู่" },
+  { id: "petanque_mixed", label: "🥎 เปตองทีมผสม", sport: "petanque", category: "ทีมผสม (ชาย 1 หญิง 2)" },
+];
+
 interface DistrictScheduleProps {
   matches: Match[];
   selectedDistrict: string;
@@ -80,7 +103,8 @@ export default function DistrictSchedule({
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [exportSuccess, setExportSuccess] = useState<boolean>(false);
-  const [lastFilename, setLastFilename] = useState<string>("");
+  const [lastFilename, setLastFilename] = useState<string>("" as string);
+  const [activeBracketSport, setActiveBracketSport] = useState<string>("football_men");
 
   const handleExportPDF = () => {
     setIsExporting(true);
@@ -279,21 +303,143 @@ export default function DistrictSchedule({
     );
   }, [matches]);
 
-  // Find selected district's medal stats & rank
-  const districtProfile = useMemo(() => {
-    if (!selectedDistrict) return null;
-    
-    const rankIndex = standings.findIndex(t => t.team === selectedDistrict);
-    const medalStats = standings[rankIndex] || { team: selectedDistrict, gold: 0, silver: 0, bronze: 0 };
-    
-    // Filter matches for this district
-    let districtMatches = matches.filter(m => {
-      if (m.sport === "track") {
-        return m.participants?.includes(selectedDistrict);
-      } else {
-        return m.teamA === selectedDistrict || m.teamB === selectedDistrict;
-      }
+    // Find selected district's medal stats & rank
+    const districtProfile = useMemo(() => {
+      if (!selectedDistrict) return null;
+      
+      const rankIndex = standings.findIndex(t => t.team === selectedDistrict);
+      const medalStats = standings[rankIndex] || { team: selectedDistrict, gold: 0, silver: 0, bronze: 0 };
+      
+      // Filter matches for this district
+      let districtMatches = matches.filter(m => {
+        if (m.sport === "track") {
+          return m.participants?.includes(selectedDistrict);
+        } else {
+          return m.teamA === selectedDistrict || m.teamB === selectedDistrict;
+        }
+      });
+
+      const participatedKeys = new Set<string>();
+    districtMatches.forEach(m => {
+      participatedKeys.add(`${m.sport}:::${m.category}`);
     });
+
+    if (!isPetanqueDrawHeld) {
+      participatedKeys.add("petanque:::ทั่วไป ชายคู่");
+      participatedKeys.add("petanque:::ทั่วไป หญิงคู่");
+      participatedKeys.add("petanque:::ทีมผสม (ชาย 1 หญิง 2)");
+    }
+
+    const extractMatchNum = (id: string): number => {
+      const parts = id.split("_");
+      const last = parts[parts.length - 1];
+      const parsed = parseInt(last, 10);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+
+    const extraKnockoutMatches = matches.filter(m => {
+      const isKO = m.round === "รอบ 8 ทีม" || m.round === "รอบรองชนะเลิศ" || m.round === "ชิงที่ 3" || m.round === "รอบชิงชนะเลิศ";
+      if (!isKO) return false;
+
+      let participates = false;
+      for (const key of participatedKeys) {
+        const [pSport, pCat] = key.split(":::");
+        if (m.sport === pSport && isSameCategory(m.category, pCat)) {
+          participates = true;
+          break;
+        }
+      }
+      if (!participates) return false;
+
+      const isAlreadyIn = districtMatches.some(dm => dm.id === m.id);
+      if (isAlreadyIn) return false;
+
+      const matchNum = extractMatchNum(m.id);
+
+      // Calculate path for this specific (m.sport, m.category)
+      const myGroups = new Set<string>();
+      matches.forEach(allM => {
+        if (allM.sport === m.sport && isSameCategory(allM.category, m.category) && allM.round === "รอบแรก") {
+          if (allM.teamA === selectedDistrict || allM.teamB === selectedDistrict) {
+            if (allM.group) {
+              myGroups.add(allM.group.trim());
+            }
+          }
+        }
+      });
+
+      // QF check
+      const connectedQFNums = new Set<number>();
+      const qfMatchesForThis = matches.filter(allM => 
+        allM.sport === m.sport && 
+        isSameCategory(allM.category, m.category) && 
+        allM.round === "รอบ 8 ทีม"
+      );
+      qfMatchesForThis.forEach(qfM => {
+        const qfNum = extractMatchNum(qfM.id);
+        const isDirect = qfM.teamA === selectedDistrict || qfM.teamB === selectedDistrict;
+        const isGroupMatch = Array.from(myGroups).some(g => 
+          (qfM.teamA && qfM.teamA.includes(g)) || (qfM.teamB && qfM.teamB.includes(g))
+        );
+        if (isDirect || isGroupMatch) {
+          connectedQFNums.add(qfNum);
+        }
+      });
+
+      // SF check
+      const connectedSFNums = new Set<number>();
+      const sfMatchesForThis = matches.filter(allM => 
+        allM.sport === m.sport && 
+        isSameCategory(allM.category, m.category) && 
+        allM.round === "รอบรองชนะเลิศ"
+      );
+      sfMatchesForThis.forEach(sfM => {
+        const sfNum = extractMatchNum(sfM.id);
+        const isDirect = sfM.teamA === selectedDistrict || sfM.teamB === selectedDistrict;
+        const referencesQF = Array.from(connectedQFNums).some(qfNum => 
+          (sfM.teamA && sfM.teamA.includes(`คู่ที่ ${qfNum}`)) || 
+          (sfM.teamB && sfM.teamB.includes(`คู่ที่ ${qfNum}`))
+        );
+        if (isDirect || referencesQF) {
+          connectedSFNums.add(sfNum);
+        }
+      });
+
+      // Final/3rd check
+      const connectedFinalNums = new Set<number>();
+      const finalMatchesForThis = matches.filter(allM => 
+        allM.sport === m.sport && 
+        isSameCategory(allM.category, m.category) && 
+        (allM.round === "รอบชิงชนะเลิศ" || allM.round === "ชิงที่ 3")
+      );
+      finalMatchesForThis.forEach(fM => {
+        const fNum = extractMatchNum(fM.id);
+        const isDirect = fM.teamA === selectedDistrict || fM.teamB === selectedDistrict;
+        const referencesSF = Array.from(connectedSFNums).some(sfNum => 
+          (fM.teamA && fM.teamA.includes(`คู่ที่ ${sfNum}`)) || 
+          (fM.teamB && fM.teamB.includes(`คู่ที่ ${sfNum}`))
+        );
+        if (isDirect || referencesSF || connectedSFNums.size > 0) {
+          connectedFinalNums.add(fNum);
+        }
+      });
+
+      // Check if this current match `m` is in the set of connected matches
+      if (m.round === "รอบ 8 ทีม") {
+        return connectedQFNums.has(matchNum);
+      } else if (m.round === "รอบรองชนะเลิศ") {
+        return connectedSFNums.has(matchNum);
+      } else if (m.round === "รอบชิงชนะเลิศ" || m.round === "ชิงที่ 3") {
+        return connectedFinalNums.has(matchNum);
+      }
+
+      return false;
+    }).map(m => ({
+      ...m,
+      isPotential: true
+    }));
+
+    districtMatches = [...districtMatches, ...extraKnockoutMatches];
 
     // If Petanque draw is not held yet, inject virtual Petanque matches for this district
     if (!isPetanqueDrawHeld) {
@@ -356,10 +502,10 @@ export default function DistrictSchedule({
       ];
     }
 
-    const total = districtMatches.length;
-    const completed = districtMatches.filter(m => m.status === "completed").length;
-    const live = districtMatches.filter(m => m.status === "live").length;
-    const pending = districtMatches.filter(m => m.status === "pending").length;
+    const total = districtMatches.filter(m => !m.isPotential).length;
+    const completed = districtMatches.filter(m => !m.isPotential && m.status === "completed").length;
+    const live = districtMatches.filter(m => !m.isPotential && m.status === "live").length;
+    const pending = districtMatches.filter(m => !m.isPotential && m.status === "pending").length;
 
     return {
       rank: rankIndex !== -1 ? rankIndex + 1 : "-",
@@ -371,6 +517,38 @@ export default function DistrictSchedule({
       matches: districtMatches
     };
   }, [selectedDistrict, matches, standings, isPetanqueDrawHeld]);
+
+  useEffect(() => {
+    if (selectedDistrict && districtProfile) {
+      // Find the first bracket sport that they actually have matches in
+      const availableBracketSport = bracketSports.find(sportOpt => 
+        districtProfile.matches.some(m => 
+          m.sport === sportOpt.sport && 
+          isSameCategory(m.category, sportOpt.category)
+        )
+      );
+      if (availableBracketSport) {
+        setActiveBracketSport(availableBracketSport.id);
+      }
+    }
+  }, [selectedDistrict, districtProfile]);
+
+  const selectedBracketConfig = useMemo(() => {
+    return bracketSports.find(s => s.id === activeBracketSport) || bracketSports[0];
+  }, [activeBracketSport]);
+
+  const bracketMatchesForSport = useMemo(() => {
+    if (!selectedDistrict || !districtProfile) return [];
+    return districtProfile.matches.filter(m => 
+      m.sport === selectedBracketConfig.sport && 
+      isSameCategory(m.category, selectedBracketConfig.category)
+    );
+  }, [selectedDistrict, districtProfile, selectedBracketConfig]);
+
+  const roundGroupStage = useMemo(() => bracketMatchesForSport.filter(m => m.round === "รอบแรก"), [bracketMatchesForSport]);
+  const roundQF = useMemo(() => bracketMatchesForSport.filter(m => m.round === "รอบ 8 ทีม"), [bracketMatchesForSport]);
+  const roundSF = useMemo(() => bracketMatchesForSport.filter(m => m.round === "รอบรองชนะเลิศ"), [bracketMatchesForSport]);
+  const roundFinals = useMemo(() => bracketMatchesForSport.filter(m => m.round === "รอบชิงชนะเลิศ" || m.round === "ชิงที่ 3"), [bracketMatchesForSport]);
 
   // Filtered district matches based on pills + search
   const filteredMatches = useMemo(() => {
@@ -634,6 +812,272 @@ export default function DistrictSchedule({
 
           </div>
 
+          {/* 2.5 Visual Tournament Bracket Pathway */}
+          <div className="bg-[#111827] border border-slate-800 p-5 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF5722]">
+                  tournament map
+                </span>
+                <h3 className="text-base font-black text-white flex items-center gap-2 uppercase tracking-wide">
+                  🗺️ เส้นทางการแข่งขันสู่รอบชิงชนะเลิศ (Bracket Pathway)
+                </h3>
+                <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                  แผนภาพสรุปเส้นทางการแข่งขันและประกบคู่ของ <span className="text-[#00FF66] font-bold">{selectedDistrict}</span> หากสามารถรักษาผลงานผ่านเข้ารอบถัดไปได้สำเร็จ
+                </p>
+              </div>
+
+              {/* Legend */}
+              <div className="flex flex-wrap gap-3 text-[10px] font-bold">
+                <div className="flex items-center gap-1.5 text-slate-300">
+                  <span className="w-3 h-3 bg-slate-900 border border-slate-800 inline-block"></span>
+                  <span>โปรแกรมปกติ / ยืนยันคู่แล้ว</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-amber-400">
+                  <span className="w-3 h-3 bg-[#16120E] border border-dashed border-amber-500/50 inline-block"></span>
+                  <span>หากผ่านเข้ารอบ (Potential Path)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sport Selector Pills for Bracket */}
+            <div className="flex flex-wrap gap-1">
+              {bracketSports.map(sportOpt => {
+                // Check if district participates in this sport category
+                const hasMatches = districtProfile.matches.some(m => 
+                  m.sport === sportOpt.sport && 
+                  isSameCategory(m.category, sportOpt.category)
+                );
+                if (!hasMatches) return null;
+
+                const isSelected = activeBracketSport === sportOpt.id;
+                return (
+                  <button
+                    key={sportOpt.id}
+                    onClick={() => setActiveBracketSport(sportOpt.id)}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all cursor-pointer border rounded-none ${
+                      isSelected
+                        ? "bg-[#FF5722] text-white border-[#FF5722]"
+                        : "bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {sportOpt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Bracket columns - Flow layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+              
+              {/* Column 1: Group Stage */}
+              <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
+                  <span className="text-xs font-black text-slate-200">1. รอบแรก (แบ่งกลุ่ม)</span>
+                  <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
+                    {roundGroupStage.length} แมตช์
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                  {roundGroupStage.length === 0 ? (
+                    <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีการแข่งขันรอบแรกในสายนี้</div>
+                  ) : (
+                    roundGroupStage.map(m => (
+                      <div 
+                        key={m.id} 
+                        className="bg-[#111827] border border-slate-800/80 p-2 text-[11px] space-y-1 hover:border-slate-700 transition-colors"
+                      >
+                        <div className="flex justify-between text-[9px] font-mono text-slate-400">
+                          <span className="font-bold text-[#FF5722]">{m.group}</span>
+                          <span>{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
+                        </div>
+                        <div className="flex justify-between items-center font-sans font-bold pt-0.5">
+                          <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : "text-slate-300"}>
+                            {m.teamA}
+                          </span>
+                          <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
+                          <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : "text-slate-300"}>
+                            {m.teamB}
+                          </span>
+                        </div>
+                        {m.status === "completed" ? (
+                          <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5 mt-1">
+                            ผลการแข่ง: {m.scoreA} - {m.scoreB}
+                          </div>
+                        ) : m.status === "live" ? (
+                          <div className="text-[9px] font-mono text-center font-black bg-red-950/20 border border-red-900/30 text-red-400 py-0.5 mt-1 animate-pulse">
+                            กำลังแข่ง 🔴
+                          </div>
+                        ) : (
+                          <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5 mt-1">
+                            {m.date}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Column 2: Quarter-finals */}
+              <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
+                  <span className="text-xs font-black text-slate-200">2. รอบ 8 ทีมสุดท้าย</span>
+                  <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
+                    {roundQF.length} แมตช์
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                  {roundQF.length === 0 ? (
+                    <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีการประกบคู่รอบนี้</div>
+                  ) : (
+                    roundQF.map(m => (
+                      <div 
+                        key={m.id} 
+                        className={`p-2 text-[11px] space-y-1.5 transition-colors ${
+                          m.isPotential 
+                            ? "border border-dashed border-amber-500/40 bg-[#16120E] hover:border-amber-500/60" 
+                            : "bg-[#111827] border border-slate-800 hover:border-slate-700"
+                        }`}
+                      >
+                        <div className="flex justify-between text-[9px] font-mono">
+                          <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
+                            {m.isPotential ? "⏳ หากเข้ารอบ" : "ยืนยันคู่แข่งขัน"}
+                          </span>
+                          <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
+                        </div>
+                        <div className="flex justify-between items-center font-sans font-bold">
+                          <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamA?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                            {m.teamA}
+                          </span>
+                          <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
+                          <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamB?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                            {m.teamB}
+                          </span>
+                        </div>
+                        {m.status === "completed" ? (
+                          <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5">
+                            ผลการแข่ง: {m.scoreA} - {m.scoreB}
+                          </div>
+                        ) : (
+                          <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5">
+                            {m.date}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Column 3: Semifinals */}
+              <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
+                  <span className="text-xs font-black text-slate-200">3. รอบรองชนะเลิศ</span>
+                  <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
+                    {roundSF.length} แมตช์
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                  {roundSF.length === 0 ? (
+                    <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีการประกบคู่รอบนี้</div>
+                  ) : (
+                    roundSF.map(m => (
+                      <div 
+                        key={m.id} 
+                        className={`p-2 text-[11px] space-y-1.5 transition-colors ${
+                          m.isPotential 
+                            ? "border border-dashed border-amber-500/40 bg-[#16120E] hover:border-amber-500/60" 
+                            : "bg-[#111827] border border-slate-800 hover:border-slate-700"
+                        }`}
+                      >
+                        <div className="flex justify-between text-[9px] font-mono">
+                          <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
+                            {m.isPotential ? "⏳ หากเข้ารอบ" : "ยืนยันคู่แข่งขัน"}
+                          </span>
+                          <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
+                        </div>
+                        <div className="flex justify-between items-center font-sans font-bold">
+                          <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamA?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                            {m.teamA}
+                          </span>
+                          <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
+                          <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamB?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                            {m.teamB}
+                          </span>
+                        </div>
+                        {m.status === "completed" ? (
+                          <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5">
+                            ผลการแข่ง: {m.scoreA} - {m.scoreB}
+                          </div>
+                        ) : (
+                          <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5">
+                            {m.date}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Column 4: Finals / 3rd Place */}
+              <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
+                  <span className="text-xs font-black text-slate-200">4. รอบชิงชนะเลิศ</span>
+                  <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
+                    {roundFinals.length} แมตช์
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                  {roundFinals.length === 0 ? (
+                    <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีข้อมูลรอบชิงชนะเลิศ</div>
+                  ) : (
+                    roundFinals.map(m => (
+                      <div 
+                        key={m.id} 
+                        className={`p-2 text-[11px] space-y-1.5 transition-colors ${
+                          m.isPotential 
+                            ? "border border-dashed border-amber-500/40 bg-[#16120E] hover:border-amber-500/60" 
+                            : "bg-[#111827] border border-slate-800 hover:border-slate-700"
+                        }`}
+                      >
+                        <div className="flex justify-between text-[9px] font-mono">
+                          <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
+                            {m.isPotential ? "⏳ หากเข้ารอบ" : "รอบชิงตำแหน่ง"}
+                          </span>
+                          <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-300 font-bold text-center bg-slate-900 border border-slate-800/80 py-0.5 font-mono">
+                          {m.round}
+                        </div>
+                        <div className="flex justify-between items-center font-sans font-bold">
+                          <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamA?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                            {m.teamA}
+                          </span>
+                          <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
+                          <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamB?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                            {m.teamB}
+                          </span>
+                        </div>
+                        {m.status === "completed" ? (
+                          <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5">
+                            ผลการแข่ง: {m.scoreA} - {m.scoreB}
+                          </div>
+                        ) : (
+                          <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5">
+                            {m.date}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           {/* 3. Toolbar & Filters */}
           <div className="bg-[#111827] border border-slate-800 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
@@ -741,10 +1185,16 @@ export default function DistrictSchedule({
                       return (
                         <div
                           key={match.id}
-                          className={`relative border flex flex-col justify-between transition-all duration-150 rounded-none overflow-hidden ${sportStyle.borderColor} ${
+                          className={`relative border flex flex-col justify-between transition-all duration-150 rounded-none overflow-hidden ${
+                            match.isPotential
+                              ? "border-dashed border-amber-500/40 bg-[#16120E]"
+                              : sportStyle.borderColor
+                          } ${
                             isLive 
                               ? "bg-[#1E293B] border-[#00FF66] shadow-[0_0_12px_0_rgba(0,255,102,0.1)]" 
-                              : "bg-[#111827] border-slate-800 hover:border-slate-700"
+                              : match.isPotential
+                                ? ""
+                                : "bg-[#111827] border-slate-800 hover:border-slate-700"
                           }`}
                         >
                           {/* Card Header (Category, Round & Live state) */}
@@ -758,7 +1208,11 @@ export default function DistrictSchedule({
                               </span>
                             </div>
                             <div className="shrink-0">
-                              {isLive ? (
+                              {match.isPotential ? (
+                                <span className="text-[9px] font-mono font-black bg-amber-950 text-amber-400 border border-amber-900 px-1.5 py-0.5 rounded-none">
+                                  ⚠️ หากเข้ารอบ
+                                </span>
+                              ) : isLive ? (
                                 <span className="text-[9px] font-mono font-black bg-red-950 text-red-400 border border-red-900 px-1.5 py-0.5 animate-pulse rounded-none">
                                   🔴 LIVE
                                 </span>
@@ -776,6 +1230,12 @@ export default function DistrictSchedule({
 
                           {/* Card Body (Matchup content) */}
                           <div className="p-4 space-y-4 flex-grow">
+                            {match.isPotential && (
+                              <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-[10px] text-amber-400 font-bold flex items-center gap-1.5 font-sans mb-1.5 rounded-none leading-normal">
+                                <span>📢</span>
+                                <span>โปรแกรมรอบถัดไป ({match.round}) หาก {selectedDistrict} เข้ารอบ</span>
+                              </div>
+                            )}
                             
                             {/* Dual Team Scoreboard (Football, Volleyball, Petanque) */}
                             {match.id.startsWith("petanque_virtual") ? (
@@ -1117,7 +1577,12 @@ export default function DistrictSchedule({
                             </td>
                             <td className="p-1 border-r border-black text-[8px]">
                               <div className="font-bold leading-tight">{m.category}</div>
-                              <div className="text-gray-600 font-mono leading-none text-[8px]">{m.round} {m.group ? `(${m.group})` : ""}</div>
+                              <div className="text-gray-600 font-mono leading-none text-[8px] flex items-center gap-1 mt-0.5">
+                                <span>{m.round} {m.group ? `(${m.group})` : ""}</span>
+                                {m.isPotential && (
+                                  <span className="text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.2 text-[7px] font-black leading-none uppercase shrink-0">หากเข้ารอบ</span>
+                                )}
+                              </div>
                             </td>
 
                             {m.id.startsWith("petanque_virtual") ? (
@@ -1162,7 +1627,9 @@ export default function DistrictSchedule({
                             )}
 
                             <td className="p-1 text-center text-[8px]">
-                              {isLive ? (
+                              {m.isPotential ? (
+                                <span className="text-amber-700 font-bold font-sans">หากเข้ารอบ ⏳</span>
+                              ) : isLive ? (
                                 <span className="font-bold text-red-600 animate-pulse">กำลังแข่ง 🔴</span>
                               ) : isCompleted ? (
                                 <span className="text-emerald-700 font-bold font-sans">
