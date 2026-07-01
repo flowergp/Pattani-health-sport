@@ -135,6 +135,59 @@ export default function DistrictSchedule({
       });
     };
 
+    // Gather, sanitize and replace all document styles to bypass html2canvas parsing of oklch()
+    let originalCssText = "";
+    const originalSheets = Array.from(document.styleSheets);
+
+    for (let i = 0; i < originalSheets.length; i++) {
+      const sheet = originalSheets[i];
+      try {
+        const rules = sheet.cssRules || sheet.rules;
+        if (rules) {
+          for (let j = 0; j < rules.length; j++) {
+            originalCssText += rules[j].cssText + "\n";
+          }
+        }
+      } catch (e) {
+        // CORS or access blocked, handle gracefully below
+      }
+    }
+
+    // Also collect style tags text content directly as fallback/enhancement
+    const styleTags = Array.from(document.querySelectorAll("style"));
+    styleTags.forEach(style => {
+      originalCssText += style.textContent + "\n";
+    });
+
+    // Clean up oklch from compiled css text
+    const sanitizedCssText = convertOklchColor(originalCssText);
+
+    // Disable all original style-producing elements
+    const styleElements = Array.from(document.querySelectorAll("style, link[rel='stylesheet']"));
+    const originalDisabledStates = styleElements.map((el: any) => {
+      return { el, state: el.disabled };
+    });
+    styleElements.forEach((el: any) => {
+      el.disabled = true;
+    });
+
+    // Inject temporary sanitized style block
+    const tempStyleEl = document.createElement("style");
+    tempStyleEl.id = "temp-pdf-sanitized-styles";
+    tempStyleEl.textContent = sanitizedCssText;
+    document.head.appendChild(tempStyleEl);
+
+    // Cleanup helper
+    const cleanupStyles = () => {
+      window.getComputedStyle = originalGetComputedStyle;
+      if (tempStyleEl.parentNode) {
+        tempStyleEl.parentNode.removeChild(tempStyleEl);
+      }
+      originalDisabledStates.forEach(({ el, state }) => {
+        el.disabled = state;
+      });
+    };
+
     const loadHtml2Pdf = (): Promise<any> => {
       return new Promise((resolve, reject) => {
         if ((window as any).html2pdf) {
@@ -167,26 +220,26 @@ export default function DistrictSchedule({
           };
           html2pdf().set(opt).from(element).save()
             .then(() => {
-              window.getComputedStyle = originalGetComputedStyle;
+              cleanupStyles();
               setIsExporting(false);
               setExportSuccess(true);
             })
             .catch((err: any) => {
               console.error("PDF generation failed:", err);
-              window.getComputedStyle = originalGetComputedStyle;
+              cleanupStyles();
               setIsExporting(false);
               setExportSuccess(false);
               setShowPreview(false);
             });
         } else {
-          window.getComputedStyle = originalGetComputedStyle;
+          cleanupStyles();
           setIsExporting(false);
           setShowPreview(false);
         }
       })
       .catch((err) => {
         console.error("Failed to load html2pdf.js:", err);
-        window.getComputedStyle = originalGetComputedStyle;
+        cleanupStyles();
         setIsExporting(false);
         setShowPreview(false);
         // Fallback
