@@ -114,26 +114,74 @@ export default function DistrictSchedule({
     // Helper to convert oklch color string to rgb/hex to bypass html2canvas parser error
     const convertOklchColor = (colorStr: string): string => {
       if (!colorStr || typeof colorStr !== "string") return colorStr;
-      if (!colorStr.includes("oklch")) return colorStr;
+      const lower = colorStr.toLowerCase();
+      if (!lower.includes("oklch")) return colorStr;
 
-      return colorStr.replace(/oklch\([^)]+\)/g, (match) => {
-        try {
-          const canvas = document.createElement("canvas");
-          canvas.width = 1;
-          canvas.height = 1;
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.fillStyle = match;
-            const converted = ctx.fillStyle;
-            if (converted && converted !== "#000000" || match.includes("0 0 0")) {
-              return converted;
+      let result = "";
+      let i = 0;
+      while (i < colorStr.length) {
+        if (colorStr.substr(i, 6).toLowerCase() === "oklch(") {
+          let start = i;
+          let parenCount = 1;
+          i += 6;
+          while (i < colorStr.length && parenCount > 0) {
+            if (colorStr[i] === "(") {
+              parenCount++;
+            } else if (colorStr[i] === ")") {
+              parenCount--;
             }
+            i++;
           }
-        } catch (e) {
-          console.error("Failed to convert color:", match, e);
+          const match = colorStr.slice(start, i);
+          
+          // Convert this single match
+          let converted = "rgb(120, 120, 120)";
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = 1;
+            canvas.height = 1;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.fillStyle = match;
+              const cv = ctx.fillStyle;
+              if (cv && cv !== "#000000" && cv !== "rgb(0, 0, 0)") {
+                converted = cv;
+              } else if (cv === "#000000" || cv === "rgb(0, 0, 0)") {
+                if (match.includes("0 0 0") || match.includes(" 0% 0") || match.includes(" 0 0")) {
+                  converted = cv;
+                } else {
+                  // Fallback for browsers that don't support oklch on canvas
+                  const nums = match.match(/[\d.]+%?/g);
+                  if (nums && nums.length >= 1) {
+                    let lVal = parseFloat(nums[0]);
+                    if (nums[0].includes("%")) lVal /= 100;
+                    const grayInt = Math.round(lVal * 255);
+                    const clamped = Math.max(0, Math.min(255, grayInt));
+                    const hex = clamped.toString(16).padStart(2, "0");
+                    if (match.includes("/")) {
+                      const alphaVal = nums[nums.length - 1];
+                      if (alphaVal && !alphaVal.includes("%")) {
+                        converted = `rgba(${clamped}, ${clamped}, ${clamped}, ${alphaVal})`;
+                      } else {
+                        converted = `#${hex}${hex}${hex}`;
+                      }
+                    } else {
+                      converted = `#${hex}${hex}${hex}`;
+                    }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
+          result += converted;
+        } else {
+          result += colorStr[i];
+          i++;
         }
-        return "rgb(120, 120, 120)";
-      });
+      }
+      return result;
     };
 
     // Temporarily proxy getComputedStyle during export with correct receiver to avoid Illegal invocation
@@ -186,13 +234,19 @@ export default function DistrictSchedule({
     // Clean up oklch from compiled css text
     const sanitizedCssText = convertOklchColor(originalCssText);
 
-    // Disable all original style-producing elements
+    // Temporarily remove all original style-producing elements to prevent html2canvas from parsing/fetching them
     const styleElements = Array.from(document.querySelectorAll("style, link[rel='stylesheet']"));
-    const originalDisabledStates = styleElements.map((el: any) => {
-      return { el, state: el.disabled };
-    });
+    const removedElements: { el: HTMLElement, parent: Node, nextSibling: Node | null }[] = [];
+    
     styleElements.forEach((el: any) => {
-      el.disabled = true;
+      if (el.parentNode) {
+        removedElements.push({
+          el,
+          parent: el.parentNode,
+          nextSibling: el.nextSibling
+        });
+        el.parentNode.removeChild(el);
+      }
     });
 
     // Inject temporary sanitized style block
@@ -208,7 +262,7 @@ export default function DistrictSchedule({
       const walker = document.createTreeWalker(pdfElement, NodeFilter.SHOW_ELEMENT);
       let currentNode = walker.currentNode as HTMLElement;
       while (currentNode) {
-        if (currentNode.style && currentNode.style.cssText && currentNode.style.cssText.includes("oklch")) {
+        if (currentNode.style && currentNode.style.cssText && currentNode.style.cssText.toLowerCase().includes("oklch")) {
           originalInlineStyles.push({ el: currentNode, cssText: currentNode.style.cssText });
           currentNode.style.cssText = convertOklchColor(currentNode.style.cssText);
         }
@@ -222,8 +276,8 @@ export default function DistrictSchedule({
       if (tempStyleEl.parentNode) {
         tempStyleEl.parentNode.removeChild(tempStyleEl);
       }
-      originalDisabledStates.forEach(({ el, state }) => {
-        el.disabled = state;
+      removedElements.forEach(({ el, parent, nextSibling }) => {
+        parent.insertBefore(el, nextSibling);
       });
       originalInlineStyles.forEach(({ el, cssText }) => {
         el.style.cssText = cssText;
