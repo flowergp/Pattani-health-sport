@@ -18,6 +18,49 @@ import {
   Printer
 } from "lucide-react";
 
+// Helper to parse Thai date (e.g. "10 ก.ค. 69") to a comparable number
+function parseThaiDateToValue(dateStr: string): number {
+  if (!dateStr || dateStr === "ไม่ระบุวัน") return 99999999;
+  
+  const parts = dateStr.trim().split(/\s+/);
+  if (parts.length < 3) {
+    const day = parseInt(parts[0], 10) || 0;
+    return day;
+  }
+  
+  const day = parseInt(parts[0], 10) || 0;
+  const monthStr = parts[1];
+  const year = parseInt(parts[2], 10) || 0;
+  
+  const months: Record<string, number> = {
+    "ม.ค.": 1,
+    "ก.พ.": 2,
+    "มี.ค.": 3,
+    "เม.ย.": 4,
+    "พ.ค.": 5,
+    "มิ.ย.": 6,
+    "ก.ค.": 7,
+    "ส.ค.": 8,
+    "ก.ย.": 9,
+    "ต.ค.": 10,
+    "พ.ย.": 11,
+    "ธ.ค.": 12
+  };
+  
+  const monthVal = months[monthStr] || 0;
+  return (year * 10000) + (monthVal * 100) + day;
+}
+
+// Helper to parse Thai time (e.g. "09.30 น.") to minutes
+function parseTimeToMinutes(timeStr: string): number {
+  if (!timeStr) return 9999;
+  const clean = timeStr.replace(/น\./g, "").replace(/\s/g, "").trim();
+  const parts = clean.split(/[.:]/);
+  const hours = parseInt(parts[0], 10) || 0;
+  const minutes = parseInt(parts[1], 10) || 0;
+  return hours * 60 + minutes;
+}
+
 interface SportTabProps {
   sport: "track" | "petanque" | "volleyball" | "football";
   matches: Match[];
@@ -130,6 +173,17 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
     return matchCat && matchRound && matchTeam && matchDistrict;
   }).sort((a, b) => {
+    // 1. Sort by Date first
+    const dateA = parseThaiDateToValue(a.date);
+    const dateB = parseThaiDateToValue(b.date);
+    if (dateA !== dateB) return dateA - dateB;
+
+    // 2. Sort by Time second
+    const timeA = parseTimeToMinutes(a.time);
+    const timeB = parseTimeToMinutes(b.time);
+    if (timeA !== timeB) return timeA - timeB;
+
+    // 3. Fallback to round order for football, or court, or custom order
     if (sport === "football") {
       const roundOrder: Record<string, number> = {
         "รอบแรก": 1,
@@ -142,29 +196,10 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
       const roundA = roundOrder[a.round] || 99;
       const roundB = roundOrder[b.round] || 99;
       if (roundA !== roundB) return roundA - roundB;
-
-      // Parse time like "09.00 น."
-      const parseTimeToMinutes = (timeStr: string): number => {
-        if (!timeStr) return 0;
-        const normalized = timeStr.replace(/\s+/g, "");
-        const match = normalized.match(/(\d+)[.:](\d+)/);
-        if (match) {
-          return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-        }
-        const singleMatch = normalized.match(/(\d+)/);
-        if (singleMatch) {
-          return parseInt(singleMatch[1], 10) * 60;
-        }
-        return 0;
-      };
-
-      const timeA = parseTimeToMinutes(a.time);
-      const timeB = parseTimeToMinutes(b.time);
-      if (timeA !== timeB) return timeA - timeB;
-
-      // Group court 1 and court 2 together
+      
       return a.court.localeCompare(b.court);
     }
+    
     return a.order - b.order;
   });
 
@@ -940,17 +975,25 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                     <div>
                       {/* Top bar info */}
                       <div className="flex justify-between items-start gap-2 mb-3">
-                        <div className="space-y-1">
-                          <span className="bg-[#FF5722] text-white text-[9px] font-mono px-2 py-0.5 font-bold uppercase block w-fit rounded-none">
-                            {m.category}
-                          </span>
-                          <span className="text-[11px] font-mono font-bold text-slate-400 block">
-                            รอบ: {m.round} {m.group ? `(${m.group})` : ""}
-                          </span>
+                        <div className="space-y-1.5">
+                          {/* Prominent Date/Time indicator */}
+                          <div className="flex items-center gap-1.5 text-amber-400 bg-slate-950 px-2.5 py-1 border border-slate-800 rounded-none w-fit text-[10px] font-mono font-black uppercase tracking-wider">
+                            <Clock size={11} className="text-[#FF5722]" />
+                            <span>{m.date} • {m.time}</span>
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                            <span className="bg-[#FF5722] text-white text-[9px] font-mono px-2 py-0.5 font-bold uppercase block w-fit rounded-none">
+                              {m.category}
+                            </span>
+                            <span className="text-[11px] font-mono font-bold text-slate-400 block">
+                              รอบ: {m.round} {m.group ? `(${m.group})` : ""}
+                            </span>
+                          </div>
                         </div>
 
                         <span
-                          className={`text-[9px] font-mono font-black px-2 py-0.5 border uppercase rounded-none ${
+                          className={`text-[9px] font-mono font-black px-2 py-0.5 border uppercase rounded-none whitespace-nowrap ${
                             isLive
                               ? "border-[#00FF66] bg-[#00FF66]/10 text-[#00FF66] animate-pulse"
                               : isCompleted
