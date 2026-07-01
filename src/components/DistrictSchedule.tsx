@@ -361,8 +361,8 @@ export default function DistrictSchedule({
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#1E293B] border-2 border-emerald-500 text-white px-6 py-4 shadow-2xl flex items-center gap-4 animate-bounce print:hidden max-w-md w-full mx-auto">
           <div className="shrink-0 w-6 h-6 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
           <div className="flex-grow space-y-0.5">
-            <h4 className="text-sm font-black text-emerald-400 uppercase tracking-wide">📥 กำลังดาวน์โหลดและจัดเตรียม PDF</h4>
-            <p className="text-[10px] text-slate-400 font-semibold leading-normal">ระบบกำลังประมวลผลตารางแข่งรายอำเภอของ {selectedDistrict} และเปิดเมนูสั่งพิมพ์</p>
+            <h4 className="text-sm font-black text-emerald-400 uppercase tracking-wide">📥 กำลังประมวลผลและดาวน์โหลด PDF</h4>
+            <p className="text-[10px] text-slate-400 font-semibold leading-normal">ระบบกำลังดาวน์โหลดตารางแข่งขันรายอำเภอของ {selectedDistrict} เป็นไฟล์ PDF ลงในเครื่องของคุณ</p>
           </div>
         </div>
       )}
