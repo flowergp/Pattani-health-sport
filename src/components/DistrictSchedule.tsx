@@ -86,6 +86,7 @@ export default function DistrictSchedule({
     setIsExporting(true);
 
     const originalGetComputedStyle = window.getComputedStyle;
+    const originalFetch = window.fetch;
 
     // Helper to convert oklch color string to rgb/hex to bypass html2canvas parser error
     const convertOklchColor = (colorStr: string): string => {
@@ -112,12 +113,12 @@ export default function DistrictSchedule({
       });
     };
 
-    // Temporarily proxy getComputedStyle during export
-    window.getComputedStyle = function(element, pseudoElt) {
-      const style = originalGetComputedStyle(element, pseudoElt);
+    // Temporarily proxy getComputedStyle during export with correct receiver to avoid Illegal invocation
+    window.getComputedStyle = function(...args: any[]) {
+      const style = originalGetComputedStyle.apply(this, args as any);
       return new Proxy(style, {
-        get(target, prop) {
-          const val = Reflect.get(target, prop);
+        get(target, prop, receiver) {
+          const val = Reflect.get(target, prop, target); // Crucial: pass target as receiver to avoid Illegal invocation!
           if (typeof val === "function") {
             if (prop === "getPropertyValue") {
               return function(propertyName: string) {
@@ -135,7 +136,29 @@ export default function DistrictSchedule({
       });
     };
 
-    // Gather, sanitize and replace all document styles to bypass html2canvas parsing of oklch()
+    // Temporarily intercept fetch requests to sanitize external stylesheets fetched by html2canvas
+    window.fetch = async function(input, init) {
+      const response = await originalFetch(input, init);
+      const url = typeof input === "string" ? input : (input instanceof Request ? input.url : "");
+      const isCss = url.endsWith(".css") || url.includes("css") || response.headers.get("content-type")?.includes("css");
+      
+      if (isCss) {
+        try {
+          const text = await response.text();
+          const sanitized = convertOklchColor(text);
+          return new Response(sanitized, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+          });
+        } catch (e) {
+          console.error("Failed to sanitize fetched CSS:", e);
+        }
+      }
+      return response;
+    };
+
+    // Gather and compile all original stylesheet contents
     let originalCssText = "";
     const originalSheets = Array.from(document.styleSheets);
 
@@ -149,11 +172,11 @@ export default function DistrictSchedule({
           }
         }
       } catch (e) {
-        // CORS or access blocked, handle gracefully below
+        // CORS or access blocked, handle gracefully
       }
     }
 
-    // Also collect style tags text content directly as fallback/enhancement
+    // Also collect style tags text content directly
     const styleTags = Array.from(document.querySelectorAll("style"));
     styleTags.forEach(style => {
       originalCssText += style.textContent + "\n";
@@ -177,14 +200,33 @@ export default function DistrictSchedule({
     tempStyleEl.textContent = sanitizedCssText;
     document.head.appendChild(tempStyleEl);
 
-    // Cleanup helper
+    // Sanitize any inline styles containing oklch on elements inside the pdf container
+    const pdfElement = document.getElementById("district-pdf-content");
+    const originalInlineStyles: { el: HTMLElement, cssText: string }[] = [];
+    if (pdfElement) {
+      const walker = document.createTreeWalker(pdfElement, NodeFilter.SHOW_ELEMENT);
+      let currentNode = walker.currentNode as HTMLElement;
+      while (currentNode) {
+        if (currentNode.style && currentNode.style.cssText && currentNode.style.cssText.includes("oklch")) {
+          originalInlineStyles.push({ el: currentNode, cssText: currentNode.style.cssText });
+          currentNode.style.cssText = convertOklchColor(currentNode.style.cssText);
+        }
+        currentNode = walker.nextNode() as HTMLElement;
+      }
+    }
+
+    // Cleanup helper to restore original environment
     const cleanupStyles = () => {
       window.getComputedStyle = originalGetComputedStyle;
+      window.fetch = originalFetch;
       if (tempStyleEl.parentNode) {
         tempStyleEl.parentNode.removeChild(tempStyleEl);
       }
       originalDisabledStates.forEach(({ el, state }) => {
         el.disabled = state;
+      });
+      originalInlineStyles.forEach(({ el, cssText }) => {
+        el.style.cssText = cssText;
       });
     };
 
