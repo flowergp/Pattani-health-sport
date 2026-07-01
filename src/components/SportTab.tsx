@@ -948,8 +948,45 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
         </div>
       </div>
 
+      {/* Petanque Schedule banner when draw has not been held yet */}
+      {petanqueDrawNotHeld && (
+        <div className="border border-yellow-500/30 bg-[#1E293B]/40 p-8 space-y-6 rounded-none text-white text-center max-w-2xl mx-auto shadow-2xl animate-fadeIn">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-none text-amber-500">
+              <AlertCircle size={32} />
+            </div>
+            <h3 className="text-lg font-black uppercase text-amber-400">
+              📌 กำหนดการแข่งขันเปตอง
+            </h3>
+            <p className="text-xs text-slate-400 font-semibold max-w-md leading-relaxed">
+              โปรแกรมการแข่งขันและตารางคะแนนรอบแบ่งกลุ่มจะแสดงโดยอัตโนมัติ หลังจากที่มีการกดปุ่ม <span className="text-emerald-400 font-bold">🎯 จับฉลากแบ่งสาย</span> และบันทึกผลการจับฉลากแล้ว
+            </p>
+          </div>
+
+          <div className="border border-slate-800 bg-slate-950 p-6 rounded-none divide-y divide-slate-800/40 text-left space-y-3.5">
+            <div className="pb-3 flex justify-between items-center text-xs font-bold text-slate-300">
+              <span>ประเภทชายคู่</span>
+              <span className="text-[#00FF66] font-mono">วันที่ 6 กรกฎาคม 2569</span>
+            </div>
+            <div className="py-3 flex justify-between items-center text-xs font-bold text-slate-300">
+              <span>ประเภทหญิงคู่</span>
+              <span className="text-[#00FF66] font-mono">วันที่ 7 กรกฎาคม 2569</span>
+            </div>
+            <div className="py-3 flex justify-between items-center text-xs font-bold text-slate-300">
+              <span>ประเภททีมผสม</span>
+              <span className="text-[#00FF66] font-mono">วันที่ 8 กรกฎาคม 2569</span>
+            </div>
+            <div className="pt-4 text-center">
+              <span className="text-white text-sm font-black font-sans bg-[#FF5722] px-4 py-1.5 inline-block rounded-none shadow-md">
+                เริ่มแข่งขัน 9.00น.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 3. Group Standings Section (Only for Petanque, Volleyball, Football) */}
-      {sport !== "track" && selectedCategory !== "" && (activeView === "all" || activeView === "standings") && (
+      {sport !== "track" && selectedCategory !== "" && (activeView === "all" || activeView === "standings") && !petanqueDrawNotHeld && (
         <div className="space-y-4">
           {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
             const catMatches = sportMatches.filter(m => m.category === cat);
@@ -1247,7 +1284,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
       {/* 3. Add Custom Match Form (Collapsible) placeholder to keep order clear */}
 
       {/* 4. Match List Grid */}
-      {activeView !== "bracket" && (activeView === "all" || activeView === "matches" || sport === "track" || selectedCategory === "") && (
+      {activeView !== "bracket" && (activeView === "all" || activeView === "matches" || sport === "track" || selectedCategory === "") && !petanqueDrawNotHeld && (
         <div className="space-y-4">
           <h3 className="text-base font-black uppercase text-white tracking-wide">
             📅 รายการแข่งขันและผลลัพธ์ {selectedCategory !== "" ? `(${filteredMatches.length})` : filteredMatches.length > 0 ? `(แสดงเฉพาะ คป.สอ. ${selectedDistrict || teamSearch}) (${filteredMatches.length})` : ""}
@@ -1649,7 +1686,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
       )}
 
       {/* 2. Knockout Bracket Display Card */}
-      {sport !== "track" && activeBracketCategory && (activeView === "all" || activeView === "bracket") && (
+      {sport !== "track" && activeBracketCategory && (activeView === "all" || activeView === "bracket") && !petanqueDrawNotHeld && (
         <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2">

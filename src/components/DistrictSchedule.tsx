@@ -82,6 +82,15 @@ export default function DistrictSchedule({
     return calculateMedals(matches);
   }, [matches]);
 
+  const isPetanqueDrawHeld = useMemo(() => {
+    const petanqueMatches = matches.filter(m => m.sport === "petanque");
+    if (petanqueMatches.length === 0) return false;
+    return petanqueMatches.some(m => 
+      (m.teamA && TEAM_NAMES.includes(m.teamA)) || 
+      (m.teamB && TEAM_NAMES.includes(m.teamB))
+    );
+  }, [matches]);
+
   // Find selected district's medal stats & rank
   const districtProfile = useMemo(() => {
     if (!selectedDistrict) return null;
@@ -90,13 +99,74 @@ export default function DistrictSchedule({
     const medalStats = standings[rankIndex] || { team: selectedDistrict, gold: 0, silver: 0, bronze: 0 };
     
     // Filter matches for this district
-    const districtMatches = matches.filter(m => {
+    let districtMatches = matches.filter(m => {
       if (m.sport === "track") {
         return m.participants?.includes(selectedDistrict);
       } else {
         return m.teamA === selectedDistrict || m.teamB === selectedDistrict;
       }
     });
+
+    // If Petanque draw is not held yet, inject virtual Petanque matches for this district
+    if (!isPetanqueDrawHeld) {
+      districtMatches = [
+        ...districtMatches,
+        {
+          id: "petanque_virtual_men",
+          sport: "petanque",
+          category: "ชายคู่ (เปตอง)",
+          gender: "ชาย",
+          round: "กำหนดการแข่งขัน (รอจับฉลากแบ่งสาย)",
+          group: "",
+          date: "6 ก.ค. 69",
+          time: "09.00 น.",
+          court: "สนามเปตอง",
+          status: "pending",
+          teamA: selectedDistrict,
+          teamB: "รอผลจับฉลาก",
+          scoreA: null,
+          scoreB: null,
+          winner: "",
+          order: 99
+        },
+        {
+          id: "petanque_virtual_women",
+          sport: "petanque",
+          category: "หญิงคู่ (เปตอง)",
+          gender: "หญิง",
+          round: "กำหนดการแข่งขัน (รอจับฉลากแบ่งสาย)",
+          group: "",
+          date: "7 ก.ค. 69",
+          time: "09.00 น.",
+          court: "สนามเปตอง",
+          status: "pending",
+          teamA: selectedDistrict,
+          teamB: "รอผลจับฉลาก",
+          scoreA: null,
+          scoreB: null,
+          winner: "",
+          order: 99
+        },
+        {
+          id: "petanque_virtual_mixed",
+          sport: "petanque",
+          category: "ทีมผสม (เปตอง)",
+          gender: "ผสม",
+          round: "กำหนดการแข่งขัน (รอจับฉลากแบ่งสาย)",
+          group: "",
+          date: "8 ก.ค. 69",
+          time: "09.00 น.",
+          court: "สนามเปตอง",
+          status: "pending",
+          teamA: selectedDistrict,
+          teamB: "รอผลจับฉลาก",
+          scoreA: null,
+          scoreB: null,
+          winner: "",
+          order: 99
+        }
+      ];
+    }
 
     const total = districtMatches.length;
     const completed = districtMatches.filter(m => m.status === "completed").length;
@@ -112,7 +182,7 @@ export default function DistrictSchedule({
       pending,
       matches: districtMatches
     };
-  }, [selectedDistrict, matches, standings]);
+  }, [selectedDistrict, matches, standings, isPetanqueDrawHeld]);
 
   // Filtered district matches based on pills + search
   const filteredMatches = useMemo(() => {
@@ -509,7 +579,16 @@ export default function DistrictSchedule({
                           <div className="p-4 space-y-4 flex-grow">
                             
                             {/* Dual Team Scoreboard (Football, Volleyball, Petanque) */}
-                            {!isTrack ? (
+                            {match.id.startsWith("petanque_virtual") ? (
+                              <div className="py-2 text-center space-y-2">
+                                <div className="text-sm font-black text-amber-400">
+                                  🥎 {match.category}
+                                </div>
+                                <div className="text-xs text-slate-400 font-semibold bg-slate-900 border border-slate-800/80 py-1.5 px-3 inline-block rounded-none leading-relaxed">
+                                  {match.round}
+                                </div>
+                              </div>
+                            ) : !isTrack ? (
                               <div className="grid grid-cols-7 items-center gap-2">
                                 {/* Team A */}
                                 <div className="col-span-3 text-center space-y-1">
@@ -753,7 +832,11 @@ export default function DistrictSchedule({
                           <div className="text-gray-600 font-mono text-[9px]">{m.round} {m.group ? `(${m.group})` : ""}</div>
                         </td>
 
-                        {m.sport === "track" ? (
+                        {m.id.startsWith("petanque_virtual") ? (
+                          <td colSpan={3} className="p-1.5 border-r border-black text-center font-bold text-amber-700 bg-amber-50">
+                            📢 รอผลการจับฉลากแบ่งสายประเภท {m.category} อย่างเป็นทางการ
+                          </td>
+                        ) : m.sport === "track" ? (
                           <td colSpan={3} className="p-1.5 border-r border-black">
                             {m.participants && m.participants.length > 0 ? (
                               <div className="grid grid-cols-1 gap-1">

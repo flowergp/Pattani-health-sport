@@ -154,7 +154,15 @@ export default function App() {
     const saved = localStorage.getItem("pattani_matches");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved) as Match[];
+        if (Array.isArray(parsed)) {
+          // Clean up corrupted IDs and deduplicate
+          const uniqueMap = new Map<string, Match>();
+          parsed
+            .filter((m) => m && m.id && !m.id.startsWith("petanque_ทั_") && !m.id.startsWith("petanque_ที_"))
+            .forEach((m) => uniqueMap.set(m.id, m));
+          return Array.from(uniqueMap.values());
+        }
       } catch (e) {
         // ignore
       }
@@ -377,8 +385,9 @@ export default function App() {
           let needsFirestoreSync = false;
           const pendingUpdates: { id: string; data: Match }[] = [];
 
-          // Filter out "ธัญรักษ์" / "ธัญญารักษ์" matches and any football matches for 3rd place (ฟุตบอล ไม่มีชิงที่ 3)
+          // Filter out "ธัญรักษ์" / "ธัญญารักษ์" matches, football matches for 3rd place, and any corrupted petanque IDs from previous versions
           const cleanedMatchesList = matchesList
+            .filter(m => m.id && !m.id.startsWith("petanque_ทั_") && !m.id.startsWith("petanque_ที_"))
             .filter(m => !isThanyarak(m.teamA) && !isThanyarak(m.teamB))
             .filter(m => !(m.sport === "football" && m.round === "ชิงที่ 3"))
             .map(m => {
@@ -415,8 +424,14 @@ export default function App() {
               return m;
             });
 
-          // Automatically ensure football matches have both third-place and final matches - DISABLED (Football has no 3rd place match)
-          let finalMatchesList = [...cleanedMatchesList];
+          // Deduplicate matches list by unique ID to be absolutely sure there are no duplicates in the application state
+          const uniqueMatchesMap = new Map<string, Match>();
+          cleanedMatchesList.forEach((m) => {
+            if (m.id) {
+              uniqueMatchesMap.set(m.id, m);
+            }
+          });
+          let finalMatchesList = Array.from(uniqueMatchesMap.values());
 
           // Write updates to Firestore if logged in
           if (needsFirestoreSync && !isLocalFallback && isLoggedIn) {
