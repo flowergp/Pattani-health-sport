@@ -622,25 +622,6 @@ export const getInitialMatches = (): Match[] => {
     order: currentOrder++
   });
 
-  // Women's 3rd Place Match
-  matches.push({
-    id: "football_women_25",
-    sport: "football",
-    category: "ฟุตบอลหญิง",
-    gender: "หญิง",
-    group: "",
-    round: "ชิงที่ 3",
-    court: "สนามที่ 1",
-    time: "14.30 น.",
-    date: "10 ก.ค. 69",
-    status: "pending",
-    teamA: "ผู้แพ้คู่ที่ 23 หญิง",
-    teamB: "ผู้แพ้คู่ที่ 24 หญิง",
-    scoreA: null,
-    scoreB: null,
-    winner: null,
-    order: currentOrder++
-  });
 
   // Women's Final
   matches.push({
@@ -750,25 +731,6 @@ export const getInitialMatches = (): Match[] => {
     order: currentOrder++
   });
 
-  // Men's 3rd Place Match
-  matches.push({
-    id: "football_men_25",
-    sport: "football",
-    category: "ฟุตบอลชาย",
-    gender: "ชาย",
-    group: "",
-    round: "ชิงที่ 3",
-    court: "สนามที่ 1",
-    time: "14.30 น.",
-    date: "10 ก.ค. 69",
-    status: "pending",
-    teamA: "ผู้แพ้คู่ที่ 23 ชาย",
-    teamB: "ผู้แพ้คู่ที่ 24 ชาย",
-    scoreA: null,
-    scoreB: null,
-    winner: null,
-    order: currentOrder++
-  });
 
   // Men's Final
   matches.push({

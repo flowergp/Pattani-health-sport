@@ -377,9 +377,10 @@ export default function App() {
           let needsFirestoreSync = false;
           const pendingUpdates: { id: string; data: Match }[] = [];
 
-          // Filter out "ธัญรักษ์" / "ธัญญารักษ์" matches and clean up ranks/participants client-side and server-side
+          // Filter out "ธัญรักษ์" / "ธัญญารักษ์" matches and any football matches for 3rd place (ฟุตบอล ไม่มีชิงที่ 3)
           const cleanedMatchesList = matchesList
             .filter(m => !isThanyarak(m.teamA) && !isThanyarak(m.teamB))
+            .filter(m => !(m.sport === "football" && m.round === "ชิงที่ 3"))
             .map(m => {
               let updated = false;
               let participants = m.participants;
@@ -404,56 +405,8 @@ export default function App() {
               return m;
             });
 
-          // Automatically ensure football matches have both third-place and final matches
+          // Automatically ensure football matches have both third-place and final matches - DISABLED (Football has no 3rd place match)
           let finalMatchesList = [...cleanedMatchesList];
-
-          const checkAndMigrateFootball = (genderSuffix: "women" | "men", genderThai: "หญิง" | "ชาย") => {
-            const id25 = `football_${genderSuffix}_25`;
-            const id26 = `football_${genderSuffix}_26`;
-            
-            const match25 = finalMatchesList.find(m => m.id === id25);
-            const match26 = finalMatchesList.find(m => m.id === id26);
-
-            if (match25 && match25.round === "รอบชิงชนะเลิศ" && !match26) {
-              needsFirestoreSync = true;
-              
-              const updated25: Match = {
-                ...match25,
-                round: "ชิงที่ 3",
-                time: "14.30 น.",
-                teamA: `ผู้แพ้คู่ที่ 23 ${genderThai}`,
-                teamB: `ผู้แพ้คู่ที่ 24 ${genderThai}`,
-              };
-
-              const new26: Match = {
-                id: id26,
-                sport: "football",
-                category: `ฟุตบอล${genderThai}`,
-                gender: genderThai,
-                group: "",
-                round: "รอบชิงชนะเลิศ",
-                court: "สนามที่ 1",
-                time: "15.30 น.",
-                date: "10 ก.ค. 69",
-                status: "pending",
-                teamA: `ผู้ชนะคู่ที่ 23 ${genderThai}`,
-                teamB: `ผู้ชนะคู่ที่ 24 ${genderThai}`,
-                scoreA: null,
-                scoreB: null,
-                winner: null,
-                order: match25.order + 1
-              };
-
-              finalMatchesList = finalMatchesList.map(m => m.id === id25 ? updated25 : m);
-              finalMatchesList.push(new26);
-
-              pendingUpdates.push({ id: id25, data: updated25 });
-              pendingUpdates.push({ id: id26, data: new26 });
-            }
-          };
-
-          checkAndMigrateFootball("women", "หญิง");
-          checkAndMigrateFootball("men", "ชาย");
 
           // Write updates to Firestore if logged in
           if (needsFirestoreSync && !isLocalFallback && isLoggedIn) {

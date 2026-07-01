@@ -197,7 +197,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   } else if (sport === "football") {
     qfSuffixes = ["19", "20", "21", "22"];
     sfSuffixes = ["23", "24"];
-    thirdSuffix = "25";
+    thirdSuffix = "";
     finalSuffix = "26";
   }
 
@@ -414,14 +414,10 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
             if (matchNum === 22) await propagateWinner(prefix + "_24", m.winner, "teamB");
 
             if (matchNum === 23) {
-              const loser = m.winner === m.teamA ? m.teamB : m.teamA;
               await propagateWinner(prefix + "_26", m.winner, "teamA"); // Final TeamA
-              await propagateWinner(prefix + "_25", loser!, "teamA"); // 3rd Place TeamA
             }
             if (matchNum === 24) {
-              const loser = m.winner === m.teamA ? m.teamB : m.teamA;
               await propagateWinner(prefix + "_26", m.winner, "teamB"); // Final TeamB
-              await propagateWinner(prefix + "_25", loser!, "teamB"); // 3rd Place TeamB
             }
           }
         }

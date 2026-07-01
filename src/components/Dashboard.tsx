@@ -87,7 +87,7 @@ export default function Dashboard({ matches, onResetData, isResetting, selectedD
             </div>
             <div className="flex items-center gap-2 text-xs font-mono font-bold bg-[#1E293B] text-slate-200 px-3 py-1.5 border border-slate-700">
               <MapPin size={14} className="text-[#FF5722]" />
-              <span>สนามกีฬาปัตตานี</span>
+              <span>สนามกีฬาเทศบาลเมืองบานา จังหวัดปัตตานี</span>
             </div>
           </div>
         </div>
