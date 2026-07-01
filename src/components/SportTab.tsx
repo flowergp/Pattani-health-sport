@@ -89,7 +89,6 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
     setIsExporting(true);
 
     const originalGetComputedStyle = window.getComputedStyle;
-    const originalFetch = window.fetch;
 
     // Helper to convert oklch color string to rgb/hex to bypass html2canvas parser error
     const convertOklchColor = (colorStr: string): string => {
@@ -137,28 +136,6 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
           return val;
         }
       });
-    };
-
-    // Temporarily intercept fetch requests to sanitize external stylesheets fetched by html2canvas
-    window.fetch = async function(input, init) {
-      const response = await originalFetch(input, init);
-      const url = typeof input === "string" ? input : (input instanceof Request ? input.url : "");
-      const isCss = url.endsWith(".css") || url.includes("css") || response.headers.get("content-type")?.includes("css");
-      
-      if (isCss) {
-        try {
-          const text = await response.text();
-          const sanitized = convertOklchColor(text);
-          return new Response(sanitized, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers
-          });
-        } catch (e) {
-          console.error("Failed to sanitize fetched CSS:", e);
-        }
-      }
-      return response;
     };
 
     // Gather and compile all original stylesheet contents
@@ -221,7 +198,6 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
     // Cleanup helper to restore original environment
     const cleanupStyles = () => {
       window.getComputedStyle = originalGetComputedStyle;
-      window.fetch = originalFetch;
       if (tempStyleEl.parentNode) {
         tempStyleEl.parentNode.removeChild(tempStyleEl);
       }
