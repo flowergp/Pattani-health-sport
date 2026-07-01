@@ -397,7 +397,7 @@ export default function App() {
                 }
               }
               let date = m.date;
-              if (m.sport === "petanque") {
+              if (m.sport === "petanque" || m.sport === "football") {
                 if (m.gender === "ชาย" && date === "6 ก.ค. 69") {
                   date = "7 ก.ค. 69";
                   updated = true;
