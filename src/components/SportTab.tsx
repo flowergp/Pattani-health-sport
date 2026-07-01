@@ -78,6 +78,19 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   const [teamSearch, setTeamSearch] = useState<string>("");
   const [activeView, setActiveView] = useState<"all" | "standings" | "bracket" | "matches">("all");
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+
+  const handleExportPDF = () => {
+    setShowPreview(false);
+    setIsExporting(true);
+    setTimeout(() => {
+      window.print();
+    }, 500);
+    setTimeout(() => {
+      setIsExporting(false);
+    }, 4000);
+  };
 
   // For adding a custom match
   const [showAddForm, setShowAddForm] = useState(false);
@@ -797,6 +810,17 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
   return (
     <div className="space-y-8" id="sport-tab-section">
+      {/* Visual PDF export response banner */}
+      {isExporting && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#1E293B] border-2 border-emerald-500 text-white px-6 py-4 shadow-2xl flex items-center gap-4 animate-bounce print:hidden max-w-md w-full mx-auto">
+          <div className="shrink-0 w-6 h-6 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+          <div className="flex-grow space-y-0.5">
+            <h4 className="text-sm font-black text-emerald-400 uppercase tracking-wide">📥 กำลังดาวน์โหลดและจัดเตรียม PDF</h4>
+            <p className="text-[10px] text-slate-400 font-semibold leading-normal">ระบบกำลังประมวลผลตารางการแข่งขันและเปิดเมนูสั่งพิมพ์</p>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-8 print:hidden">
         {/* 1. Control Filters Card */}
         <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white">
@@ -809,7 +833,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => setShowPreview(true)}
                 className="py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 rounded-none"
               >
                 <Printer size={14} className="text-[#FF5722]" />
@@ -1952,6 +1976,320 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
       })()}
 
       </div>
+
+      {/* Beautiful Interactive Print Preview Modal overlay */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-slate-950/90 z-[9999] flex flex-col justify-between overflow-y-auto p-4 md:p-8 backdrop-blur-md print:hidden text-black">
+          {/* Sticky Top Bar for controls */}
+          <div className="bg-slate-900 border border-slate-800 p-4 max-w-4xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl rounded-none shrink-0 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-[#FF5722]/10 border border-[#FF5722]/30 text-[#FF5722]">
+                <Printer size={20} className="animate-pulse" />
+              </div>
+              <div className="text-left text-white">
+                <h3 className="text-sm font-black uppercase tracking-wider">🔍 หน้าต่างตัวอย่างก่อนสั่งพิมพ์ / ดาวน์โหลด PDF</h3>
+                <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">กรุณาตรวจสอบรายละเอียดความถูกต้องของตาราง หากพร้อมแล้วสามารถกดปุ่มสั่งพิมพ์ด้านขวาได้ทันที</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                className="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer rounded-none"
+              >
+                ย้อนกลับ
+              </button>
+              <button
+                type="button"
+                onClick={handleExportPDF}
+                className="py-1.5 px-4 bg-[#00FF66] text-slate-950 hover:bg-[#00E55C] font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/10 transition-all cursor-pointer rounded-none flex items-center gap-1"
+              >
+                <Printer size={13} className="stroke-[3]" />
+                พิมพ์ตอนนี้ / ดาวน์โหลด PDF
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive Simulation Content of the A4 paper page on the screen */}
+          <div className="flex-grow max-w-4xl w-full mx-auto bg-slate-950/40 border border-slate-850 p-2 md:p-6 shadow-2xl mb-4 overflow-y-auto">
+            <div className="bg-white text-black p-8 md:p-12 shadow-inner min-h-[1123px] font-sans border border-gray-300 max-w-[210mm] mx-auto text-left relative">
+              {/* Decorative print border simulation */}
+              <div className="absolute top-2 right-2 text-[8px] font-mono text-gray-400 select-none font-bold">A4 Paper Simulation Preview</div>
+              
+              {/* Header Block */}
+              <div className="text-center border-b-2 border-black pb-4 mb-6">
+                <div className="flex justify-center mb-1 text-4xl">🏆</div>
+                <h1 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-black leading-tight">
+                  ใบรายงานผลและตารางการแข่งขันอย่างเป็นทางการ (Official Match Report)
+                </h1>
+                <h2 className="text-xs font-bold text-gray-800 mt-1 font-sans">
+                  การแข่งขันกีฬาบุคลากรสาธารณสุข จังหวัดปัตตานี ประจำปี 2569 "ปัตตานีเกมส์"
+                </h2>
+                <p className="text-[10px] text-gray-500 mt-0.5 font-semibold font-mono">
+                  ณ สนามกีฬาเทศบาลเมืองบานา จังหวัดปัตตานี
+                </p>
+                <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center text-[10px] font-semibold px-3 text-gray-700 bg-gray-100 py-2 border border-gray-300 gap-1.5">
+                  <span>ชนิดกีฬา: <strong className="text-black font-extrabold">{
+                    sport === "football" ? "ฟุตบอล (Football)" :
+                    sport === "volleyball" ? "วอลเลย์บอล (Volleyball)" :
+                    sport === "petanque" ? "เปตอง (Petanque)" :
+                    sport === "track" ? "กรีฑา (Track & Field)" : sport
+                  }</strong></span>
+                  {selectedCategory && (
+                    <span>ประเภท: <strong className="text-black font-extrabold">{selectedCategory}</strong></span>
+                  )}
+                  {selectedRound !== "all" && (
+                    <span>รอบ: <strong className="text-black font-extrabold">{selectedRound}</strong></span>
+                  )}
+                  <span>พิมพ์เมื่อ: {new Date().toLocaleDateString('th-TH', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })} น.</span>
+                </div>
+              </div>
+
+              {/* Content sections based on sport type */}
+              <div className="space-y-6 text-black">
+                {petanqueDrawNotHeld ? (
+                  <div className="border border-black p-6 bg-gray-50 rounded-none text-center space-y-4">
+                    <h3 className="text-sm font-black text-black border-b border-black pb-2">
+                      📌 กำหนดการแข่งขันเปตอง (กรณีรอผลการจับฉลาก)
+                    </h3>
+                    <div className="text-[10px] font-bold text-gray-850 space-y-2.5 leading-relaxed inline-block text-left mx-auto py-2">
+                      <p>ประเภทชายคู่ วันที่ 6 กรกฎาคม 2569</p>
+                      <p>ประเภทหญิงคู่ วันที่ 7 กรกฎาคม 2569</p>
+                      <p>ประเภททีมผสม วันที่ 8 กรกฎาคม 2569</p>
+                      <p className="mt-4 text-black text-xs font-black text-center font-sans">เริ่มแข่งขัน 9.00น. เป็นต้นไป ณ สนามเปตอง</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Group Standings (if applicable) */}
+                    {sport !== "track" && selectedCategory !== "" && (
+                      <div>
+                        {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
+                          const catMatches = sportMatches.filter(m => m.category === cat);
+                          const catGroups = Array.from(new Set(catMatches.filter(m => m.round === "รอบแรก" && m.group).map(m => m.group))).sort();
+                          
+                          const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat).length > 0);
+                          if (!hasStandings) return null;
+
+                          return (
+                            <div key={cat} className="mb-4">
+                              <h3 className="text-[10px] font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans flex items-center gap-1">
+                                📊 ตารางคะแนนแบ่งกลุ่ม ({cat})
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {catGroups.map((grpName) => {
+                                  const standings = calculateGroupStandings(matches, sport, grpName, cat);
+                                  if (standings.length === 0) return null;
+
+                                  return (
+                                    <div key={grpName} className="border border-black p-1.5 bg-gray-50/50">
+                                      <div className="font-bold text-[9px] bg-black text-white px-1.5 py-0.5 inline-block mb-1.5 font-mono">
+                                        {grpName}
+                                      </div>
+                                      <table className="w-full text-left text-[8px] border-collapse text-black">
+                                        <thead>
+                                          <tr className="border-b border-black bg-gray-100 font-bold">
+                                            <th className="py-0.5 px-1 border-r border-gray-300">อันดับ/ทีม</th>
+                                            <th className="py-0.5 px-0.5 text-center border-r border-gray-300">แข่ง</th>
+                                            <th className="py-0.5 px-0.5 text-center border-r border-gray-300">ชนะ</th>
+                                            <th className="py-0.5 px-0.5 text-center border-r border-gray-300">แพ้</th>
+                                            <th className="py-0.5 px-0.5 text-center border-r border-gray-300">+/-</th>
+                                            <th className="py-0.5 px-1 text-center">คะแนน</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {standings.map((st, i) => (
+                                            <tr key={st.team} className="border-b border-gray-200">
+                                              <td className="py-0.5 px-1 border-r border-gray-300 font-bold">
+                                                {i + 1}. {st.team}
+                                              </td>
+                                              <td className="py-0.5 px-0.5 text-center border-r border-gray-300">{st.played}</td>
+                                              <td className="py-0.5 px-0.5 text-center border-r border-gray-300 text-emerald-700 font-bold">{st.won}</td>
+                                              <td className="py-0.5 px-0.5 text-center border-r border-gray-300 text-red-700">{st.lost}</td>
+                                              <td className="py-0.5 px-0.5 text-center border-r border-gray-300 font-bold">{st.scoreDiff > 0 ? `+${st.scoreDiff}` : st.scoreDiff}</td>
+                                              <td className="py-0.5 px-1 text-center font-bold bg-gray-100">{st.points}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Main Matches Schedule Table */}
+                    <div>
+                      <h3 className="text-[10px] font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+                        📅 โปรแกรมแข่งขันและผลการแข่งขันอย่างเป็นทางการ ({filteredMatches.length} รายการ)
+                      </h3>
+                      {filteredMatches.length === 0 ? (
+                        <p className="text-xs text-center text-gray-500 py-4 font-sans">ไม่มีรายการแข่งขันที่ตรงตามตัวกรองที่เลือก</p>
+                      ) : (
+                        <table className="w-full text-[9px] border-collapse border border-black text-black">
+                          <thead>
+                            <tr className="bg-gray-100 border-b border-black text-left">
+                              <th className="p-1 border-r border-black font-bold text-center w-[40px]">คู่ที่</th>
+                              <th className="p-1 border-r border-black font-bold w-[90px]">วัน/เวลาแข่งขัน</th>
+                              <th className="p-1 border-r border-black font-bold w-[75px]">สนาม</th>
+                              <th className="p-1 border-r border-black font-bold w-[110px]">ประเภท / รอบ</th>
+                              {sport === "track" ? (
+                                <th className="p-1 border-black font-bold">สรุปผลการแข่งขันกรีฑา</th>
+                              ) : (
+                                <>
+                                  <th className="p-1 border-r border-black font-bold text-right w-[150px]">ทีมฝั่ง A</th>
+                                  <th className="p-1 border-r border-black font-bold text-center w-[60px]">คะแนน</th>
+                                  <th className="p-1 border-r border-black font-bold w-[150px]">ทีมฝั่ง B</th>
+                                  <th className="p-1 border-black font-bold text-center w-[80px]">สถานะ/ผู้ชนะ</th>
+                                </>
+                              )}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredMatches.map((m) => {
+                              const matchNum = m.id.split("_").pop();
+                              const isCompleted = m.status === "completed";
+                              const isLive = m.status === "live";
+
+                              return (
+                                <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
+                                  <td className="p-1 border-r border-black font-bold text-center bg-gray-50 font-mono">{matchNum}</td>
+                                  <td className="p-1 border-r border-black font-mono font-medium text-[8px]">
+                                    <div>{m.date}</div>
+                                    <div className="font-bold">{m.time}</div>
+                                  </td>
+                                  <td className="p-1 border-r border-black text-[8px] font-semibold">{m.court}</td>
+                                  <td className="p-1 border-r border-black text-[8px]">
+                                    <div className="font-bold">{m.category}</div>
+                                    <div className="text-gray-600 font-mono leading-none">{m.round} {m.group ? `(${m.group})` : ""}</div>
+                                  </td>
+                                  {sport === "track" ? (
+                                    <td className="p-1 text-[8px]">
+                                      {m.participants && m.participants.length > 0 ? (
+                                        <div className="grid grid-cols-1 gap-0.5">
+                                          {m.participants.map((p, idx) => {
+                                            const rank = m.ranks?.[idx]?.rank;
+                                            const score = m.ranks?.[idx]?.score;
+                                            return (
+                                              <div key={idx} className="flex justify-between items-center text-[8px] border-b border-gray-100 pb-0.5">
+                                                <span>{idx + 1}. {p}</span>
+                                                <span className="font-mono text-gray-700">
+                                                  {score ? `เวลา: ${score}` : ""} {rank ? `[อันดับ: ${rank}]` : ""}
+                                                </span>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <span className="text-gray-400 italic">ยังไม่มีผู้ลงทะเบียน</span>
+                                      )}
+                                    </td>
+                                  ) : (
+                                    <>
+                                      <td className={`p-1 border-r border-black text-right font-bold text-[8px] ${m.winner === m.teamA ? "text-emerald-800" : ""}`}>
+                                        {m.winner === m.teamA && "👑 "}{m.teamA || "TBD"}
+                                      </td>
+                                      <td className="p-1 border-r border-black text-center font-mono font-black bg-gray-50 text-[10px]">
+                                        {m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}
+                                      </td>
+                                      <td className={`p-1 border-r border-black font-bold text-[8px] ${m.winner === m.teamB ? "text-emerald-800" : ""}`}>
+                                        {m.teamB || "TBD"}{m.winner === m.teamB && " 👑"}
+                                      </td>
+                                      <td className="p-1 text-center text-[8px]">
+                                        {isLive ? (
+                                          <span className="font-bold text-red-600 animate-pulse">กำลังแข่ง 🔴</span>
+                                        ) : isCompleted ? (
+                                          <span className="text-emerald-700 font-bold">เสร็จสิ้น ({m.winner || "-"})</span>
+                                        ) : (
+                                          <span className="text-gray-400">ยังไม่แข่งขัน</span>
+                                        )}
+                                      </td>
+                                    </>
+                                  )}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+
+                    {/* Bracket / Finals Report for Cup structure if category is selected and not track */}
+                    {sport !== "track" && selectedCategory !== "" && (
+                      <div className="border border-black p-3 bg-gray-50/20">
+                        <h3 className="text-[10px] font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+                          🏆 ผลการแข่งขันรอบน็อคเอาท์ (Knockout Playoff Matches)
+                        </h3>
+                        {(() => {
+                          const koMatches = sportMatches.filter(m => 
+                            m.category === selectedCategory && 
+                            (m.round === "รอบ 8 ทีม" || m.round === "รอบรองชนะเลิศ" || m.round === "รอบชิงชนะเลิศ" || m.round === "ชิงที่ 3")
+                          ).sort((a,b) => (a.order || 0) - (b.order || 0));
+
+                          if (koMatches.length === 0) {
+                            return <p className="text-[9px] text-gray-500 italic font-sans">ไม่มีบันทึกการแข่งขันรอบน็อคเอาท์ของประเภทนี้</p>;
+                          }
+
+                          return (
+                            <table className="w-full text-[8px] border-collapse border border-black text-black">
+                              <thead>
+                                <tr className="bg-gray-100 border-b border-black text-left">
+                                  <th className="p-1 border-r border-black font-bold w-[120px]">รอบ</th>
+                                  <th className="p-1 border-r border-black font-bold text-right">ทีมฝั่ง A</th>
+                                  <th className="p-1 border-r border-black font-bold text-center w-[60px]">คะแนน</th>
+                                  <th className="p-1 border-r border-black font-bold text-left font-sans">ทีมฝั่ง B</th>
+                                  <th className="p-1 border-black font-bold text-center w-[120px]">ผู้ชนะเข้ารอบ</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {koMatches.map((m) => (
+                                  <tr key={m.id} className="border-b border-gray-300">
+                                    <td className="p-1 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
+                                    <td className={`p-1 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
+                                    <td className="p-1 border-r border-black text-center font-bold bg-gray-50 font-mono">{m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}</td>
+                                    <td className={`p-1 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>
+                                    <td className="p-1 text-center font-bold text-emerald-700">{m.winner ? `🏆 ${m.winner}` : "รอยืนยันผล"}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Footer Signature Block */}
+              <div className="pt-12 grid grid-cols-2 gap-8 text-[10px] text-black font-sans">
+                <div className="text-center">
+                  <p className="mb-10">ลงชื่อ ............................................................ ผู้บันทึก / เจ้าหน้าที่สถิติ</p>
+                  <p>( ............................................................ )</p>
+                  <p className="text-gray-500 mt-1">ฝ่ายเทคนิคกีฬาประจำชนิดกีฬา</p>
+                </div>
+                <div className="text-center">
+                  <p className="mb-10">ลงชื่อ ............................................................ ผู้รับรอง / คณะกรรมการกลาง</p>
+                  <p>( ............................................................ )</p>
+                  <p className="text-gray-500 mt-1">ประธานอนุกรรมการฝ่ายผู้ตัดสินและเทคนิคกีฬา</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 4. Beautiful Printable Official PDF Section (Hidden on screen, shown ONLY during Print/PDF export) */}
       <div className="hidden print:block bg-white text-black p-6 min-h-screen font-sans">

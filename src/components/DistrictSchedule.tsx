@@ -76,6 +76,19 @@ export default function DistrictSchedule({
   const [sportFilter, setSportFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+
+  const handleExportPDF = () => {
+    setShowPreview(false);
+    setIsExporting(true);
+    setTimeout(() => {
+      window.print();
+    }, 500);
+    setTimeout(() => {
+      setIsExporting(false);
+    }, 4000);
+  };
 
   // Get medals of all teams to compute selected district's rank
   const standings = useMemo(() => {
@@ -301,6 +314,17 @@ export default function DistrictSchedule({
 
   return (
     <div className="space-y-6" id="district-schedule-tab">
+      {/* Visual PDF export response banner */}
+      {isExporting && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#1E293B] border-2 border-emerald-500 text-white px-6 py-4 shadow-2xl flex items-center gap-4 animate-bounce print:hidden max-w-md w-full mx-auto">
+          <div className="shrink-0 w-6 h-6 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+          <div className="flex-grow space-y-0.5">
+            <h4 className="text-sm font-black text-emerald-400 uppercase tracking-wide">📥 กำลังดาวน์โหลดและจัดเตรียม PDF</h4>
+            <p className="text-[10px] text-slate-400 font-semibold leading-normal">ระบบกำลังประมวลผลตารางแข่งรายอำเภอของ {selectedDistrict} และเปิดเมนูสั่งพิมพ์</p>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6 print:hidden">
         {/* 1. District Selection Header Card */}
         <div className="bg-[#111827] border border-slate-800 p-6 rounded-none text-white space-y-4">
@@ -318,7 +342,7 @@ export default function DistrictSchedule({
             {selectedDistrict && (
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => setShowPreview(true)}
                 className="py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 rounded-none"
               >
                 <Printer size={14} className="text-[#FF5722]" />
@@ -750,6 +774,201 @@ export default function DistrictSchedule({
       )}
 
       </div>
+
+      {/* Beautiful Interactive Print Preview Modal overlay */}
+      {showPreview && selectedDistrict && (
+        <div className="fixed inset-0 bg-slate-950/90 z-[9999] flex flex-col justify-between overflow-y-auto p-4 md:p-8 backdrop-blur-md print:hidden">
+          {/* Sticky Top Bar for controls */}
+          <div className="bg-slate-900 border border-slate-800 p-4 max-w-4xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl rounded-none shrink-0 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-[#FF5722]/10 border border-[#FF5722]/30 text-[#FF5722]">
+                <Printer size={20} className="animate-pulse" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-sm font-black text-white uppercase tracking-wider">🔍 หน้าต่างตัวอย่างก่อนสั่งพิมพ์ / ดาวน์โหลด PDF</h3>
+                <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">กรุณาตรวจสอบรายละเอียดความถูกต้องของตาราง หากพร้อมแล้วสามารถกดปุ่มสั่งพิมพ์ด้านขวาได้ทันที</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                className="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer rounded-none"
+              >
+                ย้อนกลับ
+              </button>
+              <button
+                type="button"
+                onClick={handleExportPDF}
+                className="py-1.5 px-4 bg-[#00FF66] text-slate-950 hover:bg-[#00E55C] font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/10 transition-all cursor-pointer rounded-none flex items-center gap-1"
+              >
+                <Printer size={13} className="stroke-[3]" />
+                พิมพ์ตอนนี้ / ดาวน์โหลด PDF
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive Simulation Content of the A4 paper page on the screen */}
+          <div className="flex-grow max-w-4xl w-full mx-auto bg-slate-950/40 border border-slate-850 p-2 md:p-6 shadow-2xl mb-4 overflow-y-auto">
+            <div className="bg-white text-black p-8 md:p-12 shadow-inner min-h-[1123px] font-sans border border-gray-300 max-w-[210mm] mx-auto text-left relative">
+              {/* Decorative print border simulation */}
+              <div className="absolute top-2 right-2 text-[8px] font-mono text-gray-400 select-none">A4 Paper Simulation Preview</div>
+              
+              {/* Header Block */}
+              <div className="text-center border-b-2 border-black pb-4 mb-6">
+                <div className="flex justify-center mb-1 text-4xl">🏆</div>
+                <h1 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-black leading-tight">
+                  รายงานโปรแกรมและผลการแข่งขันรายอำเภออย่างเป็นทางการ (Official District Report)
+                </h1>
+                <h2 className="text-xs font-bold text-gray-800 mt-1 font-sans">
+                  การแข่งขันกีฬาบุคลากรสาธารณสุข จังหวัดปัตตานี ประจำปี 2569 "ปัตตานีเกมส์"
+                </h2>
+                <p className="text-[10px] text-gray-500 mt-0.5 font-semibold font-mono">
+                  ณ สนามกีฬาเทศบาลเมืองบานา จังหวัดปัตตานี
+                </p>
+                <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center text-[10px] font-semibold px-3 text-gray-700 bg-gray-100 py-2 border border-gray-300 gap-1.5">
+                  <span>สังกัด/คป.สอ.: <strong className="text-black font-extrabold">{selectedDistrict}</strong></span>
+                  {sportFilter !== "all" && (
+                    <span>ชนิดกีฬา: <strong className="text-black font-extrabold">{
+                      sportFilter === "football" ? "ฟุตบอล" :
+                      sportFilter === "volleyball" ? "วอลเลย์บอล" :
+                      sportFilter === "petanque" ? "เปตอง" :
+                      sportFilter === "track" ? "กรีฑา" : sportFilter
+                    }</strong></span>
+                  )}
+                  <span>พิมพ์เมื่อ: {new Date().toLocaleDateString('th-TH', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })} น.</span>
+                </div>
+              </div>
+
+              {/* Chronological Match Schedule Table */}
+              <div>
+                <h3 className="text-[10px] font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+                  📅 รายละเอียดโปรแกรมและผลการแข่งขัน ({filteredMatches.length} รายการ)
+                </h3>
+                {filteredMatches.length === 0 ? (
+                  <p className="text-xs text-center text-gray-500 py-4 font-sans">ไม่มีรายการแข่งขันที่ตรงตามตัวกรองที่เลือก</p>
+                ) : (
+                  <table className="w-full text-[9px] border-collapse border border-black text-black">
+                    <thead>
+                      <tr className="bg-gray-100 border-b border-black text-left font-sans">
+                        <th className="p-1 border-r border-black font-bold text-center w-[40px]">คู่ที่</th>
+                        <th className="p-1 border-r border-black font-bold w-[95px]">วัน/เวลาแข่งขัน</th>
+                        <th className="p-1 border-r border-black font-bold w-[65px]">กีฬา</th>
+                        <th className="p-1 border-r border-black font-bold w-[110px]">ประเภท / รอบ</th>
+                        <th className="p-1 border-r border-black font-bold text-right w-[140px]">ทีมฝั่ง A</th>
+                        <th className="p-1 border-r border-black font-bold text-center w-[60px]">คะแนน</th>
+                        <th className="p-1 border-r border-black font-bold w-[140px]">ทีมฝั่ง B</th>
+                        <th className="p-1 border-black font-bold text-center w-[90px]">ผลการแข่งขัน</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredMatches.map((m) => {
+                        const matchNum = m.id.split("_").pop();
+                        const isCompleted = m.status === "completed";
+                        const isLive = m.status === "live";
+
+                        return (
+                          <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
+                            <td className="p-1 border-r border-black font-bold text-center bg-gray-50 font-mono">{matchNum}</td>
+                            <td className="p-1 border-r border-black font-mono font-medium text-[8px]">
+                              <div>{m.date}</div>
+                              <div className="font-bold">{m.time}</div>
+                            </td>
+                            <td className="p-1 border-r border-black font-bold text-center uppercase font-sans text-[8px]">
+                              {m.sport === "football" ? "⚽ ฟุตบอล" :
+                               m.sport === "volleyball" ? "🏐 วอลเลย์" :
+                               m.sport === "petanque" ? "🥎 เปตอง" : "🏃 กรีฑา"}
+                            </td>
+                            <td className="p-1 border-r border-black text-[8px]">
+                              <div className="font-bold leading-tight">{m.category}</div>
+                              <div className="text-gray-600 font-mono leading-none text-[8px]">{m.round} {m.group ? `(${m.group})` : ""}</div>
+                            </td>
+
+                            {m.id.startsWith("petanque_virtual") ? (
+                              <td colSpan={3} className="p-1 border-r border-black text-center font-bold text-amber-700 bg-amber-50 text-[8px]">
+                                📢 รอผลการจับฉลากแบ่งสายประเภท {m.category} อย่างเป็นทางการ
+                              </td>
+                            ) : m.sport === "track" ? (
+                              <td colSpan={3} className="p-1 border-r border-black text-[8px]">
+                                {m.participants && m.participants.length > 0 ? (
+                                  <div className="grid grid-cols-1 gap-0.5">
+                                    {m.participants.map((p, idx) => {
+                                      const rank = m.ranks?.[idx]?.rank;
+                                      const score = m.ranks?.[idx]?.score;
+                                      return (
+                                        <div key={idx} className="flex justify-between items-center text-[8px] border-b border-gray-100 pb-0.5">
+                                          <span className={p === selectedDistrict ? "font-bold underline text-black" : ""}>
+                                            {idx + 1}. {p} {p === selectedDistrict ? "⭐" : ""}
+                                          </span>
+                                          <span className="font-mono text-gray-700">
+                                            {score ? `เวลา: ${score}` : ""} {rank ? `[อันดับ: ${rank}]` : ""}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 italic font-sans">ยังไม่มีผู้ลงทะเบียน</span>
+                                )}
+                              </td>
+                            ) : (
+                              <>
+                                <td className={`p-1 border-r border-black text-right font-bold text-[8px] ${m.winner === m.teamA ? "text-emerald-800" : ""} ${m.teamA === selectedDistrict ? "underline decoration-wavy" : ""}`}>
+                                  {m.winner === m.teamA && "👑 "}{m.teamA || "TBD"}
+                                </td>
+                                <td className="p-1 border-r border-black text-center font-mono font-black bg-gray-50 text-[10px]">
+                                  {m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}
+                                </td>
+                                <td className={`p-1 border-r border-black font-bold text-[8px] ${m.winner === m.teamB ? "text-emerald-800" : ""} ${m.teamB === selectedDistrict ? "underline decoration-wavy" : ""}`}>
+                                  {m.teamB || "TBD"}{m.winner === m.teamB && " 👑"}
+                                </td>
+                              </>
+                            )}
+
+                            <td className="p-1 text-center text-[8px]">
+                              {isLive ? (
+                                <span className="font-bold text-red-600 animate-pulse">กำลังแข่ง 🔴</span>
+                              ) : isCompleted ? (
+                                <span className="text-emerald-700 font-bold font-sans">
+                                  {m.winner === selectedDistrict ? "✓ ชนะ 🎉" : m.winner ? `แพ้ (ผู้ชนะ: ${m.winner})` : "เสร็จสิ้น"}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 font-sans">ยังไม่แข่งขัน</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Footer Signature Block */}
+              <div className="pt-12 grid grid-cols-2 gap-8 text-[10px] text-black font-sans">
+                <div className="text-center">
+                  <p className="mb-10">ลงชื่อ ............................................................ ผู้จัดการทีม / ตัวแทน</p>
+                  <p>( {selectedDistrict} )</p>
+                  <p className="text-gray-500 mt-1">ผู้ประสานงานตารางทีม คป.สอ.</p>
+                </div>
+                <div className="text-center">
+                  <p className="mb-10">ลงชื่อ ............................................................ พยาน / เจ้าหน้าที่สนาม</p>
+                  <p>( ............................................................ )</p>
+                  <p className="text-gray-500 mt-1">เจ้าหน้าที่บันทึกผลการแข่งขันกลาง</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Beautiful Printable Official PDF Section for District (Hidden on screen, shown ONLY during Print/PDF export) */}
       {selectedDistrict && (
