@@ -81,8 +81,57 @@ export default function DistrictSchedule({
   const [showPreview, setShowPreview] = useState<boolean>(false);
 
   const handleExportPDF = () => {
-    setShowPreview(false);
     setIsExporting(true);
+
+    const originalGetComputedStyle = window.getComputedStyle;
+
+    // Helper to convert oklch color string to rgb/hex to bypass html2canvas parser error
+    const convertOklchColor = (colorStr: string): string => {
+      if (!colorStr || typeof colorStr !== "string") return colorStr;
+      if (!colorStr.includes("oklch")) return colorStr;
+
+      return colorStr.replace(/oklch\([^)]+\)/g, (match) => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = 1;
+          canvas.height = 1;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.fillStyle = match;
+            const converted = ctx.fillStyle;
+            if (converted && converted !== "#000000" || match.includes("0 0 0")) {
+              return converted;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to convert color:", match, e);
+        }
+        return "rgb(120, 120, 120)";
+      });
+    };
+
+    // Temporarily proxy getComputedStyle during export
+    window.getComputedStyle = function(element, pseudoElt) {
+      const style = originalGetComputedStyle(element, pseudoElt);
+      return new Proxy(style, {
+        get(target, prop) {
+          const val = Reflect.get(target, prop);
+          if (typeof val === "function") {
+            if (prop === "getPropertyValue") {
+              return function(propertyName: string) {
+                const originalVal = target.getPropertyValue(propertyName);
+                return convertOklchColor(originalVal);
+              };
+            }
+            return val.bind(target);
+          }
+          if (typeof val === "string") {
+            return convertOklchColor(val);
+          }
+          return val;
+        }
+      });
+    };
 
     const loadHtml2Pdf = (): Promise<any> => {
       return new Promise((resolve, reject) => {
@@ -114,19 +163,27 @@ export default function DistrictSchedule({
           };
           html2pdf().set(opt).from(element).save()
             .then(() => {
+              window.getComputedStyle = originalGetComputedStyle;
               setIsExporting(false);
+              setShowPreview(false);
             })
             .catch((err: any) => {
               console.error("PDF generation failed:", err);
+              window.getComputedStyle = originalGetComputedStyle;
               setIsExporting(false);
+              setShowPreview(false);
             });
         } else {
+          window.getComputedStyle = originalGetComputedStyle;
           setIsExporting(false);
+          setShowPreview(false);
         }
       })
       .catch((err) => {
         console.error("Failed to load html2pdf.js:", err);
+        window.getComputedStyle = originalGetComputedStyle;
         setIsExporting(false);
+        setShowPreview(false);
         // Fallback
         window.print();
       });
