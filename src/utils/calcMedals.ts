@@ -35,7 +35,7 @@ export const calculateMedals = (matches: Match[]): Medal[] => {
 
     // For Petanque, Volleyball, Football:
     // Final matches are:
-    // - Petanque: 'petanque_ทั่วไป ช_24' etc (ends with _24)
+    // - Petanque: 'petanque_ทั่วไป ช_32' etc (ends with _32)
     // - Volleyball: 'volley_men_26', 'volley_women_26'
     // - Football: 'football_men_22', 'football_women_22'
     const finals = sportMatches.filter((m) => m.round === "รอบชิงชนะเลิศ");

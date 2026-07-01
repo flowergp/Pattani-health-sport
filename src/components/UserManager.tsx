@@ -9,6 +9,8 @@ interface UserManagerProps {
   onUpdateUser: (id: string, updates: Partial<AdminUser>) => Promise<void>;
   isLoggedIn: boolean;
   onSeedDistrictUsers?: () => Promise<void>;
+  onResetData?: () => Promise<void>;
+  isResetting?: boolean;
 }
 
 export default function UserManager({
@@ -17,7 +19,9 @@ export default function UserManager({
   onDeleteUser,
   onUpdateUser,
   isLoggedIn,
-  onSeedDistrictUsers
+  onSeedDistrictUsers,
+  onResetData,
+  isResetting
 }: UserManagerProps) {
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -408,6 +412,38 @@ export default function UserManager({
             </table>
           </div>
         </div>
+
+        {/* System Control Panel */}
+        {onResetData && (
+          <div className="border border-red-900 bg-[#1A0E1A]/40 p-6 mt-8 space-y-4 rounded-none">
+            <h3 className="text-sm font-bold text-red-400 font-mono flex items-center gap-2">
+              ⚠️ แผงควบคุมระบบ (System Control Panel)
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              ฟังก์ชันสำหรับล้างผลการแข่งขันและรีเซ็ตตารางการแข่งขันทั้งหมดเป็นค่าเริ่มต้น (โปรแกรมจะรองรับการจับฉลากเปตองในวันแข่ง 
+              โดยทำการล้างชื่อทีมของเปตองเป็น "1 สาย A", "2 สาย A", ... เพื่อให้คณะกรรมการสามารถมาบันทึกชื่ออำเภอจริงที่จับฉลากได้แบบเรียลไทม์หน้างาน)
+            </p>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตและล้างผลการแข่งขันทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้")) {
+                    try {
+                      await onResetData();
+                      alert("รีเซ็ตตารางการแข่งขันและระบบเรียบร้อยแล้ว!");
+                    } catch (err: any) {
+                      alert("เกิดข้อผิดพลาดในการรีเซ็ต: " + err.message);
+                    }
+                  }
+                }}
+                disabled={isResetting}
+                className="px-4 py-2 bg-red-950/60 hover:bg-red-900 text-red-200 border border-red-700/50 hover:border-red-500 text-xs font-bold font-mono tracking-wide rounded-none cursor-pointer transition-colors disabled:opacity-40"
+              >
+                {isResetting ? "กำลังรีเซ็ตระบบ..." : "🔄 รีเซ็ตตารางการแข่งขันเป็นค่าเริ่มต้น"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

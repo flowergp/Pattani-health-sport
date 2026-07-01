@@ -707,34 +707,7 @@ export default function DistrictSchedule({
             </div>
           </div>
 
-          {/* District Stats Summary Table */}
-          {districtProfile && (
-            <div className="border border-black p-3 mb-6 bg-gray-50/50">
-              <h3 className="text-xs font-bold uppercase mb-2 font-sans">📊 สรุปเหรียญรางวัลและข้อมูลทีม: {selectedDistrict}</h3>
-              <table className="w-full text-left text-[11px] border-collapse text-black">
-                <thead>
-                  <tr className="border-b border-black bg-gray-100 text-gray-700 font-sans">
-                    <th className="p-1 font-bold">อันดับตารางเหรียญ</th>
-                    <th className="p-1 font-bold text-center text-yellow-600 font-sans">🥇 เหรียญทอง</th>
-                    <th className="p-1 font-bold text-center text-gray-500 font-sans">🥈 เหรียญเงิน</th>
-                    <th className="p-1 font-bold text-center text-amber-700 font-sans">🥉 เหรียญทองแดง</th>
-                    <th className="p-1 font-bold text-center">รวมเหรียญ</th>
-                    <th className="p-1 font-bold text-center">แมตช์แข่งขันทั้งหมด</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-200">
-                    <td className="p-1.5 font-bold">อันดับที่ {standings.findIndex(t => t.team === selectedDistrict) + 1}</td>
-                    <td className="p-1.5 text-center font-bold text-yellow-600">{districtProfile.medals.gold}</td>
-                    <td className="p-1.5 text-center font-bold text-gray-500">{districtProfile.medals.silver}</td>
-                    <td className="p-1.5 text-center font-bold text-amber-700">{districtProfile.medals.bronze}</td>
-                    <td className="p-1.5 text-center font-black">{districtProfile.medals.gold + districtProfile.medals.silver + districtProfile.medals.bronze}</td>
-                    <td className="p-1.5 text-center font-bold bg-gray-100">{districtProfile.total} แมตช์</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
+          {/* District Stats Summary Table (Excluded from print PDF on user request) */}
 
           {/* Chronological Match Schedule Table */}
           <div>

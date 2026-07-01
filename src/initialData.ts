@@ -146,39 +146,47 @@ export const getInitialMatches = (): Match[] => {
 
   // --- 2. PETANQUE (เปตอง) ---
   const petanqueGenders = [
-    { category: "ทั่วไป ชายคู่", gender: "ชาย" as const, date: "7 ก.ค. 69" },
-    { category: "ทั่วไป หญิงคู่", gender: "หญิง" as const, date: "6 ก.ค. 69" },
+    { category: "ทั่วไป ชายคู่", gender: "ชาย" as const, date: "6 ก.ค. 69" },
+    { category: "ทั่วไป หญิงคู่", gender: "หญิง" as const, date: "7 ก.ค. 69" },
     { category: "ทีมผสม (ชาย 1 หญิง 2)", gender: "ผสม" as const, date: "8 ก.ค. 69" }
   ];
 
   const petanqueGroupStageMatches = [
     // Group A
-    { group: "สาย A", court: "สนามที่ 1", teamA: "ยะรัง", teamB: "ปะนาเระ", time: "09.00 น." },
-    { group: "สาย A", court: "สนามที่ 1", teamA: "กะพ้อ", teamB: "โคกโพธิ์", time: "09.30 น." },
-    { group: "สาย A", court: "สนามที่ 1", teamA: "ยะรัง", teamB: "กะพ้อ", time: "10.00 น." },
-    { group: "สาย A", court: "สนามที่ 1", teamA: "ปะนาเระ", teamB: "โคกโพธิ์", time: "10.30 น." },
-    { group: "สาย A", court: "สนามที่ 1", teamA: "ยะรัง", teamB: "โคกโพธิ์", time: "11.00 น." },
-    { group: "สาย A", court: "สนามที่ 1", teamA: "กะพ้อ", teamB: "ปะนาเระ", time: "11.30 น." },
+    { group: "สาย A", court: "สนามที่ 1", teamA: "1 สาย A", teamB: "2 สาย A", time: "09.00 น." },
+    { group: "สาย A", court: "สนามที่ 1", teamA: "3 สาย A", teamB: "4 สาย A", time: "09.30 น." },
+    { group: "สาย A", court: "สนามที่ 1", teamA: "1 สาย A", teamB: "3 สาย A", time: "10.00 น." },
+    { group: "สาย A", court: "สนามที่ 1", teamA: "2 สาย A", teamB: "4 สาย A", time: "10.30 น." },
+    { group: "สาย A", court: "สนามที่ 1", teamA: "1 สาย A", teamB: "4 สาย A", time: "11.00 น." },
+    { group: "สาย A", court: "สนามที่ 1", teamA: "2 สาย A", teamB: "3 สาย A", time: "11.30 น." },
     // Group B
-    { group: "สาย B", court: "สนามที่ 2", teamA: "ยะหริ่ง", teamB: "แม่ลาน", time: "09.00 น." },
-    { group: "สาย B", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "หนองจิก", time: "09.30 น." },
-    { group: "สาย B", court: "สนามที่ 2", teamA: "ยะหริ่ง", teamB: "ไม้แก่น", time: "10.00 น." },
-    { group: "สาย B", court: "สนามที่ 2", teamA: "แม่ลาน", teamB: "หนองจิก", time: "10.30 น." },
-    { group: "สาย B", court: "สนามที่ 2", teamA: "ยะหริ่ง", teamB: "หนองจิก", time: "11.00 น." },
-    { group: "สาย B", court: "สนามที่ 2", teamA: "แม่ลาน", teamB: "ไม้แก่น", time: "11.30 น." },
+    { group: "สาย B", court: "สนามที่ 2", teamA: "1 สาย B", teamB: "2 สาย B", time: "09.00 น." },
+    { group: "สาย B", court: "สนามที่ 2", teamA: "3 สาย B", teamB: "4 สาย B", time: "09.30 น." },
+    { group: "สาย B", court: "สนามที่ 2", teamA: "1 สาย B", teamB: "3 สาย B", time: "10.00 น." },
+    { group: "สาย B", court: "สนามที่ 2", teamA: "2 สาย B", teamB: "4 สาย B", time: "10.30 น." },
+    { group: "สาย B", court: "สนามที่ 2", teamA: "1 สาย B", teamB: "4 สาย B", time: "11.00 น." },
+    { group: "สาย B", court: "สนามที่ 2", teamA: "2 สาย B", teamB: "3 สาย B", time: "11.30 น." },
     // Group C
-    { group: "สาย C", court: "สนามที่ 3", teamA: "มายอ", teamB: "สายบุรี", time: "09.00 น." },
-    { group: "สาย C", court: "สนามที่ 3", teamA: "สายบุรี", teamB: "สสจ.ปัตตานี", time: "09.45 น." },
-    { group: "สาย C", court: "สนามที่ 3", teamA: "มายอ", teamB: "สสจ.ปัตตานี", time: "10.30 น." },
+    { group: "สาย C", court: "สนามที่ 3", teamA: "1 สาย C", teamB: "2 สาย C", time: "09.00 น." },
+    { group: "สาย C", court: "สนามที่ 3", teamA: "3 สาย C", teamB: "4 สาย C", time: "09.30 น." },
+    { group: "สาย C", court: "สนามที่ 3", teamA: "1 สาย C", teamB: "3 สาย C", time: "10.00 น." },
+    { group: "สาย C", court: "สนามที่ 3", teamA: "2 สาย C", teamB: "4 สาย C", time: "10.30 น." },
+    { group: "สาย C", court: "สนามที่ 3", teamA: "1 สาย C", teamB: "4 สาย C", time: "11.00 น." },
+    { group: "สาย C", court: "สนามที่ 3", teamA: "2 สาย C", teamB: "3 สาย C", time: "11.30 น." },
     // Group D
-    { group: "สาย D", court: "สนามที่ 4", teamA: "เมือง", teamB: "ทุ่งยางแดง", time: "10.30 น." }
+    { group: "สาย D", court: "สนามที่ 4", teamA: "1 สาย D", teamB: "2 สาย D", time: "09.00 น." },
+    { group: "สาย D", court: "สนามที่ 4", teamA: "3 สาย D", teamB: "4 สาย D", time: "09.30 น." },
+    { group: "สาย D", court: "สนามที่ 4", teamA: "1 สาย D", teamB: "3 สาย D", time: "10.00 น." },
+    { group: "สาย D", court: "สนามที่ 4", teamA: "2 สาย D", teamB: "4 สาย D", time: "10.30 น." },
+    { group: "สาย D", court: "สนามที่ 4", teamA: "1 สาย D", teamB: "4 สาย D", time: "11.00 น." },
+    { group: "สาย D", court: "สนามที่ 4", teamA: "2 สาย D", teamB: "3 สาย D", time: "11.30 น." }
   ];
 
   petanqueGenders.forEach((gen) => {
-    // First round (Group Stage, Match 1 - 18)
+    // First round (Group Stage, Match 1 - 24)
     petanqueGroupStageMatches.forEach((m, idx) => {
       matches.push({
-        id: `petanque_${gen.category.substring(0,2)}_${idx + 1}`,
+        id: `petanque_${gen.category}_${idx + 1}`,
         sport: "petanque",
         category: gen.category,
         gender: gen.gender,
@@ -197,17 +205,17 @@ export const getInitialMatches = (): Match[] => {
       });
     });
 
-    // Quarter-finals (Round 8 Teams, Match 17 - 20)
+    // Quarter-finals (Round 8 Teams, Match 25 - 28)
     const qf = [
-      { id: 17, court: "สนามที่ 1", labelA: "ที่ 1 สาย A", labelB: "ที่ 2 สาย B" },
-      { id: 18, court: "สนามที่ 2", labelA: "ที่ 1 สาย B", labelB: "ที่ 2 สาย A" },
-      { id: 19, court: "สนามที่ 3", labelA: "ที่ 1 สาย C", labelB: "ที่ 2 สาย D" },
-      { id: 20, court: "สนามที่ 4", labelA: "ที่ 1 สาย D", labelB: "ที่ 2 สาย C" }
+      { id: 25, court: "สนามที่ 1", labelA: "ที่ 1 สาย A", labelB: "ที่ 2 สาย B" },
+      { id: 26, court: "สนามที่ 2", labelA: "ที่ 1 สาย B", labelB: "ที่ 2 สาย A" },
+      { id: 27, court: "สนามที่ 3", labelA: "ที่ 1 สาย C", labelB: "ที่ 2 สาย D" },
+      { id: 28, court: "สนามที่ 4", labelA: "ที่ 1 สาย D", labelB: "ที่ 2 สาย C" }
     ];
 
     qf.forEach((m) => {
       matches.push({
-        id: `petanque_${gen.category.substring(0,2)}_${m.id}`,
+        id: `petanque_${gen.category}_${m.id}`,
         sport: "petanque",
         category: gen.category,
         gender: gen.gender,
@@ -226,9 +234,9 @@ export const getInitialMatches = (): Match[] => {
       });
     });
 
-    // Semi-finals (Match 21 - 22)
+    // Semi-finals (Match 29 - 30)
     matches.push({
-      id: `petanque_${gen.category.substring(0,2)}_21`,
+      id: `petanque_${gen.category}_29`,
       sport: "petanque",
       category: gen.category,
       gender: gen.gender,
@@ -238,8 +246,8 @@ export const getInitialMatches = (): Match[] => {
       time: "15.00 น.",
       date: gen.date,
       status: "pending",
-      teamA: "ผู้ชนะคู่ที่ 17",
-      teamB: "ผู้ชนะคู่ที่ 19",
+      teamA: "ผู้ชนะคู่ที่ 25",
+      teamB: "ผู้ชนะคู่ที่ 27",
       scoreA: null,
       scoreB: null,
       winner: null,
@@ -247,7 +255,7 @@ export const getInitialMatches = (): Match[] => {
     });
 
     matches.push({
-      id: `petanque_${gen.category.substring(0,2)}_22`,
+      id: `petanque_${gen.category}_30`,
       sport: "petanque",
       category: gen.category,
       gender: gen.gender,
@@ -257,17 +265,17 @@ export const getInitialMatches = (): Match[] => {
       time: "15.00 น.",
       date: gen.date,
       status: "pending",
-      teamA: "ผู้ชนะคู่ที่ 18",
-      teamB: "ผู้ชนะคู่ที่ 20",
+      teamA: "ผู้ชนะคู่ที่ 26",
+      teamB: "ผู้ชนะคู่ที่ 28",
       scoreA: null,
       scoreB: null,
       winner: null,
       order: currentOrder++
     });
 
-    // Match 23: 3rd place (ชิงที่ 3)
+    // Match 31: 3rd place (ชิงที่ 3)
     matches.push({
-      id: `petanque_${gen.category.substring(0,2)}_23`,
+      id: `petanque_${gen.category}_31`,
       sport: "petanque",
       category: gen.category,
       gender: gen.gender,
@@ -277,17 +285,17 @@ export const getInitialMatches = (): Match[] => {
       time: "16.00 น.",
       date: gen.date,
       status: "pending",
-      teamA: "ผู้แพ้คู่ที่ 21",
-      teamB: "ผู้แพ้คู่ที่ 22",
+      teamA: "ผู้แพ้คู่ที่ 29",
+      teamB: "ผู้แพ้คู่ที่ 30",
       scoreA: null,
       scoreB: null,
       winner: null,
       order: currentOrder++
     });
 
-    // Match 24: Final (ชิงชนะเลิศ)
+    // Match 32: Final (ชิงชนะเลิศ)
     matches.push({
-      id: `petanque_${gen.category.substring(0,2)}_24`,
+      id: `petanque_${gen.category}_32`,
       sport: "petanque",
       category: gen.category,
       gender: gen.gender,
@@ -297,8 +305,8 @@ export const getInitialMatches = (): Match[] => {
       time: "16.30 น.",
       date: gen.date,
       status: "pending",
-      teamA: "ผู้ชนะคู่ที่ 21",
-      teamB: "ผู้ชนะคู่ที่ 22",
+      teamA: "ผู้ชนะคู่ที่ 29",
+      teamB: "ผู้ชนะคู่ที่ 30",
       scoreA: null,
       scoreB: null,
       winner: null,

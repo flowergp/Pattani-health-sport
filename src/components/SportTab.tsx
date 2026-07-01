@@ -94,6 +94,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   const [scoreB, setScoreB] = useState<string>("");
   const [matchStatus, setMatchStatus] = useState<"pending" | "live" | "completed">("pending");
   const [winner, setWinner] = useState<string>("");
+  const [editTeamA, setEditTeamA] = useState<string>("");
+  const [editTeamB, setEditTeamB] = useState<string>("");
 
   // Volleyball set-score edit state
   const [set1A, setSet1A] = useState("0");
@@ -107,8 +109,54 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   // Key: team name, Value: rank & time
   const [trackRanks, setTrackRanks] = useState<{ [team: string]: { rank: number; time: string } }>({});
 
+  // Petanque slot inputs state
+  const [showPetanqueDrawForm, setShowPetanqueDrawForm] = useState(false);
+  const [isSavingDraw, setIsSavingDraw] = useState(false);
+  const [petanqueSlots, setPetanqueSlots] = useState<{ [key: string]: string }>({
+    A1: "", A2: "", A3: "", A4: "",
+    B1: "", B2: "", B3: "", B4: "",
+    C1: "", C2: "", C3: "", C4: "",
+    D1: "", D2: "", D3: "", D4: "",
+  });
+
   // Get current sport's matches
   const sportMatches = matches.filter((m) => m.sport === sport);
+
+  // Auto-initialize petanque draw inputs when selectedCategory or matches changes
+  useEffect(() => {
+    if (sport === "petanque" && selectedCategory) {
+      const findMatchTeam = (suffix: number, isTeamB = false) => {
+        const matchId = `petanque_${selectedCategory}_${suffix}`;
+        const match = matches.find((m) => m.id === matchId);
+        if (match) {
+          return isTeamB ? match.teamB : match.teamA;
+        }
+        return "";
+      };
+
+      setPetanqueSlots({
+        A1: findMatchTeam(1) || "",
+        A2: findMatchTeam(1, true) || "",
+        A3: findMatchTeam(2) || "",
+        A4: findMatchTeam(2, true) || "",
+
+        B1: findMatchTeam(7) || "",
+        B2: findMatchTeam(7, true) || "",
+        B3: findMatchTeam(8) || "",
+        B4: findMatchTeam(8, true) || "",
+
+        C1: findMatchTeam(13) || "",
+        C2: findMatchTeam(13, true) || "",
+        C3: findMatchTeam(14) || "",
+        C4: findMatchTeam(14, true) || "",
+
+        D1: findMatchTeam(19) || "",
+        D2: findMatchTeam(19, true) || "",
+        D3: findMatchTeam(20) || "",
+        D4: findMatchTeam(20, true) || "",
+      });
+    }
+  }, [sport, selectedCategory, matches]);
 
   // Reset selected category when sport changes so the auto-selector can pick the correct category of the new sport
   useEffect(() => {
@@ -221,10 +269,10 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   let finalSuffix = "";
 
   if (sport === "petanque") {
-    qfSuffixes = ["17", "19", "18", "20"]; // Top pair feeds into SF1, bottom pair feeds into SF2
-    sfSuffixes = ["21", "22"];
-    thirdSuffix = "23";
-    finalSuffix = "24";
+    qfSuffixes = ["25", "27", "26", "28"]; // Top pair feeds into SF1 (25 vs 27), bottom pair feeds into SF2 (26 vs 28)
+    sfSuffixes = ["29", "30"];
+    thirdSuffix = "31";
+    finalSuffix = "32";
   } else if (sport === "volleyball") {
     qfSuffixes = ["19", "21", "20", "22"];
     sfSuffixes = ["23", "24"];
@@ -261,6 +309,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
     setScoreB(m.scoreB !== null ? String(m.scoreB) : "");
     setMatchStatus(m.status);
     setWinner(m.winner ?? "");
+    setEditTeamA(m.teamA || "");
+    setEditTeamB(m.teamB || "");
 
     if (sport === "volleyball" && m.sets && m.sets.length >= 3) {
       setSet1A(String(m.sets[0]?.scoreA ?? 0));
@@ -348,10 +398,12 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
       updates.scoreA = sA;
       updates.scoreB = sB;
+      updates.teamA = editTeamA;
+      updates.teamB = editTeamB;
 
       if (sA !== null && sB !== null) {
-        if (sA > sB) updates.winner = m.teamA;
-        else if (sB > sA) updates.winner = m.teamB;
+        if (sA > sB) updates.winner = editTeamA;
+        else if (sB > sA) updates.winner = editTeamB;
         else updates.winner = "เสมอ";
       } else {
         updates.winner = null;
@@ -400,24 +452,24 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
         const matchNum = Number(suffix);
 
         if (!isNaN(matchNum)) {
-          // Petanque Progression (17-20 to 21-22, 21-22 to 23-24)
+          // Petanque Progression (25-28 to 29-30, 29-30 to 31-32)
           if (m.sport === "petanque") {
             const prefix = m.id.replace(`_${matchNum}`, "");
-            if (matchNum === 17) await propagateWinner(prefix + "_21", m.winner, "teamA");
-            if (matchNum === 19) await propagateWinner(prefix + "_21", m.winner, "teamB");
-            if (matchNum === 18) await propagateWinner(prefix + "_22", m.winner, "teamA");
-            if (matchNum === 20) await propagateWinner(prefix + "_22", m.winner, "teamB");
+            if (matchNum === 25) await propagateWinner(prefix + "_29", m.winner, "teamA");
+            if (matchNum === 27) await propagateWinner(prefix + "_29", m.winner, "teamB");
+            if (matchNum === 26) await propagateWinner(prefix + "_30", m.winner, "teamA");
+            if (matchNum === 28) await propagateWinner(prefix + "_30", m.winner, "teamB");
 
             // From Semi finals to Final / 3rd Place
-            if (matchNum === 21) {
+            if (matchNum === 29) {
               const loser = m.winner === m.teamA ? m.teamB : m.teamA;
-              await propagateWinner(prefix + "_24", m.winner, "teamA"); // Final TeamA
-              await propagateWinner(prefix + "_23", loser!, "teamA"); // 3rd Place TeamA
+              await propagateWinner(prefix + "_32", m.winner, "teamA"); // Final TeamA
+              await propagateWinner(prefix + "_31", loser!, "teamA"); // 3rd Place TeamA
             }
-            if (matchNum === 22) {
+            if (matchNum === 30) {
               const loser = m.winner === m.teamA ? m.teamB : m.teamA;
-              await propagateWinner(prefix + "_24", m.winner, "teamB"); // Final TeamB
-              await propagateWinner(prefix + "_23", loser!, "teamB"); // 3rd Place TeamB
+              await propagateWinner(prefix + "_32", m.winner, "teamB"); // Final TeamB
+              await propagateWinner(prefix + "_31", loser!, "teamB"); // 3rd Place TeamB
             }
           }
 
@@ -530,6 +582,79 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
     setShowAddForm(false);
   };
 
+  const handleSavePetanqueDraw = async () => {
+    if (!isLoggedIn) return;
+    setIsSavingDraw(true);
+
+    try {
+      // Mapping from match index (1-24) to the updated teams.
+      const getTeamsForMatchSuffix = (suffix: number) => {
+        const s = petanqueSlots;
+        // Group A (1-6)
+        if (suffix >= 1 && suffix <= 6) {
+          if (suffix === 1) return { teamA: s.A1 || "1 สาย A", teamB: s.A2 || "2 สาย A" };
+          if (suffix === 2) return { teamA: s.A3 || "3 สาย A", teamB: s.A4 || "4 สาย A" };
+          if (suffix === 3) return { teamA: s.A1 || "1 สาย A", teamB: s.A3 || "3 สาย A" };
+          if (suffix === 4) return { teamA: s.A2 || "2 สาย A", teamB: s.A4 || "4 สาย A" };
+          if (suffix === 5) return { teamA: s.A1 || "1 สาย A", teamB: s.A4 || "4 สาย A" };
+          if (suffix === 6) return { teamA: s.A2 || "2 สาย A", teamB: s.A3 || "3 สาย A" };
+        }
+        // Group B (7-12)
+        if (suffix >= 7 && suffix <= 12) {
+          if (suffix === 7) return { teamA: s.B1 || "1 สาย B", teamB: s.B2 || "2 สาย B" };
+          if (suffix === 8) return { teamA: s.B3 || "3 สาย B", teamB: s.B4 || "4 สาย B" };
+          if (suffix === 9) return { teamA: s.B1 || "1 สาย B", teamB: s.B3 || "3 สาย B" };
+          if (suffix === 10) return { teamA: s.B2 || "2 สาย B", teamB: s.B4 || "4 สาย B" };
+          if (suffix === 11) return { teamA: s.B1 || "1 สาย B", teamB: s.B4 || "4 สาย B" };
+          if (suffix === 12) return { teamA: s.B2 || "2 สาย B", teamB: s.B3 || "3 สาย B" };
+        }
+        // Group C (13-18)
+        if (suffix >= 13 && suffix <= 18) {
+          if (suffix === 13) return { teamA: s.C1 || "1 สาย C", teamB: s.C2 || "2 สาย C" };
+          if (suffix === 14) return { teamA: s.C3 || "3 สาย C", teamB: s.C4 || "4 สาย C" };
+          if (suffix === 15) return { teamA: s.C1 || "1 สาย C", teamB: s.C3 || "3 สาย C" };
+          if (suffix === 16) return { teamA: s.C2 || "2 สาย C", teamB: s.C4 || "4 สาย C" };
+          if (suffix === 17) return { teamA: s.C1 || "1 สาย C", teamB: s.C4 || "4 สาย C" };
+          if (suffix === 18) return { teamA: s.C2 || "2 สาย C", teamB: s.C3 || "3 สาย C" };
+        }
+        // Group D (19-24)
+        if (suffix >= 19 && suffix <= 24) {
+          if (suffix === 19) return { teamA: s.D1 || "1 สาย D", teamB: s.D2 || "2 สาย D" };
+          if (suffix === 20) return { teamA: s.D3 || "3 สาย D", teamB: s.D4 || "4 สาย D" };
+          if (suffix === 21) return { teamA: s.D1 || "1 สาย D", teamB: s.D3 || "3 สาย D" };
+          if (suffix === 22) return { teamA: s.D2 || "2 สาย D", teamB: s.D4 || "4 สาย D" };
+          if (suffix === 23) return { teamA: s.D1 || "1 สาย D", teamB: s.D4 || "4 สาย D" };
+          if (suffix === 24) return { teamA: s.D2 || "2 สาย D", teamB: s.D3 || "3 สาย D" };
+        }
+        return null;
+      };
+
+      // Loop and update all 24 group stage matches
+      for (let i = 1; i <= 24; i++) {
+        const matchId = `petanque_${selectedCategory}_${i}`;
+        const match = matches.find((m) => m.id === matchId);
+        if (match) {
+          const updatedTeams = getTeamsForMatchSuffix(i);
+          if (updatedTeams) {
+            // Only update if they actually changed
+            if (match.teamA !== updatedTeams.teamA || match.teamB !== updatedTeams.teamB) {
+              await onUpdateMatch(matchId, {
+                teamA: updatedTeams.teamA,
+                teamB: updatedTeams.teamB,
+              });
+            }
+          }
+        }
+      }
+      alert("บันทึกรายชื่อทีมและจัดสายใหม่เรียบร้อยแล้ว!");
+      setShowPetanqueDrawForm(false);
+    } catch (err: any) {
+      alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+    } finally {
+      setIsSavingDraw(false);
+    }
+  };
+
   const renderBracketMatch = (m: Match | undefined) => {
     if (!m) {
       return (
@@ -632,9 +757,27 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                 ส่งออก PDF / พิมพ์ตาราง
               </button>
 
+              {sport === "petanque" && isLoggedIn && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPetanqueDrawForm(!showPetanqueDrawForm);
+                    setShowAddForm(false);
+                  }}
+                  className="py-2 px-4 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-600 font-bold text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 rounded-none"
+                >
+                  <Award size={14} />
+                  {showPetanqueDrawForm ? "ปิดการจับฉลาก" : "🎯 จับฉลากแบ่งสาย"}
+                </button>
+              )}
+
               {isLoggedIn && (
                 <button
-                  onClick={() => setShowAddForm(!showAddForm)}
+                  type="button"
+                  onClick={() => {
+                    setShowAddForm(!showAddForm);
+                    setShowPetanqueDrawForm(false);
+                  }}
                   className="py-2 px-4 bg-[#FF5722] hover:bg-[#E04E1D] text-white font-bold text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 rounded-none"
                 >
                   <Plus size={14} />
@@ -815,6 +958,147 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* 1.5 Petanque Seeding & Draw Form */}
+      {sport === "petanque" && showPetanqueDrawForm && (
+        <div className="border border-emerald-500/60 bg-[#1E293B] p-6 space-y-4 rounded-none text-white shadow-2xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700/60 pb-3">
+            <div>
+              <h3 className="text-base font-black uppercase tracking-wide text-emerald-400 flex items-center gap-2">
+                <Award size={18} className="text-emerald-400" />
+                แผงบันทึกผลการจับฉลากแบ่งสายเปตอง
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                ประเภท: <span className="text-white font-bold">{selectedCategory || "ไม่ได้เลือก"}</span> (ตารางแข่งขัน 24 แมตช์จะปรับเปลี่ยนชื่อทีมคู่แข่งตามข้อมูลที่กรอกที่นี่โดยอัตโนมัติ)
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการคืนค่ารายชื่อทีมเป็นค่าเริ่มต้น (เช่น 1 สาย A, 2 สาย A, ...)?")) {
+                    setPetanqueSlots({
+                      A1: "1 สาย A", A2: "2 สาย A", A3: "3 สาย A", A4: "4 สาย A",
+                      B1: "1 สาย B", B2: "2 สาย B", B3: "3 สาย B", B4: "4 สาย B",
+                      C1: "1 สาย C", C2: "2 สาย C", C3: "3 สาย C", C4: "4 สาย C",
+                      D1: "1 สาย D", D2: "2 สาย D", D3: "3 สาย D", D4: "4 สาย D",
+                    });
+                  }
+                }}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono font-bold border border-slate-700 rounded-none cursor-pointer"
+              >
+                🔄 คืนค่าตัวเลือกเริ่มต้น
+              </button>
+            </div>
+          </div>
+
+          {!selectedCategory || selectedCategory === "all" ? (
+            <div className="p-4 bg-[#0A0F1D] text-slate-400 text-xs border border-yellow-800/50 text-center font-bold">
+              ⚠️ กรุณาเลือกประเภทการแข่งขัน (เช่น ทั่วไป ชายคู่, ทั่วไป หญิงคู่, ทีมผสม) จากตัวกรองด้านบนก่อนทำการจัดการจัดสาย
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Group A */}
+                <div className="border border-slate-800 bg-[#0F172A] p-4 space-y-3">
+                  <div className="bg-[#FF5722] text-white py-0.5 px-2 inline-block font-mono text-[9px] font-bold uppercase rounded-none">
+                    สาย A (Group A)
+                  </div>
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4].map((num) => (
+                      <div key={num} className="space-y-1">
+                        <label className="block text-[9px] font-bold text-slate-400 font-mono">ทีมที่ {num} (Slot {num})</label>
+                        <input
+                          type="text"
+                          value={petanqueSlots[`A${num}` as keyof typeof petanqueSlots] || ""}
+                          onChange={(e) => setPetanqueSlots(prev => ({ ...prev, [`A${num}`]: e.target.value }))}
+                          placeholder={`ชื่อทีมที่ ${num}`}
+                          className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none placeholder-slate-600"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Group B */}
+                <div className="border border-slate-800 bg-[#0F172A] p-4 space-y-3">
+                  <div className="bg-emerald-600 text-white py-0.5 px-2 inline-block font-mono text-[9px] font-bold uppercase rounded-none">
+                    สาย B (Group B)
+                  </div>
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4].map((num) => (
+                      <div key={num} className="space-y-1">
+                        <label className="block text-[9px] font-bold text-slate-400 font-mono">ทีมที่ {num} (Slot {num})</label>
+                        <input
+                          type="text"
+                          value={petanqueSlots[`B${num}` as keyof typeof petanqueSlots] || ""}
+                          onChange={(e) => setPetanqueSlots(prev => ({ ...prev, [`B${num}`]: e.target.value }))}
+                          placeholder={`ชื่อทีมที่ ${num}`}
+                          className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none placeholder-slate-600"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Group C */}
+                <div className="border border-slate-800 bg-[#0F172A] p-4 space-y-3">
+                  <div className="bg-indigo-600 text-white py-0.5 px-2 inline-block font-mono text-[9px] font-bold uppercase rounded-none">
+                    สาย C (Group C)
+                  </div>
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4].map((num) => (
+                      <div key={num} className="space-y-1">
+                        <label className="block text-[9px] font-bold text-slate-400 font-mono">ทีมที่ {num} (Slot {num})</label>
+                        <input
+                          type="text"
+                          value={petanqueSlots[`C${num}` as keyof typeof petanqueSlots] || ""}
+                          onChange={(e) => setPetanqueSlots(prev => ({ ...prev, [`C${num}`]: e.target.value }))}
+                          placeholder={`ชื่อทีมที่ ${num}`}
+                          className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none placeholder-slate-600"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Group D */}
+                <div className="border border-slate-800 bg-[#0F172A] p-4 space-y-3">
+                  <div className="bg-purple-600 text-white py-0.5 px-2 inline-block font-mono text-[9px] font-bold uppercase rounded-none">
+                    สาย D (Group D)
+                  </div>
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4].map((num) => (
+                      <div key={num} className="space-y-1">
+                        <label className="block text-[9px] font-bold text-slate-400 font-mono">ทีมที่ {num} (Slot {num})</label>
+                        <input
+                          type="text"
+                          value={petanqueSlots[`D${num}` as keyof typeof petanqueSlots] || ""}
+                          onChange={(e) => setPetanqueSlots(prev => ({ ...prev, [`D${num}`]: e.target.value }))}
+                          placeholder={`ชื่อทีมที่ ${num}`}
+                          className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none placeholder-slate-600"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={handleSavePetanqueDraw}
+                  disabled={isSavingDraw}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide border border-emerald-500 transition-all cursor-pointer rounded-none disabled:opacity-50"
+                >
+                  {isSavingDraw ? "⏳ กำลังบันทึกข้อมูลและปรับปรุงตารางแข่ง..." : "💾 บันทึกรายชื่อทีมแบ่งสายลงตารางแข่งขัน"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1224,7 +1508,15 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                             // Standard dual sport score editor
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-1">
-                                <label className="block text-[10px] font-mono font-bold text-slate-400 truncate">{m.teamA}</label>
+                                <label className="block text-[10px] font-mono font-bold text-slate-400 truncate">ชื่อทีมฝั่ง A</label>
+                                <input
+                                  type="text"
+                                  value={editTeamA}
+                                  onChange={(e) => setEditTeamA(e.target.value)}
+                                  placeholder="ชื่อทีมฝั่ง A"
+                                  className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none mb-1"
+                                />
+                                <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม A</label>
                                 <input
                                   type="number"
                                   min="0"
@@ -1234,7 +1526,15 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="block text-[10px] font-mono font-bold text-slate-400 truncate">{m.teamB}</label>
+                                <label className="block text-[10px] font-mono font-bold text-slate-400 truncate">ชื่อทีมฝั่ง B</label>
+                                <input
+                                  type="text"
+                                  value={editTeamB}
+                                  onChange={(e) => setEditTeamB(e.target.value)}
+                                  placeholder="ชื่อทีมฝั่ง B"
+                                  className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none mb-1"
+                                />
+                                <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม B</label>
                                 <input
                                   type="number"
                                   min="0"

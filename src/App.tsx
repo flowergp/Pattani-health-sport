@@ -1179,15 +1179,6 @@ export default function App() {
         </div>
         
         {/* Error Notification */}
-        {dbError && (
-          <div className="neo-card bg-red-950/40 border border-red-900/60 p-4 mb-6 flex items-start gap-3">
-            <ShieldAlert size={24} className="text-red-400 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <h4 className="font-bold text-red-200">เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล</h4>
-              <p className="text-xs font-medium text-red-300 leading-relaxed">{dbError}</p>
-            </div>
-          </div>
-        )}
 
         {/* Loading Overlay */}
         {loading && (
@@ -1283,6 +1274,8 @@ export default function App() {
                     onUpdateUser={handleUpdateUser}
                     isLoggedIn={isLoggedIn}
                     onSeedDistrictUsers={seedDefaultDistrictUsers}
+                    onResetData={() => resetToDefaultPDFSchedule(false)}
+                    isResetting={isResetting}
                   />
                 )}
               </motion.div>
