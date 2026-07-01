@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Match, Participant } from "../types";
 import { calculateGroupStandings } from "../utils/calcStandings";
+import { TEAM_NAMES } from "../initialData";
 import { 
   Clock, 
   MapPin, 
@@ -121,6 +122,16 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
   // Get current sport's matches
   const sportMatches = matches.filter((m) => m.sport === sport);
+
+  const isPetanqueDrawHeld = () => {
+    const petanqueMatches = matches.filter(m => m.sport === "petanque");
+    if (petanqueMatches.length === 0) return false;
+    return petanqueMatches.some(m => 
+      (m.teamA && TEAM_NAMES.includes(m.teamA)) || 
+      (m.teamB && TEAM_NAMES.includes(m.teamB))
+    );
+  };
+  const petanqueDrawNotHeld = sport === "petanque" && !isPetanqueDrawHeld();
 
   // Auto-initialize petanque draw inputs when selectedCategory or matches changes
   useEffect(() => {
@@ -655,6 +666,54 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
     }
   };
 
+  const renderPetanqueSlotSelector = (group: string, num: number) => {
+    const slotKey = `${group}${num}`;
+    const value = petanqueSlots[slotKey] || "";
+    const defaultPlaceholder = `${num} สาย ${group}`;
+    const isCustom = value && value !== defaultPlaceholder && !TEAM_NAMES.includes(value);
+
+    // Current dropdown selection
+    const selectValue = TEAM_NAMES.includes(value) || value === defaultPlaceholder
+      ? value 
+      : (value === "" ? defaultPlaceholder : "custom");
+
+    return (
+      <div className="space-y-1">
+        <label className="block text-[10px] font-bold text-slate-400 font-mono">
+          ทีมที่ {num} (Slot {num})
+        </label>
+        <select
+          value={selectValue}
+          onChange={(e) => {
+            const selected = e.target.value;
+            if (selected === "custom") {
+              setPetanqueSlots(prev => ({ ...prev, [slotKey]: "" }));
+            } else {
+              setPetanqueSlots(prev => ({ ...prev, [slotKey]: selected }));
+            }
+          }}
+          className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none cursor-pointer"
+        >
+          <option value={defaultPlaceholder}>{defaultPlaceholder} (ค่าเริ่มต้น)</option>
+          {TEAM_NAMES.map((name) => (
+            <option key={name} value={name}>{name}</option>
+          ))}
+          <option value="custom">✍️ พิมพ์ชื่อทีมเอง...</option>
+        </select>
+
+        {(isCustom || value === "" || (!TEAM_NAMES.includes(value) && value !== defaultPlaceholder)) && (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => setPetanqueSlots(prev => ({ ...prev, [slotKey]: e.target.value }))}
+            placeholder="พิมพ์ระบุชื่อทีม..."
+            className="w-full p-1.5 bg-[#0D1527] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none mt-1 placeholder-slate-600 animate-fadeIn"
+          />
+        )}
+      </div>
+    );
+  };
+
   const renderBracketMatch = (m: Match | undefined) => {
     if (!m) {
       return (
@@ -1009,16 +1068,9 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                   </div>
                   <div className="space-y-2">
                     {[1, 2, 3, 4].map((num) => (
-                      <div key={num} className="space-y-1">
-                        <label className="block text-[9px] font-bold text-slate-400 font-mono">ทีมที่ {num} (Slot {num})</label>
-                        <input
-                          type="text"
-                          value={petanqueSlots[`A${num}` as keyof typeof petanqueSlots] || ""}
-                          onChange={(e) => setPetanqueSlots(prev => ({ ...prev, [`A${num}`]: e.target.value }))}
-                          placeholder={`ชื่อทีมที่ ${num}`}
-                          className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none placeholder-slate-600"
-                        />
-                      </div>
+                      <React.Fragment key={num}>
+                        {renderPetanqueSlotSelector("A", num)}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
@@ -1030,16 +1082,9 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                   </div>
                   <div className="space-y-2">
                     {[1, 2, 3, 4].map((num) => (
-                      <div key={num} className="space-y-1">
-                        <label className="block text-[9px] font-bold text-slate-400 font-mono">ทีมที่ {num} (Slot {num})</label>
-                        <input
-                          type="text"
-                          value={petanqueSlots[`B${num}` as keyof typeof petanqueSlots] || ""}
-                          onChange={(e) => setPetanqueSlots(prev => ({ ...prev, [`B${num}`]: e.target.value }))}
-                          placeholder={`ชื่อทีมที่ ${num}`}
-                          className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none placeholder-slate-600"
-                        />
-                      </div>
+                      <React.Fragment key={num}>
+                        {renderPetanqueSlotSelector("B", num)}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
@@ -1051,16 +1096,9 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                   </div>
                   <div className="space-y-2">
                     {[1, 2, 3, 4].map((num) => (
-                      <div key={num} className="space-y-1">
-                        <label className="block text-[9px] font-bold text-slate-400 font-mono">ทีมที่ {num} (Slot {num})</label>
-                        <input
-                          type="text"
-                          value={petanqueSlots[`C${num}` as keyof typeof petanqueSlots] || ""}
-                          onChange={(e) => setPetanqueSlots(prev => ({ ...prev, [`C${num}`]: e.target.value }))}
-                          placeholder={`ชื่อทีมที่ ${num}`}
-                          className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none placeholder-slate-600"
-                        />
-                      </div>
+                      <React.Fragment key={num}>
+                        {renderPetanqueSlotSelector("C", num)}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
@@ -1072,16 +1110,9 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                   </div>
                   <div className="space-y-2">
                     {[1, 2, 3, 4].map((num) => (
-                      <div key={num} className="space-y-1">
-                        <label className="block text-[9px] font-bold text-slate-400 font-mono">ทีมที่ {num} (Slot {num})</label>
-                        <input
-                          type="text"
-                          value={petanqueSlots[`D${num}` as keyof typeof petanqueSlots] || ""}
-                          onChange={(e) => setPetanqueSlots(prev => ({ ...prev, [`D${num}`]: e.target.value }))}
-                          placeholder={`ชื่อทีมที่ ${num}`}
-                          className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none placeholder-slate-600"
-                        />
-                      </div>
+                      <React.Fragment key={num}>
+                        {renderPetanqueSlotSelector("D", num)}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
@@ -1924,8 +1955,22 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
         {/* Content sections based on sport type */}
         <div className="space-y-6 text-black">
-          {/* Group Standings (if applicable) */}
-          {sport !== "track" && selectedCategory !== "" && (
+          {petanqueDrawNotHeld ? (
+            <div className="border border-black p-6 bg-gray-50 rounded-none text-center space-y-4">
+              <h3 className="text-base font-black text-black border-b border-black pb-2">
+                📌 กำหนดการแข่งขันเปตอง
+              </h3>
+              <div className="text-xs font-bold text-gray-800 space-y-2.5 leading-relaxed inline-block text-left mx-auto py-2">
+                <p>ประเภทชายคู่ วันที่ 6 กรกฎาคม 2569</p>
+                <p>ประเภทหญิงคู่ วันที่ 7 กรกฎาคม 2569</p>
+                <p>ประเภททีมผสม วันที่ 8 กรกฎาคม 2569</p>
+                <p className="mt-4 text-black text-sm font-black text-center font-sans">เริ่มแข่งขัน 9.00น.</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Group Standings (if applicable) */}
+              {sport !== "track" && selectedCategory !== "" && (
             <div>
               {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
                 const catMatches = sportMatches.filter(m => m.category === cat);
@@ -2125,6 +2170,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
               })()}
             </div>
           )}
+          </>)}
 
           {/* Footer Signature Block */}
           <div className="pt-12 grid grid-cols-2 gap-8 text-xs text-black font-sans">
