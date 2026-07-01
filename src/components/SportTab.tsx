@@ -17,7 +17,8 @@ import {
   ChevronDown,
   ChevronUp,
   Printer,
-  Download
+  Download,
+  CheckCircle
 } from "lucide-react";
 
 // Helper to parse Thai date (e.g. "10 ก.ค. 69") to a comparable number
@@ -81,6 +82,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [showPreview, setShowPreview] = useState<boolean>(false);
+  const [exportSuccess, setExportSuccess] = useState<boolean>(false);
+  const [lastFilename, setLastFilename] = useState<string>("");
 
   const handleExportPDF = () => {
     setIsExporting(true);
@@ -156,9 +159,11 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
       .then((html2pdf) => {
         const element = document.getElementById("sport-pdf-content");
         if (element) {
+          const targetFilename = `ตารางแข่งขัน_${sport}.pdf`;
+          setLastFilename(targetFilename);
           const opt = {
             margin:       [10, 10, 10, 10], // margin in mm
-            filename:     `ตารางแข่งขัน_${sport}.pdf`,
+            filename:     targetFilename,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, logging: false },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -167,12 +172,13 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
             .then(() => {
               window.getComputedStyle = originalGetComputedStyle;
               setIsExporting(false);
-              setShowPreview(false);
+              setExportSuccess(true);
             })
             .catch((err: any) => {
               console.error("PDF generation failed:", err);
               window.getComputedStyle = originalGetComputedStyle;
               setIsExporting(false);
+              setExportSuccess(false);
               setShowPreview(false);
             });
         } else {
@@ -2079,6 +2085,57 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
       {/* Beautiful Interactive Print Preview Modal overlay */}
       {showPreview && (
         <div className="fixed inset-0 bg-slate-950/90 z-[9999] flex flex-col justify-between overflow-y-auto p-4 md:p-8 backdrop-blur-md print:hidden text-black">
+          {/* Export Success Modal Dialog */}
+          {exportSuccess && (
+            <div className="fixed inset-0 bg-slate-950/85 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm text-white">
+              <div className="bg-slate-900 border border-emerald-500/30 p-6 md:p-8 max-w-lg w-full text-center shadow-2xl relative">
+                <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                  <CheckCircle size={32} />
+                </div>
+                
+                <h3 className="text-lg md:text-xl font-black text-white mb-2 uppercase tracking-wide">
+                  🎉 ดาวน์โหลดตารางสำเร็จแล้ว!
+                </h3>
+                
+                <div className="space-y-4 text-left text-sm text-slate-300">
+                  <p className="leading-relaxed text-center sm:text-left">
+                    ระบบได้สร้างและส่งไฟล์ PDF ไปยังอุปกรณ์ของคุณแล้ว เรียกว่า <span className="font-mono text-emerald-400 font-bold bg-slate-950 px-1.5 py-0.5 border border-slate-850">{lastFilename}</span>
+                  </p>
+                  
+                  <div className="bg-slate-950/50 border border-slate-800 p-3.5 space-y-2">
+                    <h4 className="text-xs font-black text-emerald-400 uppercase tracking-wider">📁 ไฟล์ PDF ถูกเก็บไว้ที่ไหน?</h4>
+                    <p className="text-xs leading-relaxed text-slate-400">
+                      โดยปกติแล้ว ไฟล์ PDF นี้จะถูกดาวน์โหลดลงเครื่องคอมพิวเตอร์ แท็บเล็ต หรือมือถือของคุณโดยอัตโนมัติ โดยจะไปบันทึกอยู่ใน <span className="font-bold text-white">"โฟลเดอร์ดาวน์โหลด (Downloads / ดาวน์โหลด)"</span> ของอุปกรณ์ที่คุณกำลังใช้งานอยู่
+                    </p>
+                  </div>
+                  
+                  <div className="bg-amber-500/10 border border-amber-500/20 p-3.5 space-y-2">
+                    <h4 className="text-xs font-black text-amber-400 uppercase tracking-wider">💡 หากคุณไม่พบบันทึกไฟล์ดาวน์โหลด:</h4>
+                    <p className="text-xs leading-relaxed text-slate-400">
+                      เนื่องจากระบบตัวอย่าง (Iframe Sandbox) ของ AI Studio อาจบล็อกการส่งข้อมูลดาวน์โหลดเพื่อความปลอดภัยของเบราว์เซอร์
+                    </p>
+                    <p className="text-xs leading-relaxed text-amber-300 font-bold">
+                      วิธีแก้ไขง่ายๆ: ให้คลิกปุ่ม <span className="underline">"เปิดในแท็บใหม่" (Open in new tab)</span> ที่แถบควบคุมขวาบนของระบบ เพื่อเปิดเว็บแอปแบบเต็มจอ แล้วกดปุ่มดาวน์โหลดอีกครั้ง จะได้ไฟล์ 100% แน่นวยครับ!
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExportSuccess(false);
+                      setShowPreview(false);
+                    }}
+                    className="py-2.5 px-6 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-emerald-500/15"
+                  >
+                    ตกลงและปิดหน้านี้
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Sticky Top Bar for controls */}
           <div className="bg-slate-900 border border-slate-800 p-4 max-w-4xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl rounded-none shrink-0 mb-4">
             <div className="flex items-center gap-3">
@@ -2094,7 +2151,10 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowPreview(false)}
+                onClick={() => {
+                  setShowPreview(false);
+                  setExportSuccess(false);
+                }}
                 className="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer rounded-none"
               >
                 ย้อนกลับ
