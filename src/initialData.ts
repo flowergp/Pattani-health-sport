@@ -146,8 +146,8 @@ export const getInitialMatches = (): Match[] => {
 
   // --- 2. PETANQUE (เปตอง) ---
   const petanqueGenders = [
-    { category: "ทั่วไป ชายคู่", gender: "ชาย" as const, date: "6 ก.ค. 69" },
-    { category: "ทั่วไป หญิงคู่", gender: "หญิง" as const, date: "7 ก.ค. 69" },
+    { category: "ทั่วไป ชายคู่", gender: "ชาย" as const, date: "7 ก.ค. 69" },
+    { category: "ทั่วไป หญิงคู่", gender: "หญิง" as const, date: "6 ก.ค. 69" },
     { category: "ทีมผสม (ชาย 1 หญิง 2)", gender: "ผสม" as const, date: "8 ก.ค. 69" }
   ];
 

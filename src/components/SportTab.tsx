@@ -14,7 +14,8 @@ import {
   Plus,
   Trash2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Printer
 } from "lucide-react";
 
 interface SportTabProps {
@@ -577,25 +578,36 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
   return (
     <div className="space-y-8" id="sport-tab-section">
-      
-      {/* 1. Control Filters Card */}
-      <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-base font-black uppercase flex items-center gap-2 text-white">
-            <Award size={20} className="text-[#FF5722]" />
-            ตัวกรองโปรแกรมการแข่งขัน
-          </h2>
+      <div className="space-y-8 print:hidden">
+        {/* 1. Control Filters Card */}
+        <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h2 className="text-base font-black uppercase flex items-center gap-2 text-white">
+              <Award size={20} className="text-[#FF5722]" />
+              ตัวกรองโปรแกรมการแข่งขัน
+            </h2>
 
-          {isLoggedIn && (
-            <button
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="py-2 px-4 bg-[#FF5722] hover:bg-[#E04E1D] text-white font-bold text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 rounded-none"
-            >
-              <Plus size={14} />
-              {showAddForm ? "ปิดหน้าต่างเพิ่ม" : "เพิ่มแมตช์ใหม่ (+)"}
-            </button>
-          )}
-        </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 rounded-none"
+              >
+                <Printer size={14} className="text-[#FF5722]" />
+                ส่งออก PDF / พิมพ์ตาราง
+              </button>
+
+              {isLoggedIn && (
+                <button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="py-2 px-4 bg-[#FF5722] hover:bg-[#E04E1D] text-white font-bold text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 rounded-none"
+                >
+                  <Plus size={14} />
+                  {showAddForm ? "ปิดหน้าต่างเพิ่ม" : "เพิ่มแมตช์ใหม่ (+)"}
+                </button>
+              )}
+            </div>
+          </div>
 
         {/* Category segment buttons for quick access */}
         {categories.length >= 1 && (
@@ -1527,6 +1539,265 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
           </div>
         );
       })()}
+
+      </div>
+
+      {/* 4. Beautiful Printable Official PDF Section (Hidden on screen, shown ONLY during Print/PDF export) */}
+      <div className="hidden print:block bg-white text-black p-6 min-h-screen font-sans">
+        {/* Header Block */}
+        <div className="text-center border-b-2 border-black pb-4 mb-6">
+          <div className="flex justify-center mb-1 text-4xl">🏆</div>
+          <h1 className="text-xl font-black uppercase tracking-wide text-black">
+            ใบรายงานผลและตารางการแข่งขันอย่างเป็นทางการ (Official Match Report)
+          </h1>
+          <h2 className="text-sm font-bold text-gray-800 mt-1 font-sans">
+            การแข่งขันกีฬาบุคลากรสาธารณสุข จังหวัดปัตตานี ประจำปี 2569 "ปัตตานีเกมส์"
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5 font-semibold font-mono">
+            ณ สนามกีฬาเทศบาลเมืองบานา จังหวัดปัตตานี
+          </p>
+          <div className="mt-4 flex justify-between items-center text-xs font-semibold px-4 text-gray-700 bg-gray-100 py-2 border border-gray-300">
+            <span>ชนิดกีฬา: <strong className="text-black font-extrabold">{
+              sport === "football" ? "ฟุตบอล (Football)" :
+              sport === "volleyball" ? "วอลเลย์บอล (Volleyball)" :
+              sport === "petanque" ? "เปตอง (Petanque)" :
+              sport === "track" ? "กรีฑา (Track & Field)" : sport
+            }</strong></span>
+            {selectedCategory && (
+              <span>ประเภท: <strong className="text-black font-extrabold">{selectedCategory}</strong></span>
+            )}
+            {selectedRound !== "all" && (
+              <span>รอบ: <strong className="text-black font-extrabold">{selectedRound}</strong></span>
+            )}
+            <span>พิมพ์เมื่อ: {new Date().toLocaleDateString('th-TH', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })} น.</span>
+          </div>
+        </div>
+
+        {/* Content sections based on sport type */}
+        <div className="space-y-6 text-black">
+          {/* Group Standings (if applicable) */}
+          {sport !== "track" && selectedCategory !== "" && (
+            <div>
+              {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
+                const catMatches = sportMatches.filter(m => m.category === cat);
+                const catGroups = Array.from(new Set(catMatches.filter(m => m.round === "รอบแรก" && m.group).map(m => m.group))).sort();
+                
+                const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat).length > 0);
+                if (!hasStandings) return null;
+
+                return (
+                  <div key={cat} className="mb-6">
+                    <h3 className="text-xs font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans flex items-center gap-1">
+                      📊 ตารางคะแนนแบ่งกลุ่ม ({cat})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {catGroups.map((grpName) => {
+                        const standings = calculateGroupStandings(matches, sport, grpName, cat);
+                        if (standings.length === 0) return null;
+
+                        return (
+                          <div key={grpName} className="border border-black p-2 bg-gray-50/50">
+                            <div className="font-bold text-xs bg-black text-white px-2 py-0.5 inline-block mb-2 font-mono">
+                              {grpName}
+                            </div>
+                            <table className="w-full text-left text-[10px] border-collapse text-black">
+                              <thead>
+                                <tr className="border-b border-black bg-gray-100 font-bold">
+                                  <th className="py-1 px-1.5 border-r border-gray-300">อันดับ/ทีม</th>
+                                  <th className="py-1 px-0.5 text-center border-r border-gray-300">แข่ง</th>
+                                  <th className="py-1 px-0.5 text-center border-r border-gray-300">ชนะ</th>
+                                  <th className="py-1 px-0.5 text-center border-r border-gray-300">แพ้</th>
+                                  <th className="py-1 px-0.5 text-center border-r border-gray-300">+/-</th>
+                                  <th className="py-1 px-1.5 text-center">คะแนน</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {standings.map((st, i) => (
+                                  <tr key={st.team} className="border-b border-gray-200">
+                                    <td className="py-1 px-1.5 border-r border-gray-300 font-bold">
+                                      {i + 1}. {st.team}
+                                    </td>
+                                    <td className="py-1 px-0.5 text-center border-r border-gray-300">{st.played}</td>
+                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 text-emerald-700 font-bold">{st.won}</td>
+                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 text-red-700">{st.lost}</td>
+                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 font-bold">{st.scoreDiff > 0 ? `+${st.scoreDiff}` : st.scoreDiff}</td>
+                                    <td className="py-1 px-1.5 text-center font-bold bg-gray-100">{st.points}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Main Matches Schedule Table */}
+          <div>
+            <h3 className="text-xs font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+              📅 โปรแกรมแข่งขันและผลการแข่งขันอย่างเป็นทางการ ({filteredMatches.length} รายการ)
+            </h3>
+            {filteredMatches.length === 0 ? (
+              <p className="text-xs text-center text-gray-500 py-4 font-sans">ไม่มีรายการแข่งขันที่ตรงตามตัวกรองที่เลือก</p>
+            ) : (
+              <table className="w-full text-[10px] border-collapse border border-black text-black">
+                <thead>
+                  <tr className="bg-gray-100 border-b border-black text-left">
+                    <th className="p-1.5 border-r border-black font-bold text-center w-[40px]">คู่ที่</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[90px]">วัน/เวลาแข่งขัน</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[80px]">สนาม</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[120px]">ประเภท / รอบ</th>
+                    {sport === "track" ? (
+                      <th className="p-1.5 border-black font-bold">สรุปผลการแข่งขันกรีฑา</th>
+                    ) : (
+                      <>
+                        <th className="p-1.5 border-r border-black font-bold text-right w-[180px]">ทีมฝั่ง A</th>
+                        <th className="p-1.5 border-r border-black font-bold text-center w-[80px]">คะแนน</th>
+                        <th className="p-1.5 border-r border-black font-bold w-[180px]">ทีมฝั่ง B</th>
+                        <th className="p-1.5 border-black font-bold text-center w-[80px]">สถานะ/ผู้ชนะ</th>
+                      </>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMatches.map((m) => {
+                    const matchNum = m.id.split("_").pop();
+                    const isCompleted = m.status === "completed";
+                    const isLive = m.status === "live";
+
+                    return (
+                      <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
+                        <td className="p-1.5 border-r border-black font-bold text-center bg-gray-50 font-mono">{matchNum}</td>
+                        <td className="p-1.5 border-r border-black font-mono font-medium text-[9px]">
+                          <div>{m.date}</div>
+                          <div className="font-bold">{m.time}</div>
+                        </td>
+                        <td className="p-1.5 border-r border-black font-semibold">{m.court}</td>
+                        <td className="p-1.5 border-r border-black">
+                          <div className="font-bold">{m.category}</div>
+                          <div className="text-gray-600 font-mono text-[9px]">{m.round} {m.group ? `(${m.group})` : ""}</div>
+                        </td>
+
+                        {sport === "track" ? (
+                          <td className="p-1.5">
+                            {m.participants && m.participants.length > 0 ? (
+                              <div className="grid grid-cols-1 gap-1">
+                                {m.participants.map((p, idx) => {
+                                  const rank = m.ranks?.[idx]?.rank;
+                                  const score = m.ranks?.[idx]?.score;
+                                  return (
+                                    <div key={idx} className="flex justify-between items-center text-[9px] border-b border-gray-100 pb-0.5">
+                                      <span>{idx + 1}. <strong className="font-bold text-black">{p}</strong></span>
+                                      <span className="font-mono text-gray-700">
+                                        {score ? `เวลา/ระยะ: ${score}` : ""} {rank ? `[อันดับ: ${rank}]` : ""}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 italic">ยังไม่มีผู้ลงทะเบียน</span>
+                            )}
+                          </td>
+                        ) : (
+                          <>
+                            <td className={`p-1.5 border-r border-black text-right font-bold ${m.winner === m.teamA ? "text-emerald-800" : ""}`}>
+                              {m.winner === m.teamA && "👑 "}{m.teamA || "TBD"}
+                            </td>
+                            <td className="p-1.5 border-r border-black text-center font-mono font-black bg-gray-50 text-xs">
+                              {m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}
+                            </td>
+                            <td className={`p-1.5 border-r border-black font-bold ${m.winner === m.teamB ? "text-emerald-800" : ""}`}>
+                              {m.teamB || "TBD"}{m.winner === m.teamB && " 👑"}
+                            </td>
+                            <td className="p-1.5 text-center">
+                              {isLive ? (
+                                <span className="font-bold text-red-600 animate-pulse">กำลังแข่ง 🔴</span>
+                              ) : isCompleted ? (
+                                <span className="text-emerald-700 font-bold">เสร็จสิ้น ({m.winner || "-"})</span>
+                              ) : (
+                                <span className="text-gray-400">ยังไม่แข่งขัน</span>
+                              )}
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Bracket / Finals Report for Cup structure if category is selected and not track */}
+          {sport !== "track" && selectedCategory !== "" && (
+            <div className="border border-black p-4 bg-gray-50/20">
+              <h3 className="text-xs font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+                🏆 ผลการแข่งขันรอบน็อคเอาท์ (Knockout Playoff Matches)
+              </h3>
+              {(() => {
+                const koMatches = sportMatches.filter(m => 
+                  m.category === selectedCategory && 
+                  (m.round === "รอบ 8 ทีม" || m.round === "รอบรองชนะเลิศ" || m.round === "รอบชิงชนะเลิศ" || m.round === "ชิงที่ 3")
+                ).sort((a,b) => (a.order || 0) - (b.order || 0));
+
+                if (koMatches.length === 0) {
+                  return <p className="text-xs text-gray-500 italic font-sans">ไม่มีบันทึกการแข่งขันรอบน็อคเอาท์ของประเภทนี้</p>;
+                }
+
+                return (
+                  <table className="w-full text-[9px] border-collapse border border-black text-black">
+                    <thead>
+                      <tr className="bg-gray-100 border-b border-black text-left">
+                        <th className="p-1.5 border-r border-black font-bold w-[120px]">รอบ</th>
+                        <th className="p-1.5 border-r border-black font-bold text-right">ทีมฝั่ง A</th>
+                        <th className="p-1.5 border-r border-black font-bold text-center w-[60px]">คะแนน</th>
+                        <th className="p-1.5 border-r border-black font-bold text-left font-sans">ทีมฝั่ง B</th>
+                        <th className="p-1.5 border-black font-bold text-center w-[120px]">ผู้ชนะเข้ารอบ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {koMatches.map((m) => (
+                        <tr key={m.id} className="border-b border-gray-300">
+                          <td className="p-1.5 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
+                          <td className={`p-1.5 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
+                          <td className="p-1.5 border-r border-black text-center font-bold bg-gray-50 font-mono">{m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}</td>
+                          <td className={`p-1.5 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>
+                          <td className="p-1.5 text-center font-bold text-emerald-700">{m.winner ? `🏆 ${m.winner}` : "รอยืนยันผล"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Footer Signature Block */}
+          <div className="pt-12 grid grid-cols-2 gap-8 text-xs text-black font-sans">
+            <div className="text-center">
+              <p className="mb-12">ลงชื่อ ............................................................ ผู้รายงานผล</p>
+              <p>( ............................................................ )</p>
+              <p className="text-gray-500 mt-1">เจ้าหน้าที่ประสานงานการแข่งขัน</p>
+            </div>
+            <div className="text-center">
+              <p className="mb-12">ลงชื่อ ............................................................ ผู้แทนผู้ตัดสิน</p>
+              <p>( ............................................................ )</p>
+              <p className="text-gray-500 mt-1">หัวหน้าคณะผู้ตัดสิน</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </div>
   );

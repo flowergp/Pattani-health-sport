@@ -13,7 +13,8 @@ import {
   Search, 
   Award, 
   CheckCircle, 
-  PlayCircle 
+  PlayCircle,
+  Printer
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -230,19 +231,31 @@ export default function DistrictSchedule({
 
   return (
     <div className="space-y-6" id="district-schedule-tab">
-      {/* 1. District Selection Header Card */}
-      <div className="bg-[#111827] border border-slate-800 p-6 rounded-none text-white space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-xl font-black uppercase text-white flex items-center gap-2">
-              <Calendar className="text-[#FF5722]" size={22} />
-              ตารางการแข่งขันและโปรแกรมแข่งรายอำเภอ
-            </h2>
-            <p className="text-xs text-slate-400 font-semibold">
-              แสดงเฉพาะโปรแกรมแข่งขันของหน่วยงาน/อำเภอที่ท่านเลือก เพื่อการติดตามทีมของตนเองอย่างรวดเร็วและเป็นระบบ
-            </p>
+      <div className="space-y-6 print:hidden">
+        {/* 1. District Selection Header Card */}
+        <div className="bg-[#111827] border border-slate-800 p-6 rounded-none text-white space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-xl font-black uppercase text-white flex items-center gap-2">
+                <Calendar className="text-[#FF5722]" size={22} />
+                ตารางการแข่งขันและโปรแกรมแข่งรายอำเภอ
+              </h2>
+              <p className="text-xs text-slate-400 font-semibold">
+                แสดงเฉพาะโปรแกรมแข่งขันของหน่วยงาน/อำเภอที่ท่านเลือก เพื่อการติดตามทีมของตนเองอย่างรวดเร็วและเป็นระบบ
+              </p>
+            </div>
+
+            {selectedDistrict && (
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 rounded-none"
+              >
+                <Printer size={14} className="text-[#FF5722]" />
+                ส่งออก PDF ของ {selectedDistrict}
+              </button>
+            )}
           </div>
-        </div>
 
         {/* If no district is selected */}
         {!selectedDistrict && (
@@ -656,6 +669,189 @@ export default function DistrictSchedule({
           </div>
         </>
       )}
+
+      </div>
+
+      {/* Beautiful Printable Official PDF Section for District (Hidden on screen, shown ONLY during Print/PDF export) */}
+      {selectedDistrict && (
+        <div className="hidden print:block bg-white text-black p-6 min-h-screen font-sans">
+          {/* Header Block */}
+          <div className="text-center border-b-2 border-black pb-4 mb-6">
+            <div className="flex justify-center mb-1 text-4xl">🏆</div>
+            <h1 className="text-xl font-black uppercase tracking-wide text-black">
+              รายงานโปรแกรมและผลการแข่งขันรายอำเภออย่างเป็นทางการ (Official District Report)
+            </h1>
+            <h2 className="text-sm font-bold text-gray-800 mt-1 font-sans">
+              การแข่งขันกีฬาบุคลากรสาธารณสุข จังหวัดปัตตานี ประจำปี 2569 "ปัตตานีเกมส์"
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5 font-semibold font-mono">
+              ณ สนามกีฬาเทศบาลเมืองบานา จังหวัดปัตตานี
+            </p>
+            <div className="mt-4 flex flex-wrap justify-between items-center text-xs font-semibold px-4 text-gray-700 bg-gray-100 py-2 border border-gray-300">
+              <span>สังกัด/คป.สอ.: <strong className="text-black font-extrabold">{selectedDistrict}</strong></span>
+              {sportFilter !== "all" && (
+                <span>ชนิดกีฬา: <strong className="text-black font-extrabold">{
+                  sportFilter === "football" ? "ฟุตบอล" :
+                  sportFilter === "volleyball" ? "วอลเลย์บอล" :
+                  sportFilter === "petanque" ? "เปตอง" :
+                  sportFilter === "track" ? "กรีฑา" : sportFilter
+                }</strong></span>
+              )}
+              <span>พิมพ์เมื่อ: {new Date().toLocaleDateString('th-TH', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })} น.</span>
+            </div>
+          </div>
+
+          {/* District Stats Summary Table */}
+          {districtProfile && (
+            <div className="border border-black p-3 mb-6 bg-gray-50/50">
+              <h3 className="text-xs font-bold uppercase mb-2 font-sans">📊 สรุปเหรียญรางวัลและข้อมูลทีม: {selectedDistrict}</h3>
+              <table className="w-full text-left text-[11px] border-collapse text-black">
+                <thead>
+                  <tr className="border-b border-black bg-gray-100 text-gray-700 font-sans">
+                    <th className="p-1 font-bold">อันดับตารางเหรียญ</th>
+                    <th className="p-1 font-bold text-center text-yellow-600 font-sans">🥇 เหรียญทอง</th>
+                    <th className="p-1 font-bold text-center text-gray-500 font-sans">🥈 เหรียญเงิน</th>
+                    <th className="p-1 font-bold text-center text-amber-700 font-sans">🥉 เหรียญทองแดง</th>
+                    <th className="p-1 font-bold text-center">รวมเหรียญ</th>
+                    <th className="p-1 font-bold text-center">แมตช์แข่งขันทั้งหมด</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-200">
+                    <td className="p-1.5 font-bold">อันดับที่ {standings.findIndex(t => t.team === selectedDistrict) + 1}</td>
+                    <td className="p-1.5 text-center font-bold text-yellow-600">{districtProfile.medals.gold}</td>
+                    <td className="p-1.5 text-center font-bold text-gray-500">{districtProfile.medals.silver}</td>
+                    <td className="p-1.5 text-center font-bold text-amber-700">{districtProfile.medals.bronze}</td>
+                    <td className="p-1.5 text-center font-black">{districtProfile.medals.gold + districtProfile.medals.silver + districtProfile.medals.bronze}</td>
+                    <td className="p-1.5 text-center font-bold bg-gray-100">{districtProfile.total} แมตช์</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Chronological Match Schedule Table */}
+          <div>
+            <h3 className="text-xs font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+              📅 รายละเอียดโปรแกรมและผลการแข่งขัน ({filteredMatches.length} รายการ)
+            </h3>
+            {filteredMatches.length === 0 ? (
+              <p className="text-xs text-center text-gray-500 py-4 font-sans">ไม่มีรายการแข่งขันที่ตรงตามตัวกรองที่เลือก</p>
+            ) : (
+              <table className="w-full text-[10px] border-collapse border border-black text-black">
+                <thead>
+                  <tr className="bg-gray-100 border-b border-black text-left font-sans">
+                    <th className="p-1.5 border-r border-black font-bold text-center w-[40px]">คู่ที่</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[95px]">วัน/เวลาแข่งขัน</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[75px]">กีฬา</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[120px]">ประเภท / รอบ</th>
+                    <th className="p-1.5 border-r border-black font-bold text-right w-[150px]">ทีมฝั่ง A</th>
+                    <th className="p-1.5 border-r border-black font-bold text-center w-[70px]">คะแนน</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[150px]">ทีมฝั่ง B</th>
+                    <th className="p-1.5 border-black font-bold text-center w-[100px]">ผลการแข่งขัน / สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMatches.map((m) => {
+                    const matchNum = m.id.split("_").pop();
+                    const isCompleted = m.status === "completed";
+                    const isLive = m.status === "live";
+
+                    return (
+                      <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
+                        <td className="p-1.5 border-r border-black font-bold text-center bg-gray-50 font-mono">{matchNum}</td>
+                        <td className="p-1.5 border-r border-black font-mono font-medium text-[9px]">
+                          <div>{m.date}</div>
+                          <div className="font-bold">{m.time}</div>
+                        </td>
+                        <td className="p-1.5 border-r border-black font-bold text-center uppercase font-sans text-[9px]">
+                          {m.sport === "football" ? "⚽ ฟุตบอล" :
+                           m.sport === "volleyball" ? "🏐 วอลเลย์" :
+                           m.sport === "petanque" ? "🥎 เปตอง" : "🏃 กรีฑา"}
+                        </td>
+                        <td className="p-1.5 border-r border-black">
+                          <div className="font-bold">{m.category}</div>
+                          <div className="text-gray-600 font-mono text-[9px]">{m.round} {m.group ? `(${m.group})` : ""}</div>
+                        </td>
+
+                        {m.sport === "track" ? (
+                          <td colSpan={3} className="p-1.5 border-r border-black">
+                            {m.participants && m.participants.length > 0 ? (
+                              <div className="grid grid-cols-1 gap-1">
+                                {m.participants.map((p, idx) => {
+                                  const rank = m.ranks?.[idx]?.rank;
+                                  const score = m.ranks?.[idx]?.score;
+                                  return (
+                                    <div key={idx} className="flex justify-between items-center text-[9px] border-b border-gray-100 pb-0.5">
+                                      <span className={p === selectedDistrict ? "font-bold underline text-black" : ""}>
+                                        {idx + 1}. {p} {p === selectedDistrict ? "⭐" : ""}
+                                      </span>
+                                      <span className="font-mono text-gray-700">
+                                        {score ? `เวลา: ${score}` : ""} {rank ? `[อันดับ: ${rank}]` : ""}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 italic font-sans">ยังไม่มีผู้ลงทะเบียน</span>
+                            )}
+                          </td>
+                        ) : (
+                          <>
+                            <td className={`p-1.5 border-r border-black text-right font-bold ${m.winner === m.teamA ? "text-emerald-800" : ""} ${m.teamA === selectedDistrict ? "underline decoration-wavy" : ""}`}>
+                              {m.winner === m.teamA && "👑 "}{m.teamA || "TBD"}
+                            </td>
+                            <td className="p-1.5 border-r border-black text-center font-mono font-black bg-gray-50 text-xs">
+                              {m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}
+                            </td>
+                            <td className={`p-1.5 border-r border-black font-bold ${m.winner === m.teamB ? "text-emerald-800" : ""} ${m.teamB === selectedDistrict ? "underline decoration-wavy" : ""}`}>
+                              {m.teamB || "TBD"}{m.winner === m.teamB && " 👑"}
+                            </td>
+                          </>
+                        )}
+
+                        <td className="p-1.5 text-center">
+                          {isLive ? (
+                            <span className="font-bold text-red-600 animate-pulse">กำลังแข่ง 🔴</span>
+                          ) : isCompleted ? (
+                            <span className="text-emerald-700 font-bold font-sans">
+                              {m.winner === selectedDistrict ? "✓ ชนะ 🎉" : m.winner ? `แพ้ (ผู้ชนะ: ${m.winner})` : "เสร็จสิ้น"}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 font-sans">ยังไม่แข่งขัน</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Footer Signature Block */}
+          <div className="pt-12 grid grid-cols-2 gap-8 text-xs text-black font-sans">
+            <div className="text-center">
+              <p className="mb-12">ลงชื่อ ............................................................ ผู้จัดการทีม / ตัวแทน</p>
+              <p>( {selectedDistrict} )</p>
+              <p className="text-gray-500 mt-1">ผู้ประสานงานตารางทีม คป.สอ.</p>
+            </div>
+            <div className="text-center">
+              <p className="mb-12">ลงชื่อ ............................................................ พยาน / เจ้าหน้าที่สนาม</p>
+              <p>( ............................................................ )</p>
+              <p className="text-gray-500 mt-1">เจ้าหน้าที่บันทึกผลการแข่งขันกลาง</p>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -396,8 +396,18 @@ export default function App() {
                   updated = true;
                 }
               }
+              let date = m.date;
+              if (m.sport === "petanque") {
+                if (m.gender === "ชาย" && date === "6 ก.ค. 69") {
+                  date = "7 ก.ค. 69";
+                  updated = true;
+                } else if (m.gender === "หญิง" && date === "7 ก.ค. 69") {
+                  date = "6 ก.ค. 69";
+                  updated = true;
+                }
+              }
               if (updated) {
-                const updatedMatch = { ...m, participants, ranks };
+                const updatedMatch = { ...m, participants, ranks, date };
                 needsFirestoreSync = true;
                 pendingUpdates.push({ id: m.id, data: updatedMatch });
                 return updatedMatch;
@@ -905,7 +915,7 @@ export default function App() {
     <div className={`min-h-screen ${theme === "light" ? "theme-light" : ""} bg-[#0A0F1D] text-[#E2E8F0] pb-16 selection:bg-[#FF5722] selection:text-white transition-colors duration-200`}>
       
       {/* HEADER BAR (Modern Information-Dense & Unified Navbar) */}
-      <header ref={headerRef} className="bg-[#111827] border-b border-slate-800 sticky top-0 z-50 shadow-md">
+      <header ref={headerRef} className="bg-[#111827] border-b border-slate-800 sticky top-0 z-50 shadow-md print:hidden">
         {/* Top bar (Logo & Admin) */}
         <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/50">
           <div className="flex items-center gap-3">
@@ -1130,7 +1140,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 mt-6">
 
         {/* District Filter Selector Card */}
-        <div className="bg-[#111827] border border-slate-800 p-4 mb-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-[#111827] border border-slate-800 p-4 mb-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-[#FF5722] text-sm animate-bounce">📍</span>
@@ -1282,7 +1292,7 @@ export default function App() {
       </main>
 
       {/* FOOTER */}
-      <footer className="mt-16 pt-8 border-t border-slate-800 text-center text-xs text-slate-500 space-y-2">
+      <footer className="mt-16 pt-8 border-t border-slate-800 text-center text-xs text-slate-500 space-y-2 print:hidden">
         <p className="font-mono uppercase tracking-widest text-[10px]">
           คป.สอ. ปัตตานีเกมส์ 2569 • พัฒนาโดย กลุ่มงานสุขศึกษา รพ.ปัตตานี
         </p>
