@@ -1466,7 +1466,7 @@ export default function DistrictSchedule({
 
       {/* Beautiful Interactive Print Preview Modal overlay */}
       {showPreview && selectedDistrict && (
-        <div className="fixed inset-0 bg-slate-950/90 z-[9999] flex flex-col justify-between overflow-y-auto p-4 md:p-8 backdrop-blur-md print:hidden">
+        <div className="fixed inset-0 bg-slate-950/90 z-[9999] flex flex-col justify-between overflow-y-auto p-4 md:p-8 backdrop-blur-md print-overlay-container">
           {/* Export Success Modal Dialog */}
           {exportSuccess && (
             <div className="fixed inset-0 bg-slate-950/85 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm">

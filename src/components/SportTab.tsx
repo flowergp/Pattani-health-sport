@@ -2209,7 +2209,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
       {/* Beautiful Interactive Print Preview Modal overlay */}
       {showPreview && (
-        <div className="fixed inset-0 bg-slate-950/90 z-[9999] flex flex-col justify-between overflow-y-auto p-4 md:p-8 backdrop-blur-md print:hidden text-black">
+        <div className="fixed inset-0 bg-slate-950/90 z-[9999] flex flex-col justify-between overflow-y-auto p-4 md:p-8 backdrop-blur-md print-overlay-container text-black">
           {/* Export Success Modal Dialog */}
           {exportSuccess && (
             <div className="fixed inset-0 bg-slate-950/85 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm text-white">
