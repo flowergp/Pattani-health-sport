@@ -424,3 +424,57 @@ body {
 .theme-light label {
   color: #334155 !important;
 }
+
+/* Print styles to print the official schedules beautifully and cleanly */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  
+  /* Hide all elements on the screen */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Reveal the printable div and its descendants */
+  #district-pdf-content,
+  #district-pdf-content * {
+    visibility: visible;
+  }
+
+  #sport-pdf-content,
+  #sport-pdf-content * {
+    visibility: visible;
+  }
+
+  /* Force the printable container to the top-left corner of the page with correct dimension */
+  #district-pdf-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 10mm !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+
+  #sport-pdf-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 10mm !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+}
+

@@ -2286,6 +2286,14 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
               </button>
               <button
                 type="button"
+                onClick={() => window.print()}
+                className="py-1.5 px-4 bg-amber-500 text-slate-950 hover:bg-amber-400 font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-500/10 transition-all cursor-pointer rounded-none flex items-center gap-1"
+              >
+                <Printer size={13} className="stroke-[3]" />
+                สั่งพิมพ์ตาราง
+              </button>
+              <button
+                type="button"
                 onClick={handleExportPDF}
                 className="py-1.5 px-4 bg-[#00FF66] text-slate-950 hover:bg-[#00E55C] font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/10 transition-all cursor-pointer rounded-none flex items-center gap-1"
               >
