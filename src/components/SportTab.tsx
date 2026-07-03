@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Match, Participant } from "../types";
 import { calculateGroupStandings } from "../utils/calcStandings";
 import { getDisplayMatchNum } from "../utils/matchUtils";
@@ -79,6 +79,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
   // Filters state
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedRound, setSelectedRound] = useState<string>("all");
+  const [selectedGroup, setSelectedGroup] = useState<string>("all");
+  const [selectedCourt, setSelectedCourt] = useState<string>("all");
   const [teamSearch, setTeamSearch] = useState<string>("");
   const [activeView, setActiveView] = useState<"all" | "standings" | "bracket" | "matches">("all");
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
@@ -448,10 +450,18 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
     }
   }, [sport, selectedCategory, matches]);
 
-  // Reset selected category when sport changes so the auto-selector can pick the correct category of the new sport
+  // Reset filters when sport changes
   useEffect(() => {
     setSelectedCategory("");
+    setSelectedGroup("all");
+    setSelectedCourt("all");
   }, [sport]);
+
+  // Reset group and court filters when category changes
+  useEffect(() => {
+    setSelectedGroup("all");
+    setSelectedCourt("all");
+  }, [selectedCategory]);
 
   // Auto-select first non-empty category for non-track sports if empty
   useEffect(() => {
@@ -473,6 +483,26 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
     return r !== "รอบ 8 ทีม" && r !== "รอบรองชนะเลิศ" && r !== "รอบชิงชนะเลิศ" && r !== "ชิงที่ 3";
   })];
 
+  // Get unique groups for this sport & selected category
+  const groupsList = useMemo(() => {
+    const list = sportMatches
+      .filter((m) => selectedCategory === "" || m.category === selectedCategory)
+      .map((m) => m.group)
+      .filter(Boolean);
+    // Sort logically
+    return ["all", ...Array.from(new Set(list)).sort()];
+  }, [sportMatches, selectedCategory]);
+
+  // Get unique courts for this sport & selected category
+  const courtsList = useMemo(() => {
+    const list = sportMatches
+      .filter((m) => selectedCategory === "" || m.category === selectedCategory)
+      .map((m) => m.court)
+      .filter(Boolean);
+    // Sort logically
+    return ["all", ...Array.from(new Set(list)).sort()];
+  }, [sportMatches, selectedCategory]);
+
   // Filter matches
   const filteredMatches = sportMatches.filter((m) => {
     // Cut bracket/knockout rounds from the match schedule list (รายการแข่งขัน) (except for track)
@@ -482,6 +512,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
     const matchCat = selectedCategory === "" ? true : m.category === selectedCategory;
     const matchRound = selectedRound === "all" || m.round === selectedRound;
+    const matchGroup = selectedGroup === "all" || m.group === selectedGroup;
+    const matchCourt = selectedCourt === "all" || m.court === selectedCourt;
     
     let matchTeam = true;
     if (teamSearch.trim()) {
@@ -504,13 +536,27 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
       }
     }
 
-    // If no category is selected, only show matches if a search or district filter is active (except for track, which supports Show All)
-    if (selectedCategory === "" && !teamSearch.trim() && !selectedDistrict && sport !== "track") {
+    // If no category is selected, only show matches if a search, district, group, or court filter is active (except for track, which supports Show All)
+    if (
+      selectedCategory === "" && 
+      !teamSearch.trim() && 
+      !selectedDistrict && 
+      selectedGroup === "all" && 
+      selectedCourt === "all" && 
+      sport !== "track"
+    ) {
       return false;
     }
 
-    return matchCat && matchRound && matchTeam && matchDistrict;
+    return matchCat && matchRound && matchTeam && matchDistrict && matchGroup && matchCourt;
   }).sort((a, b) => {
+    // For Petanque, sort by match number (suffix of the ID)
+    if (sport === "petanque") {
+      const numA = Number(a.id.split("_").pop()) || 0;
+      const numB = Number(b.id.split("_").pop()) || 0;
+      if (numA !== numB) return numA - numB;
+    }
+
     // 1. Sort by Date first
     const dateA = parseThaiDateToValue(a.date);
     const dateB = parseThaiDateToValue(b.date);
@@ -1217,8 +1263,9 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
       </div>
 
       {/* 2. Sticky Filters Bar (Stays fixed below the header) */}
-      <div className="sticky top-[var(--header-height,104px)] z-40 bg-[#111827] border border-slate-800 p-4 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-none text-white transition-all">
-        <div>
+      {/* 2. Sticky Filters Bar (Stays fixed below the header) */}
+      <div className="sticky top-[var(--header-height,104px)] z-40 bg-[#111827] border border-slate-800 p-4 shadow-xl flex flex-col md:flex-row flex-wrap md:items-end gap-3 rounded-none text-white transition-all">
+        <div className="flex-1 min-w-[140px]">
           <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">ประเภทการแข่ง</label>
           <select
             value={selectedCategory}
@@ -1233,7 +1280,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
           </select>
         </div>
 
-        <div>
+        <div className="flex-1 min-w-[130px]">
           <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">รอบการแข่งขัน</label>
           <select
             value={selectedRound}
@@ -1248,7 +1295,41 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
           </select>
         </div>
 
-        <div>
+        {groupsList.length > 1 && (
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">สาย / กลุ่ม</label>
+            <select
+              value={selectedGroup}
+              onChange={(e) => setSelectedGroup(e.target.value)}
+              className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+            >
+              {groupsList.map((g) => (
+                <option key={g} value={g}>
+                  {g === "all" ? "🎯 แสดงทุกสาย" : `สาย ${g}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {courtsList.length > 1 && (
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">สนามแข่งขัน</label>
+            <select
+              value={selectedCourt}
+              onChange={(e) => setSelectedCourt(e.target.value)}
+              className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+            >
+              {courtsList.map((c) => (
+                <option key={c} value={c}>
+                  {c === "all" ? "📍 แสดงทุกสนาม" : c}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="flex-1 min-w-[150px] md:flex-[1.5]">
           <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">ค้นหาชื่อทีม</label>
           <input
             type="text"

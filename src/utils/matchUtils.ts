@@ -27,12 +27,7 @@ export function getDisplayMatchNum(id: string, sport: string): string {
     }
   }
 
-  // Petanque
-  if (sport === "petanque") {
-    if (num <= 24) {
-      return String(((num - 1) % 6) + 1);
-    }
-  }
+
 
   return String(num);
 }
