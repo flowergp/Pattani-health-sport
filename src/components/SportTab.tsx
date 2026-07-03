@@ -2531,16 +2531,16 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
               {/* Header Block */}
               <div className="text-center border-b-2 border-black pb-4 mb-6">
                 <div className="flex justify-center mb-1 text-4xl">🏆</div>
-                <h1 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-black leading-tight">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wide text-black leading-tight">
                   ใบรายงานผลและตารางการแข่งขันอย่างเป็นทางการ (Official Match Report)
                 </h1>
-                <h2 className="text-xs font-bold text-gray-800 mt-1 font-sans">
+                <h2 className="text-base sm:text-lg font-bold text-gray-800 mt-1 font-sans">
                   การแข่งขันกีฬาบุคลากรสาธารณสุข จังหวัดปัตตานี ประจำปี 2569 "ปัตตานีเกมส์"
                 </h2>
-                <p className="text-[10px] text-gray-500 mt-0.5 font-semibold font-mono">
+                <p className="text-sm sm:text-base text-gray-500 mt-0.5 font-semibold font-mono">
                   ณ สนามกีฬาเทศบาลเมืองบานา จังหวัดปัตตานี
                 </p>
-                <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center text-[10px] font-semibold px-3 text-gray-700 bg-gray-100 py-2 border border-gray-300 gap-1.5">
+                <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm sm:text-base font-semibold px-3 text-gray-700 bg-gray-100 py-2 border border-gray-300 gap-1.5">
                   <span>ชนิดกีฬา: <strong className="text-black font-extrabold">{
                     sport === "football" ? "ฟุตบอล (Football)" :
                     sport === "volleyball" ? "วอลเลย์บอล (Volleyball)" :
@@ -2570,7 +2570,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                     <h3 className="text-sm font-black text-black border-b border-black pb-2">
                       📌 กำหนดการแข่งขันเปตอง (กรณีรอผลการจับฉลาก)
                     </h3>
-                    <div className="text-[10px] font-bold text-gray-850 space-y-2.5 leading-relaxed inline-block text-left mx-auto py-2">
+                    <div className="text-[10px] font-bold text-gray-855 space-y-2.5 leading-relaxed inline-block text-left mx-auto py-2">
                       <p>ประเภทชายคู่ วันที่ 6 กรกฎาคม 2569</p>
                       <p>ประเภทหญิงคู่ วันที่ 7 กรกฎาคม 2569</p>
                       <p>ประเภททีมผสม วันที่ 8 กรกฎาคม 2569</p>
@@ -2591,7 +2591,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                           return (
                             <div key={cat} className="mb-4">
-                              <h3 className="text-[10px] font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans flex items-center gap-1">
+                              <h3 className="text-xs sm:text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans flex items-center gap-1">
                                 📊 ตารางคะแนนแบ่งกลุ่ม ({cat})
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2601,10 +2601,10 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                                   return (
                                     <div key={grpName} className="border border-black p-1.5 bg-gray-50/50">
-                                      <div className="font-bold text-[9px] bg-black text-white px-1.5 py-0.5 inline-block mb-1.5 font-mono">
+                                      <div className="font-bold text-[13px] bg-black text-white px-1.5 py-0.5 inline-block mb-1.5 font-mono">
                                         {grpName}
                                       </div>
-                                      <table className="w-full text-left text-[8px] border-collapse text-black">
+                                      <table className="w-full text-left text-sm border-collapse text-black">
                                         <thead>
                                           <tr className="border-b border-black bg-gray-100 font-bold">
                                             <th className="py-0.5 px-1 border-r border-gray-300">อันดับ/ทีม</th>
@@ -2642,27 +2642,25 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                     {/* Main Matches Schedule Table */}
                     <div>
-                      <h3 className="text-[10px] font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+                      <h3 className="text-xs sm:text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
                         📅 โปรแกรมแข่งขันและผลการแข่งขันอย่างเป็นทางการ ({filteredMatches.length} รายการ)
                       </h3>
                       {filteredMatches.length === 0 ? (
                         <p className="text-xs text-center text-gray-500 py-4 font-sans">ไม่มีรายการแข่งขันที่ตรงตามตัวกรองที่เลือก</p>
                       ) : (
-                        <table className="w-full text-[9px] border-collapse border border-black text-black">
+                        <table className="w-full text-sm border-collapse border border-black text-black">
                           <thead>
                             <tr className="bg-gray-100 border-b border-black text-left">
-                              <th className="p-1 border-r border-black font-bold text-center w-[40px]">คู่ที่</th>
-                              <th className="p-1 border-r border-black font-bold w-[90px]">วัน/เวลาแข่งขัน</th>
-                              <th className="p-1 border-r border-black font-bold w-[75px]">สนาม</th>
-                              <th className="p-1 border-r border-black font-bold w-[110px]">ประเภท / รอบ</th>
+                              <th className="p-1 border-r border-black font-bold text-center w-[45px]">คู่ที่</th>
+                              <th className="p-1 border-r border-black font-bold w-[105px]">วัน/เวลาแข่งขัน</th>
+                              <th className="p-1 border-r border-black font-bold w-[85px]">สนาม</th>
+                              <th className="p-1 border-r border-black font-bold w-[125px]">ประเภท / รอบ</th>
                               {sport === "track" ? (
                                 <th className="p-1 border-black font-bold">สรุปผลการแข่งขันกรีฑา</th>
                               ) : (
                                 <>
-                                  <th className="p-1 border-r border-black font-bold text-right w-[150px]">ทีมฝั่ง A</th>
-                                  <th className="p-1 border-r border-black font-bold text-center w-[60px]">คะแนน</th>
-                                  <th className="p-1 border-r border-black font-bold w-[150px]">ทีมฝั่ง B</th>
-                                  <th className="p-1 border-black font-bold text-center w-[80px]">สถานะ/ผู้ชนะ</th>
+                                  <th className="p-1 border-r border-black font-bold text-right w-[215px]">ทีมฝั่ง A</th>
+                                  <th className="p-1 border-black font-bold w-[215px]">ทีมฝั่ง B</th>
                                 </>
                               )}
                             </tr>
@@ -2675,25 +2673,25 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                               return (
                                 <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                                  <td className="p-1 border-r border-black font-bold text-center bg-gray-50 font-mono">{matchNum}</td>
-                                  <td className="p-1 border-r border-black font-mono font-medium text-[8px]">
+                                  <td className="p-1 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{matchNum}</td>
+                                  <td className="p-1 border-r border-black font-mono font-medium text-xs">
                                     <div>{m.date}</div>
                                     <div className="font-bold">{m.time}</div>
                                   </td>
-                                  <td className="p-1 border-r border-black text-[8px] font-semibold">{m.court}</td>
-                                  <td className="p-1 border-r border-black text-[8px]">
+                                  <td className="p-1 border-r border-black text-xs font-semibold">{m.court}</td>
+                                  <td className="p-1 border-r border-black text-xs">
                                     <div className="font-bold">{m.category}</div>
                                     <div className="text-gray-600 font-mono leading-none">{m.round} {m.group ? `(${m.group})` : ""}</div>
                                   </td>
                                   {sport === "track" ? (
-                                    <td className="p-1 text-[8px]">
+                                    <td className="p-1 text-xs">
                                       {m.participants && m.participants.length > 0 ? (
                                         <div className="grid grid-cols-1 gap-0.5">
                                           {m.participants.map((p, idx) => {
                                             const rank = m.ranks?.[idx]?.rank;
                                             const score = m.ranks?.[idx]?.score;
                                             return (
-                                              <div key={idx} className="flex justify-between items-center text-[8px] border-b border-gray-100 pb-0.5">
+                                              <div key={idx} className="flex justify-between items-center text-[10px] border-b border-gray-100 pb-0.5">
                                                 <span>{idx + 1}. {p}</span>
                                                 <span className="font-mono text-gray-700">
                                                   {score ? `เวลา: ${score}` : ""} {rank ? `[อันดับ: ${rank}]` : ""}
@@ -2708,23 +2706,11 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                                     </td>
                                   ) : (
                                     <>
-                                      <td className={`p-1 border-r border-black text-right font-bold text-[8px] ${m.winner === m.teamA ? "text-emerald-800" : ""}`}>
+                                      <td className={`p-1 border-r border-black text-right font-bold text-sm ${m.winner === m.teamA ? "text-emerald-800" : ""}`}>
                                         {m.winner === m.teamA && "👑 "}{m.teamA || "TBD"}
                                       </td>
-                                      <td className="p-1 border-r border-black text-center font-mono font-black bg-gray-50 text-[10px]">
-                                        {m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}
-                                      </td>
-                                      <td className={`p-1 border-r border-black font-bold text-[8px] ${m.winner === m.teamB ? "text-emerald-800" : ""}`}>
+                                      <td className={`p-1 font-bold text-sm ${m.winner === m.teamB ? "text-emerald-800" : ""}`}>
                                         {m.teamB || "TBD"}{m.winner === m.teamB && " 👑"}
-                                      </td>
-                                      <td className="p-1 text-center text-[8px]">
-                                        {isLive ? (
-                                          <span className="font-bold text-red-600 animate-pulse">กำลังแข่ง 🔴</span>
-                                        ) : isCompleted ? (
-                                          <span className="text-emerald-700 font-bold">เสร็จสิ้น ({m.winner || "-"})</span>
-                                        ) : (
-                                          <span className="text-gray-400">ยังไม่แข่งขัน</span>
-                                        )}
                                       </td>
                                     </>
                                   )}
@@ -2739,7 +2725,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                     {/* Bracket / Finals Report for Cup structure if category is selected and not track */}
                     {sport !== "track" && selectedCategory !== "" && (
                       <div className="border border-black p-3 bg-gray-50/20">
-                        <h3 className="text-[10px] font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+                        <h3 className="text-xs sm:text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
                           🏆 ผลการแข่งขันรอบน็อคเอาท์ (Knockout Playoff Matches)
                         </h3>
                         {(() => {
@@ -2749,16 +2735,15 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                           ).sort((a,b) => (a.order || 0) - (b.order || 0));
 
                           if (koMatches.length === 0) {
-                            return <p className="text-[9px] text-gray-500 italic font-sans">ไม่มีบันทึกการแข่งขันรอบน็อคเอาท์ของประเภทนี้</p>;
+                            return <p className="text-xs text-gray-500 italic font-sans">ไม่มีบันทึกการแข่งขันรอบน็อคเอาท์ของประเภทนี้</p>;
                           }
 
                           return (
-                            <table className="w-full text-[8px] border-collapse border border-black text-black">
+                            <table className="w-full text-sm border-collapse border border-black text-black">
                               <thead>
                                 <tr className="bg-gray-100 border-b border-black text-left">
                                   <th className="p-1 border-r border-black font-bold w-[120px]">รอบ</th>
                                   <th className="p-1 border-r border-black font-bold text-right">ทีมฝั่ง A</th>
-                                  <th className="p-1 border-r border-black font-bold text-center w-[60px]">คะแนน</th>
                                   <th className="p-1 border-r border-black font-bold text-left font-sans">ทีมฝั่ง B</th>
                                   <th className="p-1 border-black font-bold text-center w-[120px]">ผู้ชนะเข้ารอบ</th>
                                 </tr>
@@ -2768,7 +2753,6 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                                   <tr key={m.id} className="border-b border-gray-300">
                                     <td className="p-1 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
                                     <td className={`p-1 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
-                                    <td className="p-1 border-r border-black text-center font-bold bg-gray-50 font-mono">{m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}</td>
                                     <td className={`p-1 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>
                                     <td className="p-1 text-center font-bold text-emerald-700">{m.winner ? `🏆 ${m.winner}` : "รอยืนยันผล"}</td>
                                   </tr>
@@ -2784,7 +2768,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
               </div>
 
               {/* Footer Signature Block */}
-              <div className="pt-12 grid grid-cols-2 gap-8 text-[10px] text-black font-sans">
+              <div className="pt-12 grid grid-cols-2 gap-8 text-sm sm:text-base text-black font-sans">
                 <div className="text-center">
                   <p className="mb-10">ลงชื่อ ............................................................ ผู้บันทึก / เจ้าหน้าที่สถิติ</p>
                   <p>( ............................................................ )</p>
@@ -2793,7 +2777,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                 <div className="text-center">
                   <p className="mb-10">ลงชื่อ ............................................................ ผู้รับรอง / คณะกรรมการกลาง</p>
                   <p>( ............................................................ )</p>
-                  <p className="text-gray-500 mt-1">ประธานอนุกรรมการฝ่ายผู้ตัดสินและเทคนิคกีฬา</p>
+                  <p className="text-gray-500 mt-1">ประธานฝ่ายเทคนิคการแข่งขัน</p>
                 </div>
               </div>
 
@@ -2807,16 +2791,16 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
         {/* Header Block */}
         <div className="text-center border-b-2 border-black pb-4 mb-6">
           <div className="flex justify-center mb-1 text-4xl">🏆</div>
-          <h1 className="text-xl font-black uppercase tracking-wide text-black">
+          <h1 className="text-3xl font-black uppercase tracking-wide text-black">
             ใบรายงานผลและตารางการแข่งขันอย่างเป็นทางการ (Official Match Report)
           </h1>
-          <h2 className="text-sm font-bold text-gray-800 mt-1 font-sans">
+          <h2 className="text-lg font-bold text-gray-800 mt-1 font-sans">
             การแข่งขันกีฬาบุคลากรสาธารณสุข จังหวัดปัตตานี ประจำปี 2569 "ปัตตานีเกมส์"
           </h2>
-          <p className="text-xs text-gray-500 mt-0.5 font-semibold font-mono">
+          <p className="text-base text-gray-500 mt-0.5 font-semibold font-mono">
             ณ สนามกีฬาเทศบาลเมืองบานา จังหวัดปัตตานี
           </p>
-          <div className="mt-4 flex justify-between items-center text-xs font-semibold px-4 text-gray-700 bg-gray-100 py-2 border border-gray-300">
+          <div className="mt-4 flex justify-between items-center text-base font-semibold px-4 text-gray-700 bg-gray-100 py-2 border border-gray-300">
             <span>ชนิดกีฬา: <strong className="text-black font-extrabold">{
               sport === "football" ? "ฟุตบอล (Football)" :
               sport === "volleyball" ? "วอลเลย์บอล (Volleyball)" :
@@ -2843,14 +2827,14 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
         <div className="space-y-6 text-black">
           {petanqueDrawNotHeld ? (
             <div className="border border-black p-6 bg-gray-50 rounded-none text-center space-y-4">
-              <h3 className="text-base font-black text-black border-b border-black pb-2">
+              <h3 className="text-lg font-black text-black border-b border-black pb-2">
                 📌 กำหนดการแข่งขันเปตอง
               </h3>
-              <div className="text-xs font-bold text-gray-800 space-y-2.5 leading-relaxed inline-block text-left mx-auto py-2">
+              <div className="text-sm font-bold text-gray-850 space-y-2.5 leading-relaxed inline-block text-left mx-auto py-2">
                 <p>ประเภทชายคู่ วันที่ 6 กรกฎาคม 2569</p>
                 <p>ประเภทหญิงคู่ วันที่ 7 กรกฎาคม 2569</p>
                 <p>ประเภททีมผสม วันที่ 8 กรกฎาคม 2569</p>
-                <p className="mt-4 text-black text-sm font-black text-center font-sans">เริ่มแข่งขัน 9.00น.</p>
+                <p className="mt-4 text-black text-base font-black text-center font-sans">เริ่มแข่งขัน 9.00น.</p>
               </div>
             </div>
           ) : (
@@ -2867,7 +2851,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                 return (
                   <div key={cat} className="mb-6">
-                    <h3 className="text-xs font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans flex items-center gap-1">
+                    <h3 className="text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans flex items-center gap-1">
                       📊 ตารางคะแนนแบ่งกลุ่ม ({cat})
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2877,10 +2861,10 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                         return (
                           <div key={grpName} className="border border-black p-2 bg-gray-50/50">
-                            <div className="font-bold text-xs bg-black text-white px-2 py-0.5 inline-block mb-2 font-mono">
+                            <div className="font-bold text-base bg-black text-white px-2 py-0.5 inline-block mb-2 font-mono">
                               {grpName}
                             </div>
-                            <table className="w-full text-left text-[10px] border-collapse text-black">
+                            <table className="w-full text-left text-sm border-collapse text-black">
                               <thead>
                                 <tr className="border-b border-black bg-gray-100 font-bold">
                                   <th className="py-1 px-1.5 border-r border-gray-300">อันดับ/ทีม</th>
@@ -2894,14 +2878,14 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                               <tbody>
                                 {standings.map((st, i) => (
                                   <tr key={st.team} className="border-b border-gray-200">
-                                    <td className="py-1 px-1.5 border-r border-gray-300 font-bold">
+                                    <td className="py-1 px-1.5 border-r border-gray-300 font-bold text-xs text-black">
                                       {i + 1}. {st.team}
                                     </td>
-                                    <td className="py-1 px-0.5 text-center border-r border-gray-300">{st.played}</td>
-                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 text-emerald-700 font-bold">{st.won}</td>
-                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 text-red-700">{st.lost}</td>
-                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 font-bold">{st.scoreDiff > 0 ? `+${st.scoreDiff}` : st.scoreDiff}</td>
-                                    <td className="py-1 px-1.5 text-center font-bold bg-gray-100">{st.points}</td>
+                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 text-xs">{st.played}</td>
+                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 text-emerald-700 font-bold text-sm">{st.won}</td>
+                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 text-red-700 text-xs">{st.lost}</td>
+                                    <td className="py-1 px-0.5 text-center border-r border-gray-300 font-bold text-sm">{st.scoreDiff > 0 ? `+${st.scoreDiff}` : st.scoreDiff}</td>
+                                    <td className="py-1 px-1.5 text-center font-bold bg-gray-100 text-xs">{st.points}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -2918,27 +2902,25 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
           {/* Main Matches Schedule Table */}
           <div>
-            <h3 className="text-xs font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+            <h3 className="text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
               📅 โปรแกรมแข่งขันและผลการแข่งขันอย่างเป็นทางการ ({filteredMatches.length} รายการ)
             </h3>
             {filteredMatches.length === 0 ? (
               <p className="text-xs text-center text-gray-500 py-4 font-sans">ไม่มีรายการแข่งขันที่ตรงตามตัวกรองที่เลือก</p>
             ) : (
-              <table className="w-full text-[10px] border-collapse border border-black text-black">
+              <table className="w-full text-sm border-collapse border border-black text-black">
                 <thead>
                   <tr className="bg-gray-100 border-b border-black text-left">
-                    <th className="p-1.5 border-r border-black font-bold text-center w-[40px]">คู่ที่</th>
-                    <th className="p-1.5 border-r border-black font-bold w-[90px]">วัน/เวลาแข่งขัน</th>
-                    <th className="p-1.5 border-r border-black font-bold w-[80px]">สนาม</th>
-                    <th className="p-1.5 border-r border-black font-bold w-[120px]">ประเภท / รอบ</th>
+                    <th className="p-1.5 border-r border-black font-bold text-center w-[45px]">คู่ที่</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[105px]">วัน/เวลาแข่งขัน</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[85px]">สนาม</th>
+                    <th className="p-1.5 border-r border-black font-bold w-[125px]">ประเภท / รอบ</th>
                     {sport === "track" ? (
                       <th className="p-1.5 border-black font-bold">สรุปผลการแข่งขันกรีฑา</th>
                     ) : (
                       <>
-                        <th className="p-1.5 border-r border-black font-bold text-right w-[180px]">ทีมฝั่ง A</th>
-                        <th className="p-1.5 border-r border-black font-bold text-center w-[80px]">คะแนน</th>
-                        <th className="p-1.5 border-r border-black font-bold w-[180px]">ทีมฝั่ง B</th>
-                        <th className="p-1.5 border-black font-bold text-center w-[80px]">สถานะ/ผู้ชนะ</th>
+                        <th className="p-1.5 border-r border-black font-bold text-right w-[215px]">ทีมฝั่ง A</th>
+                        <th className="p-1.5 border-black font-bold w-[215px]">ทีมฝั่ง B</th>
                       </>
                     )}
                   </tr>
@@ -2951,26 +2933,26 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                     return (
                       <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                        <td className="p-1.5 border-r border-black font-bold text-center bg-gray-50 font-mono">{matchNum}</td>
-                        <td className="p-1.5 border-r border-black font-mono font-medium text-[9px]">
+                        <td className="p-1.5 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{matchNum}</td>
+                        <td className="p-1.5 border-r border-black font-mono font-medium text-xs">
                           <div>{m.date}</div>
                           <div className="font-bold">{m.time}</div>
                         </td>
-                        <td className="p-1.5 border-r border-black font-semibold">{m.court}</td>
-                        <td className="p-1.5 border-r border-black">
+                        <td className="p-1.5 border-r border-black font-semibold text-xs">{m.court}</td>
+                        <td className="p-1.5 border-r border-black text-xs">
                           <div className="font-bold">{m.category}</div>
-                          <div className="text-gray-600 font-mono text-[9px]">{m.round} {m.group ? `(${m.group})` : ""}</div>
+                          <div className="text-gray-600 font-mono text-[10px]">{m.round} {m.group ? `(${m.group})` : ""}</div>
                         </td>
 
                         {sport === "track" ? (
-                          <td className="p-1.5">
+                          <td className="p-1.5 text-xs">
                             {m.participants && m.participants.length > 0 ? (
                               <div className="grid grid-cols-1 gap-1">
                                 {m.participants.map((p, idx) => {
                                   const rank = m.ranks?.[idx]?.rank;
                                   const score = m.ranks?.[idx]?.score;
                                   return (
-                                    <div key={idx} className="flex justify-between items-center text-[9px] border-b border-gray-100 pb-0.5">
+                                    <div key={idx} className="flex justify-between items-center text-[10px] border-b border-gray-100 pb-0.5">
                                       <span>{idx + 1}. <strong className="font-bold text-black">{p}</strong></span>
                                       <span className="font-mono text-gray-700">
                                         {score ? `เวลา/ระยะ: ${score}` : ""} {rank ? `[อันดับ: ${rank}]` : ""}
@@ -2985,23 +2967,11 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                           </td>
                         ) : (
                           <>
-                            <td className={`p-1.5 border-r border-black text-right font-bold ${m.winner === m.teamA ? "text-emerald-800" : ""}`}>
+                            <td className={`p-1.5 border-r border-black text-right font-bold text-sm ${m.winner === m.teamA ? "text-emerald-800" : ""}`}>
                               {m.winner === m.teamA && "👑 "}{m.teamA || "TBD"}
                             </td>
-                            <td className="p-1.5 border-r border-black text-center font-mono font-black bg-gray-50 text-xs">
-                              {m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}
-                            </td>
-                            <td className={`p-1.5 border-r border-black font-bold ${m.winner === m.teamB ? "text-emerald-800" : ""}`}>
+                            <td className={`p-1.5 font-bold text-sm ${m.winner === m.teamB ? "text-emerald-800" : ""}`}>
                               {m.teamB || "TBD"}{m.winner === m.teamB && " 👑"}
-                            </td>
-                            <td className="p-1.5 text-center">
-                              {isLive ? (
-                                <span className="font-bold text-red-600 animate-pulse">กำลังแข่ง 🔴</span>
-                              ) : isCompleted ? (
-                                <span className="text-emerald-700 font-bold">เสร็จสิ้น ({m.winner || "-"})</span>
-                              ) : (
-                                <span className="text-gray-400">ยังไม่แข่งขัน</span>
-                              )}
                             </td>
                           </>
                         )}
@@ -3016,7 +2986,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
           {/* Bracket / Finals Report for Cup structure if category is selected and not track */}
           {sport !== "track" && selectedCategory !== "" && (
             <div className="border border-black p-4 bg-gray-50/20">
-              <h3 className="text-xs font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
+              <h3 className="text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
                 🏆 ผลการแข่งขันรอบน็อคเอาท์ (Knockout Playoff Matches)
               </h3>
               {(() => {
@@ -3030,12 +3000,11 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                 }
 
                 return (
-                  <table className="w-full text-[9px] border-collapse border border-black text-black">
+                  <table className="w-full text-sm border-collapse border border-black text-black">
                     <thead>
                       <tr className="bg-gray-100 border-b border-black text-left">
                         <th className="p-1.5 border-r border-black font-bold w-[120px]">รอบ</th>
                         <th className="p-1.5 border-r border-black font-bold text-right">ทีมฝั่ง A</th>
-                        <th className="p-1.5 border-r border-black font-bold text-center w-[60px]">คะแนน</th>
                         <th className="p-1.5 border-r border-black font-bold text-left font-sans">ทีมฝั่ง B</th>
                         <th className="p-1.5 border-black font-bold text-center w-[120px]">ผู้ชนะเข้ารอบ</th>
                       </tr>
@@ -3045,7 +3014,6 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                         <tr key={m.id} className="border-b border-gray-300">
                           <td className="p-1.5 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
                           <td className={`p-1.5 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
-                          <td className="p-1.5 border-r border-black text-center font-bold bg-gray-50 font-mono">{m.scoreA !== null ? m.scoreA : "-"} : {m.scoreB !== null ? m.scoreB : "-"}</td>
                           <td className={`p-1.5 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>
                           <td className="p-1.5 text-center font-bold text-emerald-700">{m.winner ? `🏆 ${m.winner}` : "รอยืนยันผล"}</td>
                         </tr>
@@ -3059,7 +3027,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
           </>)}
 
           {/* Footer Signature Block */}
-          <div className="pt-12 grid grid-cols-2 gap-8 text-xs text-black font-sans">
+          <div className="pt-12 grid grid-cols-2 gap-8 text-base text-black font-sans">
             <div className="text-center">
               <p className="mb-12">ลงชื่อ ............................................................ ผู้รายงานผล</p>
               <p>( ............................................................ )</p>

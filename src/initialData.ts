@@ -339,7 +339,7 @@ export const getInitialMatches = (): Match[] => {
     { matchNo: 12, group: "สาย D", court: "สนามที่ 2", teamA: "ปะนาเระ", teamB: "แม่ลาน", time: "13.00 น." },
     { matchNo: 13, group: "สาย C", court: "สนามที่ 2", teamA: "โคกโพธิ์", teamB: "หนองจิก", time: "13.45 น." },
     { matchNo: 14, group: "สาย D", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "แม่ลาน", time: "14.30 น." },
-    { matchNo: 15, group: "สาย A", court: "สนามที่ 2", teamA: "เมือง", teamB: "กะพ้อ", time: "15.15 น." }
+    { matchNo: 15, group: "สาย A", court: "สนามที่ 1", teamA: "เมือง", teamB: "กะพ้อ", time: "15.15 น." }
   ];
 
   const volleyGroupMatchesFemale = [
@@ -391,10 +391,10 @@ export const getInitialMatches = (): Match[] => {
 
     // Quarter-finals (Round 8 Teams)
     const qf = [
-      { id: 19, court: "สนามที่ 1", labelA: "ที่ 1 สาย A", labelB: "ที่ 2 สาย C" },
-      { id: 20, court: "สนามที่ 1", labelA: "ที่ 1 สาย C", labelB: "ที่ 2 สาย A" },
-      { id: 21, court: "สนามที่ 2", labelA: "ที่ 1 สาย B", labelB: "ที่ 2 สาย D" },
-      { id: 22, court: "สนามที่ 2", labelA: "ที่ 1 สาย D", labelB: "ที่ 2 สาย B" }
+      { id: 19, court: isMale ? "สนามที่ 2" : "สนามที่ 1", labelA: "ที่ 1 สาย A", labelB: "ที่ 2 สาย C", time: "09.00 น." },
+      { id: 20, court: isMale ? "สนามที่ 2" : "สนามที่ 1", labelA: "ที่ 1 สาย C", labelB: "ที่ 2 สาย A", time: "09.45 น." },
+      { id: 21, court: isMale ? "สนามที่ 2" : "สนามที่ 1", labelA: "ที่ 1 สาย B", labelB: "ที่ 2 สาย D", time: "10.30 น." },
+      { id: 22, court: isMale ? "สนามที่ 2" : "สนามที่ 1", labelA: "ที่ 1 สาย D", labelB: "ที่ 2 สาย B", time: "11.15 น." }
     ];
 
     qf.forEach((m) => {
@@ -406,7 +406,7 @@ export const getInitialMatches = (): Match[] => {
         group: "",
         round: "รอบ 8 ทีม",
         court: m.court,
-        time: "10.00 น.",
+        time: m.time,
         date: "8 ก.ค. 69",
         status: "pending",
         teamA: m.labelA,
@@ -427,7 +427,7 @@ export const getInitialMatches = (): Match[] => {
       gender: cat.gender,
       group: "",
       round: "รอบรองชนะเลิศ",
-      court: "สนามที่ 1",
+      court: isMale ? "สนามที่ 2" : "สนามที่ 1",
       time: "09.00 น.",
       date: "9 ก.ค. 69",
       status: "pending",
@@ -447,8 +447,8 @@ export const getInitialMatches = (): Match[] => {
       gender: cat.gender,
       group: "",
       round: "รอบรองชนะเลิศ",
-      court: "สนามที่ 2",
-      time: "09.00 น.",
+      court: isMale ? "สนามที่ 2" : "สนามที่ 1",
+      time: "09.45 น.",
       date: "9 ก.ค. 69",
       status: "pending",
       teamA: "ผู้ชนะคู่ที่ 20",
@@ -468,7 +468,7 @@ export const getInitialMatches = (): Match[] => {
       gender: cat.gender,
       group: "",
       round: "ชิงที่ 3",
-      court: "สนามที่ 1",
+      court: isMale ? "สนามที่ 2" : "สนามที่ 1",
       time: "13.00 น.",
       date: "9 ก.ค. 69",
       status: "pending",
@@ -489,7 +489,7 @@ export const getInitialMatches = (): Match[] => {
       gender: cat.gender,
       group: "",
       round: "รอบชิงชนะเลิศ",
-      court: "สนามที่ 1",
+      court: isMale ? "สนามที่ 2" : "สนามที่ 1",
       time: "14.30 น.",
       date: "9 ก.ค. 69",
       status: "pending",
