@@ -709,6 +709,25 @@ export default function App() {
     }
   };
 
+  const handleDeleteMatch = async (id: string) => {
+    if (!isLoggedIn) return;
+
+    // Local-first delete
+    const updatedList = matches.filter((m) => m.id !== id);
+    saveMatchesLocally(updatedList);
+
+    if (!isLocalFallback) {
+      try {
+        await deleteDoc(doc(db, "matches", id));
+      } catch (error: any) {
+        console.error("Error deleting match in Firestore: ", error);
+        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
+          enableLocalFallback();
+        }
+      }
+    }
+  };
+
   // 4. Budget/Expenses actions
   const handleAddExpense = async (item: Omit<ExpenseItem, "id" | "total">) => {
     if (!isLoggedIn) return;
@@ -1174,6 +1193,7 @@ export default function App() {
                     matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
                     onAddMatch={handleAddMatch}
+                    onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
                     selectedDistrict={selectedDistrict}
                   />
@@ -1185,6 +1205,7 @@ export default function App() {
                     matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
                     onAddMatch={handleAddMatch}
+                    onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
                     selectedDistrict={selectedDistrict}
                   />
@@ -1196,6 +1217,7 @@ export default function App() {
                     matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
                     onAddMatch={handleAddMatch}
+                    onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
                     selectedDistrict={selectedDistrict}
                   />
@@ -1207,6 +1229,7 @@ export default function App() {
                     matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
                     onAddMatch={handleAddMatch}
+                    onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
                     selectedDistrict={selectedDistrict}
                   />

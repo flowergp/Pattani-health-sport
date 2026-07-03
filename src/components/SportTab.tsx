@@ -69,11 +69,12 @@ interface SportTabProps {
   matches: Match[];
   onUpdateMatch: (id: string, updates: Partial<Match>) => Promise<void>;
   onAddMatch: (match: Omit<Match, "id" | "order">) => Promise<void>;
+  onDeleteMatch: (id: string) => Promise<void>;
   isLoggedIn: boolean;
   selectedDistrict?: string;
 }
 
-export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, isLoggedIn, selectedDistrict }: SportTabProps) {
+export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, onDeleteMatch, isLoggedIn, selectedDistrict }: SportTabProps) {
   // Filters state
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedRound, setSelectedRound] = useState<string>("all");
@@ -842,6 +843,18 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
     await onUpdateMatch(m.id, updates);
     setEditingMatchId(null);
+  };
+
+  const handleDeleteMatch = async (matchId: string) => {
+    if (!window.confirm("⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบคู่แข่งขันคู่นี้ออกจากระบบ? การกระทำนี้ไม่สามารถกู้คืนได้")) {
+      return;
+    }
+    try {
+      setEditingMatchId(null);
+      await onDeleteMatch(matchId);
+    } catch (err) {
+      console.error("Failed to delete match: ", err);
+    }
   };
 
   const propagateWinner = async (targetMatchId: string, winnerName: string, slot: "teamA" | "teamB") => {
@@ -1973,6 +1986,13 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                         </button>
                         <button
                           type="button"
+                          onClick={() => handleDeleteMatch(m.id)}
+                          className="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs uppercase rounded-none transition-all cursor-pointer border-0 flex items-center gap-1"
+                        >
+                          🗑️ ลบคู่แข่ง
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setEditingMatchId(null)}
                           className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase rounded-none transition-all cursor-pointer border-0"
                         >
@@ -2357,6 +2377,13 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                   className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase rounded-none transition-all cursor-pointer border-0 flex items-center gap-1"
                 >
                   🔄 เคลียร์สกอร์
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteMatch(hiddenEditingMatch.id)}
+                  className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs uppercase rounded-none transition-all cursor-pointer border-0 flex items-center gap-1"
+                >
+                  🗑️ ลบคู่แข่ง
                 </button>
                 <button
                   type="button"
