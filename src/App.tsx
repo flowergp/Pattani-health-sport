@@ -890,7 +890,7 @@ export default function App() {
     <div className={`min-h-screen ${theme === "light" ? "theme-light" : ""} bg-[#0A0F1D] text-[#E2E8F0] pb-16 selection:bg-[#FF5722] selection:text-white transition-colors duration-200`}>
       
       {/* HEADER BAR (Modern Information-Dense & Unified Navbar) */}
-      <header ref={headerRef} className="bg-[#111827] border-b border-slate-800 sticky top-0 z-50 shadow-md print:hidden">
+      <header ref={headerRef} className="bg-[#111827] border-b border-slate-800 md:sticky top-0 z-50 shadow-md print:hidden">
         {/* Top bar (Logo & Admin) */}
         <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/50">
           <div className="flex items-center gap-3">

@@ -1263,8 +1263,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
       </div>
 
       {/* 2. Sticky Filters Bar (Stays fixed below the header) */}
-      {/* 2. Sticky Filters Bar (Stays fixed below the header) */}
-      <div className="sticky top-[var(--header-height,104px)] z-40 bg-[#111827] border border-slate-800 p-4 shadow-xl flex flex-col md:flex-row flex-wrap md:items-end gap-3 rounded-none text-white transition-all">
+      <div className="sticky top-0 md:top-[var(--header-height,104px)] z-40 bg-[#111827] border border-slate-800 p-4 shadow-xl flex flex-col md:flex-row flex-wrap md:items-end gap-3 rounded-none text-white transition-all">
         <div className="flex-1 min-w-[140px]">
           <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">ประเภทการแข่ง</label>
           <select
@@ -1280,22 +1279,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
           </select>
         </div>
 
-        <div className="flex-1 min-w-[130px]">
-          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">รอบการแข่งขัน</label>
-          <select
-            value={selectedRound}
-            onChange={(e) => setSelectedRound(e.target.value)}
-            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
-          >
-            {rounds.map((r) => (
-              <option key={r} value={r}>
-                {r === "all" ? "🏆 แสดงทุกรอบ" : r}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {groupsList.length > 1 && (
+        {sport === "petanque" && groupsList.length > 1 && (
           <div className="flex-1 min-w-[120px]">
             <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">สาย / กลุ่ม</label>
             <select
@@ -2102,35 +2086,17 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                       </div>
                     </div>
                   )}
-
-                  {/* Foot metadata */}
-                  <div className="mt-3 pt-3 border-t border-slate-800/60 flex justify-between items-center text-[10px] font-mono font-bold text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Clock size={11} />
-                      {m.time} ({m.date})
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin size={11} />
-                      {m.court}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Edit Button footer */}
-                {!isEditing && (
-                  isLoggedIn ? (
-                    <button
-                      onClick={() => handleStartEdit(m)}
-                      className="w-full mt-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer rounded-none transition-all border-0"
-                    >
-                      <Edit3 size={12} />
-                      บันทึกคะแนน / อัปเดตผลแข่งขัน
-                    </button>
-                  ) : (
-                    <div className="w-full mt-4 py-2 bg-slate-900/50 text-slate-500 font-bold text-[10px] uppercase font-mono tracking-wider flex items-center justify-center gap-1.5 border border-slate-800/80">
-                      🔒 กรุณาเข้าสู่ระบบเพื่อแก้ไขคะแนน
-                    </div>
-                  )
+                {!isEditing && isLoggedIn && (
+                  <button
+                    onClick={() => handleStartEdit(m)}
+                    className="w-full mt-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer rounded-none transition-all border-0"
+                  >
+                    <Edit3 size={12} />
+                    บันทึกคะแนน / อัปเดตผลแข่งขัน
+                  </button>
                 )}
               </div>
             );

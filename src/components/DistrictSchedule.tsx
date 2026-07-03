@@ -1336,6 +1336,10 @@ export default function DistrictSchedule({
                                 <MapPin size={11} className="text-[#00FF66]" />
                                 <span>{match.court}</span>
                               </div>
+
+                              <div className="text-[11px] font-mono font-bold text-slate-400 mt-0.5">
+                                รอบ: {match.round} {match.group ? `(${match.group})` : ""}
+                              </div>
                             </div>
                             {match.isPotential && (
                               <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-[10px] text-amber-400 font-bold flex items-center gap-1.5 font-sans mb-1.5 rounded-none leading-normal">
@@ -1490,18 +1494,6 @@ export default function DistrictSchedule({
                               </div>
                             )}
 
-                          </div>
-
-                          {/* Card Footer (Metadata: Date, Time, Court Location) */}
-                          <div className="p-3 bg-slate-900/40 border-t border-slate-800/60 flex flex-wrap justify-between gap-2 text-[11px] text-slate-400 font-mono">
-                            <span className="flex items-center gap-1 font-bold text-slate-300">
-                              <Clock size={12} className="text-[#FF5722]" />
-                              {match.time}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MapPin size={12} className="text-[#FF5722]" />
-                              {match.court} • {match.round}
-                            </span>
                           </div>
 
                         </div>
