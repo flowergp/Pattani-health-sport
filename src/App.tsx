@@ -98,50 +98,8 @@ export function resolveAllMatches(allMatches: Match[]): Match[] {
   });
 }
 
-const DEFAULT_DISTRICTS = [
-  { th: "เมือง", en: "muang" },
-  { th: "หนองจิก", en: "nongchik" },
-  { th: "ยะรัง", en: "yarang" },
-  { th: "ยะหริ่ง", en: "yaring" },
-  { th: "ยะหรึ่ง", en: "yarueng" },
-  { th: "ปะนาเระ", en: "panare" },
-  { th: "มายอ", en: "mayo" },
-  { th: "แม่ลาน", en: "maelan" },
-  { th: "แม่ลาน", en: "maelarn" },
-  { th: "ไม้แก่น", en: "maikaen" },
-  { th: "โคกโพธิ์", en: "khokpho" },
-  { th: "สายบุรี", en: "saiburi" },
-  { th: "กะพ้อ", en: "kapho" },
-  { th: "ทุ่งยางแดง", en: "thungyangdaeng" },
-  { th: "สสจ.ปัตตานี", en: "ssjpattani" }
-];
-
 function getDefaultUsers(): AdminUser[] {
-  const usersList: AdminUser[] = [];
-  DEFAULT_DISTRICTS.forEach((d, idx) => {
-    // Thai username
-    const thId = `user_th_${idx}`;
-    usersList.push({
-      id: thId,
-      username: d.th,
-      password: "1234",
-      role: "editor",
-      team: d.th,
-      createdAt: new Date().toLocaleDateString("th-TH")
-    });
-
-    // English username
-    const enId = `user_en_${idx}`;
-    usersList.push({
-      id: enId,
-      username: d.en,
-      password: "1234",
-      role: "editor",
-      team: d.th,
-      createdAt: new Date().toLocaleDateString("th-TH")
-    });
-  });
-  return usersList;
+  return [];
 }
 
 export default function App() {
@@ -156,6 +114,16 @@ export default function App() {
       try {
         const parsed = JSON.parse(saved) as Match[];
         if (Array.isArray(parsed)) {
+          // Auto-migrate if we have old volleyball match IDs (without _c1_ or _c2_)
+          const hasOldVolleyballIds = parsed.some(
+            (m) => m && m.sport === "volleyball" && m.round === "รอบแรก" && !m.id.includes("_c1_") && !m.id.includes("_c2_")
+          );
+          if (hasOldVolleyballIds) {
+            console.log("Old volleyball matches detected in local storage. Clearing cache...");
+            localStorage.removeItem("pattani_matches");
+            return getInitialMatches();
+          }
+
           // Clean up corrupted IDs and deduplicate
           const uniqueMap = new Map<string, Match>();
           parsed
@@ -447,24 +415,9 @@ export default function App() {
             }
           }
 
-          // If collection is completely empty, auto-populate with PDF data
-          if (snapshot.empty && !isResetting) {
-            console.log("No matches found in Firestore. Populating with initial data...");
-            try {
-              await resetToDefaultPDFSchedule(true);
-            } catch (err: any) {
-              console.error("Error populating default matches: ", err);
-              if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
-                enableLocalFallback();
-              } else {
-                setDbError(err.message || "Failed to seed default matches database");
-              }
-            }
-          } else {
-            const sortedList = finalMatchesList.sort((a, b) => a.order - b.order);
-            saveMatchesLocally(sortedList);
-            setLoading(false);
-          }
+          const sortedList = finalMatchesList.sort((a, b) => a.order - b.order);
+          saveMatchesLocally(sortedList);
+          setLoading(false);
         },
         (error: any) => {
           clearTimeout(timeoutId);
@@ -487,19 +440,7 @@ export default function App() {
             expensesList.push({ id: docSnap.id, ...docSnap.data() } as ExpenseItem);
           });
 
-          // If empty, auto-populate
-          if (snapshot.empty && !isResetting) {
-            try {
-              await seedDefaultExpenses();
-            } catch (err: any) {
-              console.error("Error populating default expenses: ", err);
-              if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
-                enableLocalFallback();
-              }
-            }
-          } else {
-            saveExpensesLocally(expensesList);
-          }
+          saveExpensesLocally(expensesList);
         },
         (error: any) => {
           console.error("Firestore expenses subscription error: ", error);
@@ -526,19 +467,7 @@ export default function App() {
             });
           });
           
-          if (snapshot.empty && !isResetting) {
-            console.log("No users found in Firestore. Populating with initial district users...");
-            try {
-              await seedDefaultDistrictUsers();
-            } catch (err: any) {
-              console.error("Error auto-seeding users: ", err);
-              if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
-                enableLocalFallback();
-              }
-            }
-          } else {
-            saveUsersLocally(usersList);
-          }
+          saveUsersLocally(usersList);
         },
         (error: any) => {
           console.error("Firestore users subscription error: ", error);

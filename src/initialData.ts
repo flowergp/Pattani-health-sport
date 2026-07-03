@@ -35,7 +35,7 @@ export const getInitialMatches = (): Match[] => {
       id: "track_100_w",
       name: "วิ่ง 100 เมตร หญิง",
       gender: "หญิง" as const,
-      g1: ["ไม้แก่น", "ทุ่งยางแดง", "สสจ.ปัตตานี", "มายอ", "สายบุรี", "หนองจิก"],
+      g1: ["ไม้แก่น", "ทุ่งยางแดง", "สสจ.ปัตตานี", "มายอ", "สายบุรี", "ธัญรักษ์", "หนองจิก"],
       g2: ["กะพ้อ", "ปะนาเระ", "ยะรัง", "โคกโพธิ์", "เมือง", "ยะหริ่ง", "แม่ลาน"]
     },
     {
@@ -43,34 +43,34 @@ export const getInitialMatches = (): Match[] => {
       name: "วิ่ง 100 เมตร ชาย",
       gender: "ชาย" as const,
       g1: ["ปะนาเระ", "มายอ", "หนองจิก", "เมือง", "ทุ่งยางแดง", "ยะหริ่ง", "แม่ลาน"],
-      g2: ["ไม้แก่น", "กะพ้อ", "สายบุรี", "ยะรัง", "สสจ.ปัตตานี", "โคกโพธิ์"]
+      g2: ["ไม้แก่น", "กะพ้อ", "สายบุรี", "ยะรัง", "สสจ.ปัตตานี", "ธัญรักษ์", "โคกโพธิ์"]
     },
     {
       id: "track_8x50_mix",
       name: "วิ่งพลัดผสม 8X50 เมตร (ชาย4 หญิง4)",
       gender: "ผสม" as const,
-      g1: ["ไม้แก่น", "ยะรัง", "มายอ", "หนองจิก", "ทุ่งยางแดง", "แม่ลาน"],
+      g1: ["ไม้แก่น", "ยะรัง", "มายอ", "หนองจิก", "ทุ่งยางแดง", "แม่ลาน", "ธัญรักษ์"],
       g2: ["ยะหริ่ง", "กะพ้อ", "ปะนาเระ", "เมือง", "โคกโพธิ์", "สสจ.ปัตตานี", "สายบุรี"]
     },
     {
       id: "track_4x100_w",
       name: "วิ่งพลัด 4X100 เมตร หญิง",
       gender: "หญิง" as const,
-      g1: ["แม่ลาน", "กะพ้อ", "สายบุรี", "หนองจิก", "ทุ่งยางแดง", "เมือง"],
+      g1: ["แม่ลาน", "กะพ้อ", "สายบุรี", "ธัญรักษ์", "หนองจิก", "ทุ่งยางแดง", "เมือง"],
       g2: ["ไม้แก่น", "มายอ", "สสจ.ปัตตานี", "ปะนาเระ", "โคกโพธิ์", "ยะรัง", "ยะหริ่ง"]
     },
     {
       id: "track_4x100_m",
       name: "วิ่งพลัด 4X100 เมตร ชาย",
       gender: "ชาย" as const,
-      g1: ["เมือง", "มายอ", "โคกโพธิ์", "แม่ลาน", "หนองจิก", "ปะนาเระ"],
+      g1: ["ธัญรักษ์", "เมือง", "มายอ", "โคกโพธิ์", "แม่ลาน", "หนองจิก", "ปะนาเระ"],
       g2: ["ยะหริ่ง", "ไม้แก่น", "ยะรัง", "สายบุรี", "กะพ้อ", "สสจ.ปัตตานี", "ทุ่งยางแดง"]
     },
     {
       id: "track_4x100_mix",
       name: "วิ่งพลัดผสม 4X100 เมตร (ชาย2 หญิง2)",
       gender: "ผสม" as const,
-      g1: ["สายบุรี", "เมือง", "ยะหริ่ง", "หนองจิก", "ไม้แก่น", "กะพ้อ"],
+      g1: ["สายบุรี", "เมือง", "ยะหริ่ง", "หนองจิก", "ธัญรักษ์", "ไม้แก่น", "กะพ้อ"],
       g2: ["ปะนาเระ", "ยะรัง", "สสจ.ปัตตานี", "โคกโพธิ์", "ทุ่งยางแดง", "แม่ลาน", "มายอ"]
     }
   ];
@@ -321,43 +321,46 @@ export const getInitialMatches = (): Match[] => {
     { category: "ทีมหญิง", gender: "หญิง" as const, date: "7 ก.ค. 69", matchesDate: "7 ก.ค. 69" }
   ];
 
-  // Group stage schedules as shown in PDF
   const volleyGroupMatchesMale = [
-    { matchNo: 1, group: "สาย A", court: "สนามที่ 1", teamA: "มายอ", teamB: "สสจ.ปัตตานี", time: "09.00 น." },
-    { matchNo: 2, group: "สาย A", court: "สนามที่ 1", teamA: "เมือง", teamB: "กะพ้อ", time: "09.45 น." },
-    { matchNo: 3, group: "สาย C", court: "สนามที่ 1", teamA: "ยะรัง", teamB: "โคกโพธิ์", time: "10.30 น." },
-    { matchNo: 4, group: "สาย A", court: "สนามที่ 1", teamA: "กะพ้อ", teamB: "สสจ.ปัตตานี", time: "11.15 น." },
-    { matchNo: 5, group: "สาย A", court: "สนามที่ 1", teamA: "เมือง", teamB: "มายอ", time: "13.00 น." },
-    { matchNo: 6, group: "สาย C", court: "สนามที่ 1", teamA: "ยะรัง", teamB: "หนองจิก", time: "13.45 น." },
-    { matchNo: 7, group: "สาย A", court: "สนามที่ 1", teamA: "เมือง", teamB: "สสจ.ปัตตานี", time: "14.30 น." },
-    { matchNo: 8, group: "สาย A", court: "สนามที่ 1", teamA: "กะพ้อ", teamB: "มายอ", time: "15.15 น." },
-    { matchNo: 9, group: "สาย C", court: "สนามที่ 1", teamA: "โคกโพธิ์", teamB: "หนองจิก", time: "16.00 น." },
+    // สนามที่ 1
+    { matchNo: 1, group: "สาย A", court: "สนามที่ 1", teamA: "เมือง", teamB: "มายอ", time: "09.00 น." },
+    { matchNo: 2, group: "สาย A", court: "สนามที่ 1", teamA: "กะพ้อ", teamB: "สสจ.ปัตตานี", time: "09.45 น." },
+    { matchNo: 3, group: "สาย B", court: "สนามที่ 1", teamA: "ยะหริ่ง", teamB: "สายบุรี", time: "10.30 น." },
+    { matchNo: 4, group: "สาย A", court: "สนามที่ 1", teamA: "เมือง", teamB: "สสจ.ปัตตานี", time: "11.15 น." },
+    { matchNo: 5, group: "สาย A", court: "สนามที่ 1", teamA: "กะพ้อ", teamB: "มายอ", time: "13.00 น." },
+    { matchNo: 6, group: "สาย B", court: "สนามที่ 1", teamA: "ทุ่งยางแดง", teamB: "สายบุรี", time: "13.45 น." },
+    { matchNo: 7, group: "สาย A", court: "สนามที่ 1", teamA: "มายอ", teamB: "สสจ.ปัตตานี", time: "14.30 น." },
 
-    { matchNo: 11, group: "สาย B", court: "สนามที่ 2", teamA: "ทุ่งยางแดง", teamB: "สายบุรี", time: "09.45 น." },
-    { matchNo: 12, group: "สาย D", court: "สนามที่ 2", teamA: "ปะนาเระ", teamB: "ไม้แก่น", time: "10.30 น." },
-    { matchNo: 13, group: "สาย B", court: "สนามที่ 2", teamA: "ยะหริ่ง", teamB: "ทุ่งยางแดง", time: "11.15 น." },
-    { matchNo: 15, group: "สาย D", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "แม่ลาน", time: "13.45 น." },
-    { matchNo: 16, group: "สาย B", court: "สนามที่ 2", teamA: "ยะหริ่ง", teamB: "สายบุรี", time: "14.30 น." },
-    { matchNo: 18, group: "สาย D", court: "สนามที่ 2", teamA: "แม่ลาน", teamB: "ปะนาเระ", time: "16.00 น." }
+    // สนามที่ 2
+    { matchNo: 8, group: "สาย B", court: "สนามที่ 2", teamA: "ยะหริ่ง", teamB: "ทุ่งยางแดง", time: "09.00 น." },
+    { matchNo: 9, group: "สาย C", court: "สนามที่ 2", teamA: "ยะรัง", teamB: "โคกโพธิ์", time: "09.45 น." },
+    { matchNo: 10, group: "สาย D", court: "สนามที่ 2", teamA: "ปะนาเระ", teamB: "ไม้แก่น", time: "10.30 น." },
+    { matchNo: 11, group: "สาย C", court: "สนามที่ 2", teamA: "ยะรัง", teamB: "หนองจิก", time: "11.15 น." },
+    { matchNo: 12, group: "สาย D", court: "สนามที่ 2", teamA: "ปะนาเระ", teamB: "แม่ลาน", time: "13.00 น." },
+    { matchNo: 13, group: "สาย C", court: "สนามที่ 2", teamA: "โคกโพธิ์", teamB: "หนองจิก", time: "13.45 น." },
+    { matchNo: 14, group: "สาย D", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "แม่ลาน", time: "14.30 น." },
+    { matchNo: 15, group: "สาย A", court: "สนามที่ 2", teamA: "เมือง", teamB: "กะพ้อ", time: "15.15 น." }
   ];
 
   const volleyGroupMatchesFemale = [
-    { matchNo: 1, group: "สาย C", court: "สนามที่ 1", teamA: "สายบุรี", teamB: "กะพ้อ", time: "09.00 น." },
-    { matchNo: 3, group: "สาย A", court: "สนามที่ 1", teamA: "โคกโพธิ์", teamB: "ยะหริ่ง", time: "10.30 น." },
-    { matchNo: 4, group: "สาย C", court: "สนามที่ 1", teamA: "สายบุรี", teamB: "สสจ.ปัตตานี", time: "11.15 น." },
-    { matchNo: 6, group: "สาย A", court: "สนามที่ 1", teamA: "แม่ลาน", teamB: "ยะหริ่ง", time: "13.45 น." },
-    { matchNo: 8, group: "สาย C", court: "สนามที่ 1", teamA: "กะพ้อ", teamB: "สสจ.ปัตตานี", time: "15.15 น." },
-    { matchNo: 9, group: "สาย A", court: "สนามที่ 1", teamA: "แม่ลาน", teamB: "โคกโพธิ์", time: "16.00 น." },
+    // สนามที่ 1
+    { matchNo: 1, group: "สาย C", court: "สนามที่ 1", teamA: "สายบุรี", teamB: "สสจ.ปัตตานี", time: "09.00 น." },
+    { matchNo: 2, group: "สาย A", court: "สนามที่ 1", teamA: "แม่ลาน", teamB: "โคกโพธิ์", time: "09.45 น." },
+    { matchNo: 3, group: "สาย B", court: "สนามที่ 1", teamA: "ปะนาเระ", teamB: "มายอ", time: "10.30 น." },
+    { matchNo: 4, group: "สาย A", court: "สนามที่ 1", teamA: "แม่ลาน", teamB: "ยะหริ่ง", time: "11.15 น." },
+    { matchNo: 5, group: "สาย B", court: "สนามที่ 1", teamA: "ปะนาเระ", teamB: "เมือง", time: "13.00 น." },
+    { matchNo: 6, group: "สาย A", court: "สนามที่ 1", teamA: "โคกโพธิ์", teamB: "ยะหริ่ง", time: "13.45 น." },
+    { matchNo: 7, group: "สาย B", court: "สนามที่ 1", teamA: "มายอ", teamB: "เมือง", time: "14.30 น." },
+    { matchNo: 8, group: "สาย D", court: "สนามที่ 1", teamA: "หนองจิก", teamB: "ไม้แก่น", time: "15.15 น." },
 
-    { matchNo: 10, group: "สาย D", court: "สนามที่ 2", teamA: "ยะรัง", teamB: "หนองจิก", time: "09.00 น." },
-    { matchNo: 11, group: "สาย D", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "ทุ่งยางแดง", time: "09.45 น." },
-    { matchNo: 12, group: "สาย B", court: "สนามที่ 2", teamA: "เมือง", teamB: "มายอ", time: "10.30 น." },
-    { matchNo: 13, group: "สาย D", court: "สนามที่ 2", teamA: "ยะรัง", teamB: "ทุ่งยางแดง", time: "11.15 น." },
-    { matchNo: 14, group: "สาย D", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "หนองจิก", time: "13.00 น." },
-    { matchNo: 15, group: "สาย B", court: "สนามที่ 2", teamA: "ปะนาเระ", teamB: "มายอ", time: "13.45 น." },
-    { matchNo: 16, group: "สาย D", court: "สนามที่ 2", teamA: "ทุ่งยางแดง", teamB: "หนองจิก", time: "14.30 น." },
-    { matchNo: 17, group: "สาย D", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "ยะรัง", time: "15.15 น." },
-    { matchNo: 18, group: "สาย B", court: "สนามที่ 2", teamA: "เมือง", teamB: "ปะนาเระ", time: "16.00 น." }
+    // สนามที่ 2
+    { matchNo: 9, group: "สาย D", court: "สนามที่ 2", teamA: "หนองจิก", teamB: "ทุ่งยางแดง", time: "09.00 น." },
+    { matchNo: 10, group: "สาย D", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "ยะรัง", time: "09.45 น." },
+    { matchNo: 11, group: "สาย C", court: "สนามที่ 2", teamA: "สายบุรี", teamB: "กะพ้อ", time: "10.30 น." },
+    { matchNo: 12, group: "สาย D", court: "สนามที่ 2", teamA: "หนองจิก", teamB: "ยะรัง", time: "11.15 น." },
+    { matchNo: 13, group: "สาย D", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "ทุ่งยางแดง", time: "13.00 น." },
+    { matchNo: 14, group: "สาย C", court: "สนามที่ 2", teamA: "กะพ้อ", teamB: "สสจ.ปัตตานี", time: "13.45 น." },
+    { matchNo: 15, group: "สาย D", court: "สนามที่ 2", teamA: "ทุ่งยางแดง", teamB: "ยะรัง", time: "14.30 น." }
   ];
 
   volleyCategories.forEach((cat) => {
@@ -524,6 +527,7 @@ export const getInitialMatches = (): Match[] => {
   ];
 
   const menGroupData = [
+    // สนามที่ 1
     { group: "สาย A", court: "สนามที่ 1", teamA: "มายอ", teamB: "ไม้แก่น", time: "09.00 น." },
     { group: "สาย B", court: "สนามที่ 1", teamA: "หนองจิก", teamB: "ปะนาเระ", time: "09.30 น." },
     { group: "สาย D", court: "สนามที่ 1", teamA: "สสจ.ปัตตานี", teamB: "กะพ้อ", time: "10.00 น." },
@@ -533,6 +537,7 @@ export const getInitialMatches = (): Match[] => {
     { group: "สาย B", court: "สนามที่ 1", teamA: "สายบุรี", teamB: "หนองจิก", time: "13.30 น." },
     { group: "สาย D", court: "สนามที่ 1", teamA: "โคกโพธิ์", teamB: "สสจ.ปัตตานี", time: "14.00 น." },
 
+    // สนามที่ 2
     { group: "สาย A", court: "สนามที่ 2", teamA: "ยะหริ่ง", teamB: "แม่ลาน", time: "09.00 น." },
     { group: "สาย C", court: "สนามที่ 2", teamA: "ทุ่งยางแดง", teamB: "ยะรัง", time: "09.30 น." },
     { group: "สาย A", court: "สนามที่ 2", teamA: "ไม้แก่น", teamB: "ยะหริ่ง", time: "10.00 น." },
@@ -630,7 +635,6 @@ export const getInitialMatches = (): Match[] => {
     order: currentOrder++
   });
 
-
   // Women's Final
   matches.push({
     id: "football_women_26",
@@ -639,8 +643,8 @@ export const getInitialMatches = (): Match[] => {
     gender: "หญิง",
     group: "",
     round: "รอบชิงชนะเลิศ",
-    court: "สนามที่ 1",
-    time: "15.30 น.",
+    court: "สนามที่ 2",
+    time: "15.00 น.",
     date: "10 ก.ค. 69",
     status: "pending",
     teamA: "ผู้ชนะคู่ที่ 23 หญิง",
@@ -738,7 +742,6 @@ export const getInitialMatches = (): Match[] => {
     winner: null,
     order: currentOrder++
   });
-
 
   // Men's Final
   matches.push({

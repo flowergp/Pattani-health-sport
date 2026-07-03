@@ -84,6 +84,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [exportSuccess, setExportSuccess] = useState<boolean>(false);
   const [lastFilename, setLastFilename] = useState<string>("");
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+
 
   const handleExportPDF = () => {
     setIsExporting(true);
@@ -165,17 +167,29 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
     // Temporarily proxy getComputedStyle during export with correct receiver to avoid Illegal invocation
     window.getComputedStyle = function(...args: any[]) {
-      const style = originalGetComputedStyle.apply(this, args as any);
+      const context = (this && this.getComputedStyle) ? this : window;
+      const style = originalGetComputedStyle.apply(context, args as any);
+      
+      const element = args[0];
+      const isInsidePdf = element && (
+        element.id === "sport-pdf-content" || 
+        document.getElementById("sport-pdf-content")?.contains(element)
+      );
+
+      if (!isInsidePdf) {
+        return style;
+      }
+
       return new Proxy(style, {
-        get(target, prop, receiver) {
-          const val = Reflect.get(target, prop, target); // Crucial: pass target as receiver to avoid Illegal invocation!
+        get(target, prop) {
+          if (prop === "getPropertyValue") {
+            return function(propertyName: string) {
+              const originalVal = target.getPropertyValue(propertyName);
+              return convertOklchColor(originalVal);
+            };
+          }
+          const val = (target as any)[prop];
           if (typeof val === "function") {
-            if (prop === "getPropertyValue") {
-              return function(propertyName: string) {
-                const originalVal = target.getPropertyValue(propertyName);
-                return convertOklchColor(originalVal);
-              };
-            }
             return val.bind(target);
           }
           if (typeof val === "string") {
@@ -293,8 +307,21 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
             html2canvas:  { scale: 2, useCORS: true, logging: false },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
           };
-          html2pdf().set(opt).from(element).save()
-            .then(() => {
+
+          // Generate blob url to download and to provide as fallback download link
+          html2pdf().set(opt).from(element).toPdf().output('blob')
+            .then((blob: any) => {
+              const url = URL.createObjectURL(blob);
+              setPdfBlobUrl(url);
+
+              // Trigger automatic download
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = targetFilename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+
               cleanupStyles();
               setIsExporting(false);
               setExportSuccess(true);
@@ -305,6 +332,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
               setIsExporting(false);
               setExportSuccess(false);
               setShowPreview(false);
+              // Fallback
+              window.print();
             });
         } else {
           cleanupStyles();
@@ -2243,12 +2272,34 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                       วิธีแก้ไขง่ายๆ: ให้คลิกปุ่ม <span className="underline">"เปิดในแท็บใหม่" (Open in new tab)</span> ที่แถบควบคุมขวาบนของระบบ เพื่อเปิดเว็บแอปแบบเต็มจอ แล้วกดปุ่มดาวน์โหลดอีกครั้ง จะได้ไฟล์ 100% แน่นวยครับ!
                     </p>
                   </div>
+
+                  {pdfBlobUrl && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-3.5 space-y-2.5">
+                      <h4 className="text-xs font-black text-emerald-400 uppercase tracking-wider">📥 ดาวน์โหลดสำรอง (สำหรับ Iframe Sandbox)</h4>
+                      <p className="text-xs leading-relaxed text-slate-400">
+                        หากเบราว์เซอร์บล็อกการดาวน์โหลดอัตโนมัติ คุณสามารถคลิกปุ่มด้านล่างเพื่อเปิดไฟล์ PDF ในแท็บใหม่เพื่อพิมพ์หรือบันทึกลงเครื่องได้โดยตรง
+                      </p>
+                      <a
+                        href={pdfBlobUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 py-2 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md rounded-none w-full justify-center"
+                      >
+                        <Download size={13} className="stroke-[3]" />
+                        เปิดไฟล์ PDF ในแท็บใหม่
+                      </a>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mt-6 flex justify-center">
                   <button
                     type="button"
                     onClick={() => {
+                      if (pdfBlobUrl) {
+                        URL.revokeObjectURL(pdfBlobUrl);
+                        setPdfBlobUrl(null);
+                      }
                       setExportSuccess(false);
                       setShowPreview(false);
                     }}
@@ -2277,6 +2328,10 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
               <button
                 type="button"
                 onClick={() => {
+                  if (pdfBlobUrl) {
+                    URL.revokeObjectURL(pdfBlobUrl);
+                    setPdfBlobUrl(null);
+                  }
                   setShowPreview(false);
                   setExportSuccess(false);
                 }}
