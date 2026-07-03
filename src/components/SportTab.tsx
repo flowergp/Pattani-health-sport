@@ -1203,127 +1203,85 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
               )}
             </div>
           </div>
+        </div>
 
-        {/* Category segment buttons for quick access */}
-        {categories.length >= 1 && (
-          <div className="flex flex-wrap gap-2 pt-1 pb-2 border-b border-slate-800/60">
-            {categories.map((c) => {
-              const isActive = selectedCategory === c;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setSelectedCategory(c)}
-                  className={`px-3 py-2 text-xs font-bold uppercase border transition-all duration-150 cursor-pointer rounded-none ${
-                    isActive
-                      ? "bg-[#FF5722] text-white border-[#FF5722]"
-                      : "bg-[#1E293B] text-slate-300 border-slate-700 hover:bg-[#2D3748]"
-                  }`}
-                >
-                  {c === "" ? (sport === "track" ? "✨ แสดงทั้งหมด" : "⚠️ กรุณาเลือกประเภท") : c}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* 🛠️ Selectable View Options */}
-        {sport !== "track" && (
-          <div className="pt-2">
-            <span className="block text-[10px] font-bold uppercase text-slate-400 mb-2 flex items-center gap-1.5 font-mono">
-              🖥️ เลือกมุมมองที่ต้องการแสดงผล (Select display section):
-            </span>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {[
-                { id: "all", label: "✨ แสดงทั้งหมด", desc: "รวมทุกส่วน" },
-                { id: "standings", label: "📊 ตารางคะแนน", desc: "รอบแบ่งกลุ่ม" },
-                { id: "matches", label: "📋 รายการแข่งขัน", desc: "และผลลัพธ์" },
-                { id: "bracket", label: "🏆 ผังประกบคู่", desc: "รอบน็อคเอ้าท์" }
-              ].map((tab) => {
-                const isActive = activeView === tab.id;
+        {/* Sticky Controls Container (Category buttons, View Selector, and Group filter) */}
+        <div className="sticky top-0 md:top-[var(--header-height,104px)] z-40 bg-[#111827] border border-slate-800 p-4 shadow-xl space-y-3 rounded-none text-white transition-all print:hidden">
+          {/* Category segment buttons for quick access */}
+          {categories.length >= 1 && (
+            <div className="flex flex-wrap gap-2 pb-2 border-b border-slate-800/60">
+              {categories.map((c) => {
+                const isActive = selectedCategory === c;
                 return (
                   <button
-                    key={tab.id}
+                    key={c}
                     type="button"
-                    onClick={() => setActiveView(tab.id as any)}
-                    className={`p-2 border transition-all duration-150 cursor-pointer flex flex-col items-center justify-center text-center leading-tight rounded-none ${
+                    onClick={() => setSelectedCategory(c)}
+                    className={`px-3 py-2 text-xs font-bold uppercase border transition-all duration-150 cursor-pointer rounded-none ${
                       isActive
-                        ? "bg-[#FF5722] border-[#FF5722] text-white font-black"
-                        : "bg-[#151F32] border-slate-800 text-slate-300 hover:bg-[#1E293B]"
+                        ? "bg-[#FF5722] text-white border-[#FF5722]"
+                        : "bg-[#1E293B] text-slate-300 border-slate-700 hover:bg-[#2D3748]"
                     }`}
                   >
-                    <span className="text-xs font-bold">{tab.label}</span>
-                    <span className={`text-[9px] font-mono mt-0.5 ${isActive ? 'text-white/80' : 'text-slate-500 font-medium'}`}>{tab.desc}</span>
+                    {c === "" ? (sport === "track" ? "✨ แสดงทั้งหมด" : "⚠️ กรุณาเลือกประเภท") : c}
                   </button>
                 );
               })}
             </div>
-          </div>
-        )}
-      </div>
+          )}
 
-      {/* 2. Sticky Filters Bar (Stays fixed below the header) */}
-      <div className="sticky top-0 md:top-[var(--header-height,104px)] z-40 bg-[#111827] border border-slate-800 p-4 shadow-xl flex flex-col md:flex-row flex-wrap md:items-end gap-3 rounded-none text-white transition-all">
-        <div className="flex-1 min-w-[140px]">
-          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">ประเภทการแข่ง</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
-          >
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c === "" ? (sport === "track" ? "✨ แสดงทั้งหมด" : "⚠️ กรุณาเลือกประเภท") : c}
-              </option>
-            ))}
-          </select>
+          {/* 🛠️ Selectable View Options */}
+          {sport !== "track" && (
+            <div className="pb-2 border-b border-slate-800/60">
+              <span className="block text-[10px] font-bold uppercase text-slate-400 mb-2 flex items-center gap-1.5 font-mono">
+                🖥️ เลือกมุมมองที่ต้องการแสดงผล (Select display section):
+              </span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {[
+                  { id: "all", label: "✨ แสดงทั้งหมด", desc: "รวมทุกส่วน" },
+                  { id: "standings", label: "📊 ตารางคะแนน", desc: "รอบแบ่งกลุ่ม" },
+                  { id: "matches", label: "📋 รายการแข่งขัน", desc: "และผลลัพธ์" },
+                  { id: "bracket", label: "🏆 ผังประกบคู่", desc: "รอบน็อคเอ้าท์" }
+                ].map((tab) => {
+                  const isActive = activeView === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveView(tab.id as any)}
+                      className={`p-2 border transition-all duration-150 cursor-pointer flex flex-col items-center justify-center text-center leading-tight rounded-none ${
+                        isActive
+                          ? "bg-[#FF5722] border-[#FF5722] text-white font-black"
+                          : "bg-[#151F32] border-slate-800 text-slate-300 hover:bg-[#1E293B]"
+                      }`}
+                    >
+                      <span className="text-xs font-bold">{tab.label}</span>
+                      <span className={`text-[9px] font-mono mt-0.5 ${isActive ? 'text-white/80' : 'text-slate-500 font-medium'}`}>{tab.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Group Filter (Only for Petanque) */}
+          {sport === "petanque" && groupsList.length > 1 && (
+            <div className="w-full">
+              <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">สาย / กลุ่ม</label>
+              <select
+                value={selectedGroup}
+                onChange={(e) => setSelectedGroup(e.target.value)}
+                className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+              >
+                {groupsList.map((g) => (
+                  <option key={g} value={g}>
+                    {g === "all" ? "🎯 แสดงทุกสาย" : `สาย ${g}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
-
-        {sport === "petanque" && groupsList.length > 1 && (
-          <div className="flex-1 min-w-[120px]">
-            <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">สาย / กลุ่ม</label>
-            <select
-              value={selectedGroup}
-              onChange={(e) => setSelectedGroup(e.target.value)}
-              className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
-            >
-              {groupsList.map((g) => (
-                <option key={g} value={g}>
-                  {g === "all" ? "🎯 แสดงทุกสาย" : `สาย ${g}`}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {courtsList.length > 1 && (
-          <div className="flex-1 min-w-[120px]">
-            <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">สนามแข่งขัน</label>
-            <select
-              value={selectedCourt}
-              onChange={(e) => setSelectedCourt(e.target.value)}
-              className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
-            >
-              {courtsList.map((c) => (
-                <option key={c} value={c}>
-                  {c === "all" ? "📍 แสดงทุกสนาม" : c}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="flex-1 min-w-[150px] md:flex-[1.5]">
-          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">ค้นหาชื่อทีม</label>
-          <input
-            type="text"
-            value={teamSearch}
-            onChange={(e) => setTeamSearch(e.target.value)}
-            placeholder="ค้นหาชื่อ คป.สอ. หรือทีม..."
-            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none placeholder-slate-500"
-          />
-        </div>
-      </div>
 
       {/* Petanque Schedule notice when draw has not been held yet */}
       {petanqueDrawNotHeld && (
