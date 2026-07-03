@@ -1077,7 +1077,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
         </div>
 
         <div className="flex justify-between items-center mt-1.5 pt-1 border-t border-dashed border-slate-800">
-          <span className="text-[8px] font-mono bg-slate-950 text-slate-300 px-1.5 py-0.5 border border-slate-800 font-bold">
+          <span className="text-[10px] font-mono bg-amber-500/10 text-amber-400 px-2 py-0.5 border border-amber-500/30 font-black">
             คู่ที่ {m.id.split("_").pop()}
           </span>
           {isLive && (
@@ -1627,7 +1627,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                             {(() => {
                               const matchNum = m.id.split("_").pop();
                               return matchNum && !isNaN(Number(matchNum)) ? (
-                                <span className="bg-slate-900 border border-slate-800 text-slate-200 text-[9px] font-mono px-2 py-0.5 font-bold uppercase block w-fit rounded-none">
+                                <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs md:text-sm font-mono px-2.5 py-1 font-black uppercase block w-fit rounded-none">
                                   คู่ที่ {matchNum}
                                 </span>
                               ) : null;
@@ -2689,7 +2689,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                               return (
                                 <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                                  <td className="p-1 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{matchNum}</td>
+                                  <td className="p-1 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{matchNum}</td>
                                   <td className="p-1 border-r border-black font-mono font-medium text-xs">
                                     <div>{m.date}</div>
                                     <div className="font-bold">{m.time}</div>
@@ -2771,7 +2771,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                                   const displayMatchNum = matchNum && !isNaN(Number(matchNum)) ? matchNum : "-";
                                   return (
                                     <tr key={m.id} className="border-b border-gray-300">
-                                      <td className="p-1 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{displayMatchNum}</td>
+                                      <td className="p-1 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{displayMatchNum}</td>
                                       <td className="p-1 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
                                       <td className={`p-1 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
                                       <td className={`p-1 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>
@@ -2955,7 +2955,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                     return (
                       <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                        <td className="p-1.5 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{matchNum}</td>
+                        <td className="p-1.5 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{matchNum}</td>
                         <td className="p-1.5 border-r border-black font-mono font-medium text-xs">
                           <div>{m.date}</div>
                           <div className="font-bold">{m.time}</div>
@@ -3038,7 +3038,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                         const displayMatchNum = matchNum && !isNaN(Number(matchNum)) ? matchNum : "-";
                         return (
                           <tr key={m.id} className="border-b border-gray-300">
-                            <td className="p-1.5 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{displayMatchNum}</td>
+                            <td className="p-1.5 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{displayMatchNum}</td>
                             <td className="p-1.5 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
                             <td className={`p-1.5 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
                             <td className={`p-1.5 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>

@@ -259,7 +259,7 @@ export default function Dashboard({ matches, selectedDistrict }: DashboardProps)
                       {(() => {
                         const matchNum = m.id.split("_").pop();
                         return matchNum && !isNaN(Number(matchNum)) ? (
-                          <span className="bg-slate-950 text-amber-400 text-[9px] font-mono px-2 py-0.5 border border-slate-800 uppercase rounded-none">
+                          <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono px-2.5 py-1 font-black uppercase rounded-none">
                             คู่ที่ {matchNum}
                           </span>
                         ) : null;

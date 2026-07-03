@@ -1292,7 +1292,7 @@ export default function DistrictSchedule({
                               {(() => {
                                 const matchNum = match.id.split("_").pop();
                                 return matchNum && !isNaN(Number(matchNum)) ? (
-                                  <span className="bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-mono px-2 py-0.5 font-bold uppercase rounded-none">
+                                  <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs md:text-sm font-mono px-2.5 py-1 font-black uppercase rounded-none">
                                     คู่ที่ {matchNum}
                                   </span>
                                 ) : null;
@@ -1691,7 +1691,7 @@ export default function DistrictSchedule({
 
                         return (
                           <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                            <td className="p-1 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{matchNum}</td>
+                            <td className="p-1 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{matchNum}</td>
                             <td className="p-1 border-r border-black font-mono font-medium text-xs">
                               <div>{m.date}</div>
                               <div className="font-bold">{m.time}</div>
@@ -1839,7 +1839,7 @@ export default function DistrictSchedule({
 
                     return (
                       <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                        <td className="p-1.5 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{matchNum}</td>
+                        <td className="p-1.5 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{matchNum}</td>
                         <td className="p-1.5 border-r border-black font-mono font-medium text-xs">
                           <div>{m.date}</div>
                           <div className="font-bold">{m.time}</div>
