@@ -1325,6 +1325,18 @@ export default function DistrictSchedule({
 
                           {/* Card Body (Matchup content) */}
                           <div className="p-4 space-y-4 flex-grow">
+                            {/* Prominent Date/Time & Court indicators */}
+                            <div className="flex flex-col gap-1.5 mb-3">
+                              <div className="flex items-center gap-1.5 text-amber-400 bg-slate-950 px-2.5 py-1 border border-slate-800 rounded-none w-fit text-[10px] font-mono font-black uppercase tracking-wider">
+                                <Clock size={11} className="text-[#FF5722]" />
+                                <span>{match.date} • {match.time}</span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 text-[#00FF66] bg-slate-950 px-2.5 py-1 border border-slate-800 rounded-none w-fit text-[10.5px] font-mono font-black uppercase tracking-wider">
+                                <MapPin size={11} className="text-[#00FF66]" />
+                                <span>{match.court}</span>
+                              </div>
+                            </div>
                             {match.isPotential && (
                               <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-[10px] text-amber-400 font-bold flex items-center gap-1.5 font-sans mb-1.5 rounded-none leading-normal">
                                 <span>📢</span>

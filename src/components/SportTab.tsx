@@ -1623,6 +1623,12 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                             <Clock size={11} className="text-[#FF5722]" />
                             <span>{m.date} • {m.time}</span>
                           </div>
+
+                          {/* Prominent Court Location indicator */}
+                          <div className="flex items-center gap-1.5 text-[#00FF66] bg-slate-950 px-2.5 py-1 border border-slate-800 rounded-none w-fit text-[10.5px] font-mono font-black uppercase tracking-wider mt-1">
+                            <MapPin size={11} className="text-[#00FF66]" />
+                            <span>{m.court}</span>
+                          </div>
                           
                           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                             {(() => {
