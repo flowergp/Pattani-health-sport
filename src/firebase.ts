@@ -1,15 +1,15 @@
 import { initializeApp } from "firebase/app";
 import { initializeFirestore, setLogLevel } from "firebase/firestore";
 
-// Config matches firebase-applet-config.json
+// New Firebase configuration
 const firebaseConfig = {
-  projectId: "long-smoke-jwjrd",
-  appId: "1:769527903239:web:1981d65d477dce4426a6a2",
-  apiKey: "AIzaSyDw_VONXunFXPTs5PSwQFwHku48vtavFjQ",
-  authDomain: "long-smoke-jwjrd.firebaseapp.com",
-  firestoreDatabaseId: "ai-studio-sportstournament-0ab39319-6c78-455f-b2fd-9fb0d12953a0",
-  storageBucket: "long-smoke-jwjrd.firebasestorage.app",
-  messagingSenderId: "769527903239"
+  apiKey: "AIzaSyBmITE7up6mCfJLDtRHvPlUHcftnHQG8So",
+  authDomain: "ptnsports-25886.firebaseapp.com",
+  projectId: "ptnsports-25886",
+  storageBucket: "ptnsports-25886.firebasestorage.app",
+  messagingSenderId: "396135126232",
+  appId: "1:396135126232:web:b99a9ff5289307f9ef33ad",
+  measurementId: "G-QWXRPP2ZW8"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -23,5 +23,5 @@ try {
 
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true
-}, firebaseConfig.firestoreDatabaseId);
+});
 
