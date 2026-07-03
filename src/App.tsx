@@ -298,6 +298,12 @@ export default function App() {
       "ระบบได้ปรับเข้าสู่โหมดการทำงานในเครื่องของคุณโดยอัตโนมัติ คุณสามารถดูผลลัพธ์ ตารางการแข่งขัน " +
       "และแก้ไขผลคะแนนต่างๆ ได้ตามปกติ โดยข้อมูลทั้งหมดจะจัดเก็บอยู่ในเบราว์เซอร์เครื่องนี้อย่างปลอดภัย"
     );
+    
+    // Auto-seed local matches if current matches list is empty
+    if (matches.length === 0) {
+      saveMatchesLocally(getInitialMatches());
+    }
+
     disableNetwork(db).catch((err) => {
       console.log("Failed to disable Firestore network in enableLocalFallback: ", err);
     });
@@ -340,6 +346,22 @@ export default function App() {
         collection(db, "matches"),
         async (snapshot) => {
           clearTimeout(timeoutId);
+          if (snapshot.empty) {
+            console.log("Firestore matches collection is empty. Auto-seeding default matches...");
+            const defaultMatches = getInitialMatches();
+            try {
+              const batch = writeBatch(db);
+              defaultMatches.forEach((m) => {
+                batch.set(doc(db, "matches", m.id), m);
+              });
+              await batch.commit();
+              console.log("Auto-seeded matches collection successfully!");
+            } catch (err) {
+              console.error("Auto-seed matches error: ", err);
+            }
+            return;
+          }
+
           const matchesList: Match[] = [];
           snapshot.forEach((docSnap) => {
             matchesList.push({ ...docSnap.data() } as Match);
@@ -373,18 +395,8 @@ export default function App() {
                   updated = true;
                 }
               }
-              let date = m.date;
-              if (m.sport === "petanque" || m.sport === "football") {
-                if (m.gender === "ชาย" && date === "6 ก.ค. 69") {
-                  date = "7 ก.ค. 69";
-                  updated = true;
-                } else if (m.gender === "หญิง" && date === "7 ก.ค. 69") {
-                  date = "6 ก.ค. 69";
-                  updated = true;
-                }
-              }
               if (updated) {
-                const updatedMatch = { ...m, participants, ranks, date };
+                const updatedMatch = { ...m, participants, ranks };
                 needsFirestoreSync = true;
                 pendingUpdates.push({ id: m.id, data: updatedMatch });
                 return updatedMatch;
@@ -1215,6 +1227,9 @@ export default function App() {
                     onDeleteUser={handleDeleteUser}
                     onUpdateUser={handleUpdateUser}
                     isLoggedIn={isLoggedIn}
+                    onResetData={resetToDefaultPDFSchedule}
+                    onSeedDistrictUsers={seedDefaultDistrictUsers}
+                    isResetting={isResetting}
                   />
                 )}
               </motion.div>

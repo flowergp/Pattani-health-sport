@@ -140,6 +140,34 @@ export default function UserManager({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {onResetData && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm("🚨 คำเตือน: คุณต้องการรีเซ็ตโปรแกรมการแข่งขันและผลคะแนนทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่? (ข้อมูลที่บันทึกไว้จะหายไป)")) {
+                  onResetData();
+                }
+              }}
+              disabled={isResetting}
+              className="px-3.5 py-1.5 bg-red-950/40 hover:bg-red-900/60 border border-red-800 text-red-400 font-bold text-xs uppercase cursor-pointer rounded-none transition-all disabled:opacity-50"
+            >
+              {isResetting ? "⏳ กำลังรีเซ็ต..." : "⚠️ รีเซ็ตตารางการแข่งขัน"}
+            </button>
+          )}
+
+          {onSeedDistrictUsers && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm("คุณต้องการสร้างบัญชีผู้ใช้งานสำหรับทุกอำเภอเริ่มต้นใหม่หรือไม่? (ข้อมูลเดิมยังคงอยู่)")) {
+                  onSeedDistrictUsers();
+                }
+              }}
+              className="px-3.5 py-1.5 bg-indigo-950/40 hover:bg-indigo-900 border border-indigo-800 text-indigo-400 font-bold text-xs uppercase cursor-pointer rounded-none transition-all"
+            >
+              🔑 สร้างผู้ใช้รายอำเภอเริ่มต้น
+            </button>
+          )}
 
           <div className="flex items-center gap-2 bg-[#1E293B] border border-slate-800 px-3 py-1 text-xs text-slate-300 font-mono">
             <Shield size={14} className="text-[#00FF66]" />
