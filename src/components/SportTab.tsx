@@ -369,6 +369,11 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
   const [winner, setWinner] = useState<string>("");
   const [editTeamA, setEditTeamA] = useState<string>("");
   const [editTeamB, setEditTeamB] = useState<string>("");
+  const [editDate, setEditDate] = useState<string>("");
+  const [editTime, setEditTime] = useState<string>("");
+  const [editCourt, setEditCourt] = useState<string>("");
+  const [editRound, setEditRound] = useState<string>("");
+  const [editGroup, setEditGroup] = useState<string>("");
 
   // Volleyball set-score edit state
   const [set1A, setSet1A] = useState("0");
@@ -594,6 +599,11 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
     setWinner(m.winner ?? "");
     setEditTeamA(m.teamA || "");
     setEditTeamB(m.teamB || "");
+    setEditDate(m.date || "");
+    setEditTime(m.time || "");
+    setEditCourt(m.court || "");
+    setEditRound(m.round || "");
+    setEditGroup(m.group || "");
 
     if (sport === "volleyball" && m.sets && m.sets.length >= 3) {
       setSet1A(String(m.sets[0]?.scoreA ?? 0));
@@ -619,7 +629,12 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
 
   const handleSaveEdit = async (m: Match) => {
     const updates: Partial<Match> = {
-      status: matchStatus
+      status: matchStatus,
+      date: editDate,
+      time: editTime,
+      court: editCourt,
+      round: editRound,
+      group: editGroup
     };
 
     if (sport === "track") {
@@ -1753,6 +1768,63 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                         </select>
                       </div>
 
+                      {/* Program details edit */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">วันที่</label>
+                          <input
+                            type="text"
+                            value={editDate}
+                            onChange={(e) => setEditDate(e.target.value)}
+                            placeholder="เช่น 6 ก.ค. 69"
+                            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">เวลา</label>
+                          <input
+                            type="text"
+                            value={editTime}
+                            onChange={(e) => setEditTime(e.target.value)}
+                            placeholder="เช่น 09.00 น."
+                            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">สนาม</label>
+                          <input
+                            type="text"
+                            value={editCourt}
+                            onChange={(e) => setEditCourt(e.target.value)}
+                            placeholder="เช่น สนามที่ 1"
+                            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">รอบการแข่งขัน</label>
+                          <input
+                            type="text"
+                            value={editRound}
+                            onChange={(e) => setEditRound(e.target.value)}
+                            placeholder="เช่น รอบแรก"
+                            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">กลุ่ม/สาย</label>
+                          <input
+                            type="text"
+                            value={editGroup}
+                            onChange={(e) => setEditGroup(e.target.value)}
+                            placeholder="เช่น สาย A (เว้นว่างไว้ถ้าไม่มี)"
+                            className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                          />
+                        </div>
+                      </div>
+
                       {isTrack ? (
                         // Edit track ranks
                         <div className="space-y-2">
@@ -1798,8 +1870,31 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                           </div>
                         </div>
                       ) : (
-                        // Edit team score
+                        // Edit team names & score
                         <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[10px] font-mono font-bold text-slate-400 truncate mb-1">ชื่อทีมฝั่ง A</label>
+                              <input
+                                type="text"
+                                value={editTeamA}
+                                onChange={(e) => setEditTeamA(e.target.value)}
+                                placeholder="ชื่อทีมฝั่ง A"
+                                className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-mono font-bold text-slate-400 truncate mb-1">ชื่อทีมฝั่ง B</label>
+                              <input
+                                type="text"
+                                value={editTeamB}
+                                onChange={(e) => setEditTeamB(e.target.value)}
+                                placeholder="ชื่อทีมฝั่ง B"
+                                className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                              />
+                            </div>
+                          </div>
+
                           {sport === "volleyball" ? (
                             // Volleyball set editor
                             <div className="space-y-2">
@@ -1837,14 +1932,6 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                             // Standard dual sport score editor
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-1">
-                                <label className="block text-[10px] font-mono font-bold text-slate-400 truncate">ชื่อทีมฝั่ง A</label>
-                                <input
-                                  type="text"
-                                  value={editTeamA}
-                                  onChange={(e) => setEditTeamA(e.target.value)}
-                                  placeholder="ชื่อทีมฝั่ง A"
-                                  className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none mb-1"
-                                />
                                 <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม A</label>
                                 <input
                                   type="number"
@@ -1855,14 +1942,6 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="block text-[10px] font-mono font-bold text-slate-400 truncate">ชื่อทีมฝั่ง B</label>
-                                <input
-                                  type="text"
-                                  value={editTeamB}
-                                  onChange={(e) => setEditTeamB(e.target.value)}
-                                  placeholder="ชื่อทีมฝั่ง B"
-                                  className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none mb-1"
-                                />
                                 <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม B</label>
                                 <input
                                   type="number"
@@ -2124,8 +2203,88 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                 </select>
               </div>
 
-              {/* Edit team score */}
+              {/* Program details edit */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">วันที่</label>
+                  <input
+                    type="text"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    placeholder="เช่น 6 ก.ค. 69"
+                    className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">เวลา</label>
+                  <input
+                    type="text"
+                    value={editTime}
+                    onChange={(e) => setEditTime(e.target.value)}
+                    placeholder="เช่น 09.00 น."
+                    className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">สนาม</label>
+                  <input
+                    type="text"
+                    value={editCourt}
+                    onChange={(e) => setEditCourt(e.target.value)}
+                    placeholder="เช่น สนามที่ 1"
+                    className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">รอบการแข่งขัน</label>
+                  <input
+                    type="text"
+                    value={editRound}
+                    onChange={(e) => setEditRound(e.target.value)}
+                    placeholder="เช่น รอบแรก"
+                    className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">กลุ่ม/สาย</label>
+                  <input
+                    type="text"
+                    value={editGroup}
+                    onChange={(e) => setEditGroup(e.target.value)}
+                    placeholder="เช่น สาย A"
+                    className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                  />
+                </div>
+              </div>
+
+              {/* Edit team names & score */}
               <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-mono font-bold text-slate-400 truncate mb-1">ชื่อทีมฝั่ง A</label>
+                    <input
+                      type="text"
+                      value={editTeamA}
+                      onChange={(e) => setEditTeamA(e.target.value)}
+                      placeholder="ชื่อทีมฝั่ง A"
+                      className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono font-bold text-slate-400 truncate mb-1">ชื่อทีมฝั่ง B</label>
+                    <input
+                      type="text"
+                      value={editTeamB}
+                      onChange={(e) => setEditTeamB(e.target.value)}
+                      placeholder="ชื่อทีมฝั่ง B"
+                      className="w-full p-1.5 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
+                    />
+                  </div>
+                </div>
+
                 {sport === "volleyball" ? (
                   <div className="space-y-2">
                     <span className="block text-[10px] font-mono font-bold text-slate-400">ระบุคะแนนเซต (Volleyball Set Scores):</span>
@@ -2161,7 +2320,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                 ) : (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="block text-[10px] font-mono font-bold text-slate-400 truncate">{hiddenEditingMatch.teamA || "TBD"}</label>
+                      <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม A</label>
                       <input
                         type="number"
                         min="0"
@@ -2170,8 +2329,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, is
                         className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none font-mono"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono font-bold text-slate-400 truncate">{hiddenEditingMatch.teamB || "TBD"}</label>
+                    <div className="grid grid-cols-1">
+                      <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม B</label>
                       <input
                         type="number"
                         min="0"
