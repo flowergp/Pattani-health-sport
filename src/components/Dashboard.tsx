@@ -17,12 +17,10 @@ import { motion } from "motion/react";
 
 interface DashboardProps {
   matches: Match[];
-  onResetData: () => Promise<void>;
-  isResetting: boolean;
   selectedDistrict?: string;
 }
 
-export default function Dashboard({ matches, onResetData, isResetting, selectedDistrict }: DashboardProps) {
+export default function Dashboard({ matches, selectedDistrict }: DashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const totalMatches = matches.length;

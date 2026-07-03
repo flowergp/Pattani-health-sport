@@ -1152,8 +1152,6 @@ export default function App() {
                 {activeTab === "dashboard" && (
                   <Dashboard 
                     matches={resolvedMatches} 
-                    onResetData={() => resetToDefaultPDFSchedule(false)} 
-                    isResetting={isResetting}
                     selectedDistrict={selectedDistrict}
                   />
                 )}
@@ -1217,9 +1215,6 @@ export default function App() {
                     onDeleteUser={handleDeleteUser}
                     onUpdateUser={handleUpdateUser}
                     isLoggedIn={isLoggedIn}
-                    onSeedDistrictUsers={seedDefaultDistrictUsers}
-                    onResetData={() => resetToDefaultPDFSchedule(false)}
-                    isResetting={isResetting}
                   />
                 )}
               </motion.div>

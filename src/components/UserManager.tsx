@@ -140,25 +140,7 @@ export default function UserManager({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {onSeedDistrictUsers && (
-            <button
-              type="button"
-              onClick={async () => {
-                if (window.confirm("ต้องการสร้างบัญชีผู้ใช้อำเภอเริ่มต้น (13 อำเภอ คป.สอ.) หรือไม่?")) {
-                  try {
-                    await onSeedDistrictUsers();
-                    setSuccessMsg("สร้างบัญชีผู้ใช้อำเภอเริ่มต้นสำเร็จเรียบร้อย!");
-                    setTimeout(() => setSuccessMsg(""), 3000);
-                  } catch (e: any) {
-                    setErrorMsg("เกิดข้อผิดพลาดในการสร้างบัญชี");
-                  }
-                }
-              }}
-              className="px-3.5 py-1 bg-blue-950/40 hover:bg-blue-900 border border-blue-800 text-blue-400 font-bold text-xs uppercase cursor-pointer rounded-none transition-all duration-150"
-            >
-              ⚡ สร้างบัญชีผู้ใช้อำเภอ (13 อำเภอ)
-            </button>
-          )}
+
           <div className="flex items-center gap-2 bg-[#1E293B] border border-slate-800 px-3 py-1 text-xs text-slate-300 font-mono">
             <Shield size={14} className="text-[#00FF66]" />
             บัญชีทั้งหมด: {users.length + (users.some(u => u.username === "admin") ? 0 : 1)} บัญชี
@@ -413,37 +395,7 @@ export default function UserManager({
           </div>
         </div>
 
-        {/* System Control Panel */}
-        {onResetData && (
-          <div className="border border-red-900 bg-[#1A0E1A]/40 p-6 mt-8 space-y-4 rounded-none">
-            <h3 className="text-sm font-bold text-red-400 font-mono flex items-center gap-2">
-              ⚠️ แผงควบคุมระบบ (System Control Panel)
-            </h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              ฟังก์ชันสำหรับล้างผลการแข่งขันและรีเซ็ตตารางการแข่งขันทั้งหมดเป็นค่าเริ่มต้น (โปรแกรมจะรองรับการจับฉลากเปตองในวันแข่ง 
-              โดยทำการล้างชื่อทีมของเปตองเป็น "1 สาย A", "2 สาย A", ... เพื่อให้คณะกรรมการสามารถมาบันทึกชื่ออำเภอจริงที่จับฉลากได้แบบเรียลไทม์หน้างาน)
-            </p>
-            <div className="flex flex-wrap gap-4 pt-2">
-              <button
-                type="button"
-                onClick={async () => {
-                  if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตและล้างผลการแข่งขันทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้")) {
-                    try {
-                      await onResetData();
-                      alert("รีเซ็ตตารางการแข่งขันและระบบเรียบร้อยแล้ว!");
-                    } catch (err: any) {
-                      alert("เกิดข้อผิดพลาดในการรีเซ็ต: " + err.message);
-                    }
-                  }
-                }}
-                disabled={isResetting}
-                className="px-4 py-2 bg-red-950/60 hover:bg-red-900 text-red-200 border border-red-700/50 hover:border-red-500 text-xs font-bold font-mono tracking-wide rounded-none cursor-pointer transition-colors disabled:opacity-40"
-              >
-                {isResetting ? "กำลังรีเซ็ตระบบ..." : "🔄 รีเซ็ตตารางการแข่งขันเป็นค่าเริ่มต้น"}
-              </button>
-            </div>
-          </div>
-        )}
+
       </div>
     </div>
   );
