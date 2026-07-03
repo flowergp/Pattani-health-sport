@@ -1624,6 +1624,14 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                           </div>
                           
                           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                            {(() => {
+                              const matchNum = m.id.split("_").pop();
+                              return matchNum && !isNaN(Number(matchNum)) ? (
+                                <span className="bg-slate-900 border border-slate-800 text-slate-200 text-[9px] font-mono px-2 py-0.5 font-bold uppercase block w-fit rounded-none">
+                                  คู่ที่ {matchNum}
+                                </span>
+                              ) : null;
+                            })()}
                             <span className="bg-[#FF5722] text-white text-[9px] font-mono px-2 py-0.5 font-bold uppercase block w-fit rounded-none">
                               {m.category}
                             </span>
@@ -1763,7 +1771,12 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                     // EDITING STATE MODAL INLINE
                     <div className="py-4 space-y-4 bg-[#1E293B] p-4 border border-slate-700 my-2 text-white rounded-none">
                       <div className="flex justify-between items-center border-b border-slate-700 pb-2">
-                        <span className="font-mono text-xs font-bold text-[#FF5722]">✍️ บันทึกคะแนนและสถานะ</span>
+                        <span className="font-mono text-xs font-bold text-[#FF5722]">
+                          ✍️ บันทึกคะแนนและสถานะ {(() => {
+                            const matchNum = m.id.split("_").pop();
+                            return matchNum && !isNaN(Number(matchNum)) ? `(คู่ที่ ${matchNum})` : "";
+                          })()}
+                        </span>
                         <span className="font-mono text-[9px] bg-slate-950 text-slate-400 px-1.5 py-0.5 border border-slate-800">ID: {m.id}</span>
                       </div>
 
@@ -2189,7 +2202,10 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
             <div className="w-full max-w-lg border border-slate-700 bg-[#1E293B] p-6 space-y-4 rounded-none text-white shadow-2xl animate-in fade-in zoom-in-95 duration-150">
               <div className="flex justify-between items-center border-b border-slate-700 pb-2">
                 <span className="font-mono text-sm font-black text-[#FF5722] flex items-center gap-1.5">
-                  ✍️ บันทึกคะแนน {hiddenEditingMatch.round} ({hiddenEditingMatch.category})
+                  ✍️ บันทึกคะแนน {hiddenEditingMatch.round} ({hiddenEditingMatch.category}) {(() => {
+                    const matchNum = hiddenEditingMatch.id.split("_").pop();
+                    return matchNum && !isNaN(Number(matchNum)) ? `(คู่ที่ ${matchNum})` : "";
+                  })()}
                 </span>
                 <button 
                   type="button"
@@ -2742,6 +2758,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                             <table className="w-full text-sm border-collapse border border-black text-black">
                               <thead>
                                 <tr className="bg-gray-100 border-b border-black text-left">
+                                  <th className="p-1 border-r border-black font-bold text-center w-[45px]">คู่ที่</th>
                                   <th className="p-1 border-r border-black font-bold w-[120px]">รอบ</th>
                                   <th className="p-1 border-r border-black font-bold text-right">ทีมฝั่ง A</th>
                                   <th className="p-1 border-r border-black font-bold text-left font-sans">ทีมฝั่ง B</th>
@@ -2749,14 +2766,19 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                                 </tr>
                               </thead>
                               <tbody>
-                                {koMatches.map((m) => (
-                                  <tr key={m.id} className="border-b border-gray-300">
-                                    <td className="p-1 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
-                                    <td className={`p-1 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
-                                    <td className={`p-1 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>
-                                    <td className="p-1 text-center font-bold text-emerald-700">{m.winner ? `🏆 ${m.winner}` : "รอยืนยันผล"}</td>
-                                  </tr>
-                                ))}
+                                {koMatches.map((m) => {
+                                  const matchNum = m.id.split("_").pop();
+                                  const displayMatchNum = matchNum && !isNaN(Number(matchNum)) ? matchNum : "-";
+                                  return (
+                                    <tr key={m.id} className="border-b border-gray-300">
+                                      <td className="p-1 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{displayMatchNum}</td>
+                                      <td className="p-1 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
+                                      <td className={`p-1 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
+                                      <td className={`p-1 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>
+                                      <td className="p-1 text-center font-bold text-emerald-700">{m.winner ? `🏆 ${m.winner}` : "รอยืนยันผล"}</td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           );
@@ -3003,6 +3025,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                   <table className="w-full text-sm border-collapse border border-black text-black">
                     <thead>
                       <tr className="bg-gray-100 border-b border-black text-left">
+                        <th className="p-1.5 border-r border-black font-bold text-center w-[45px]">คู่ที่</th>
                         <th className="p-1.5 border-r border-black font-bold w-[120px]">รอบ</th>
                         <th className="p-1.5 border-r border-black font-bold text-right">ทีมฝั่ง A</th>
                         <th className="p-1.5 border-r border-black font-bold text-left font-sans">ทีมฝั่ง B</th>
@@ -3010,14 +3033,19 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                       </tr>
                     </thead>
                     <tbody>
-                      {koMatches.map((m) => (
-                        <tr key={m.id} className="border-b border-gray-300">
-                          <td className="p-1.5 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
-                          <td className={`p-1.5 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
-                          <td className={`p-1.5 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>
-                          <td className="p-1.5 text-center font-bold text-emerald-700">{m.winner ? `🏆 ${m.winner}` : "รอยืนยันผล"}</td>
-                        </tr>
-                      ))}
+                      {koMatches.map((m) => {
+                        const matchNum = m.id.split("_").pop();
+                        const displayMatchNum = matchNum && !isNaN(Number(matchNum)) ? matchNum : "-";
+                        return (
+                          <tr key={m.id} className="border-b border-gray-300">
+                            <td className="p-1.5 border-r border-black font-bold text-center bg-gray-50 font-mono text-sm">{displayMatchNum}</td>
+                            <td className="p-1.5 border-r border-black font-bold">{m.round} {m.group ? `(${m.group})` : ""}</td>
+                            <td className={`p-1.5 border-r border-black text-right ${m.winner === m.teamA ? "font-black text-emerald-800" : ""}`}>{m.teamA || "TBD"}</td>
+                            <td className={`p-1.5 border-r border-black text-left ${m.winner === m.teamB ? "font-black text-emerald-800" : ""}`}>{m.teamB || "TBD"}</td>
+                            <td className="p-1.5 text-center font-bold text-emerald-700">{m.winner ? `🏆 ${m.winner}` : "รอยืนยันผล"}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 );

@@ -1127,7 +1127,10 @@ export default function DistrictSchedule({
                       >
                         <div className="flex justify-between text-[9px] font-mono">
                           <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
-                            {m.isPotential ? "⏳ หากเข้ารอบ" : "รอบชิงตำแหน่ง"}
+                            {m.isPotential ? "⏳ หากเข้ารอบ" : "รอบชิงตำแหน่ง"} {(() => {
+                              const matchNum = m.id.split("_").pop();
+                              return matchNum && !isNaN(Number(matchNum)) ? `(คู่ที่ ${matchNum})` : "";
+                            })()}
                           </span>
                           <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
                         </div>
@@ -1282,10 +1285,18 @@ export default function DistrictSchedule({
                         >
                           {/* Card Header (Category, Round & Live state) */}
                           <div className="p-3 bg-slate-900/60 border-b border-slate-800/80 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className={`text-[10px] font-mono font-black px-2 py-0.5 border uppercase rounded-none ${sportStyle.bg}`}>
                                 {sportStyle.icon} {sportStyle.label}
                               </span>
+                              {(() => {
+                                const matchNum = match.id.split("_").pop();
+                                return matchNum && !isNaN(Number(matchNum)) ? (
+                                  <span className="bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-mono px-2 py-0.5 font-bold uppercase rounded-none">
+                                    คู่ที่ {matchNum}
+                                  </span>
+                                ) : null;
+                              })()}
                               <span className="text-[11px] font-bold text-slate-300 truncate max-w-[200px]" title={match.category}>
                                 {match.category}
                               </span>

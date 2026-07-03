@@ -255,9 +255,19 @@ export default function Dashboard({ matches, selectedDistrict }: DashboardProps)
                 >
                   {/* Badge */}
                   <div className="flex justify-between items-start gap-2 mb-2">
-                    <span className="bg-slate-950 text-slate-300 text-[9px] font-mono px-2 py-0.5 border border-slate-800 uppercase rounded-none">
-                      {m.category}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {(() => {
+                        const matchNum = m.id.split("_").pop();
+                        return matchNum && !isNaN(Number(matchNum)) ? (
+                          <span className="bg-slate-950 text-amber-400 text-[9px] font-mono px-2 py-0.5 border border-slate-800 uppercase rounded-none">
+                            คู่ที่ {matchNum}
+                          </span>
+                        ) : null;
+                      })()}
+                      <span className="bg-slate-950 text-slate-300 text-[9px] font-mono px-2 py-0.5 border border-slate-800 uppercase rounded-none">
+                        {m.category}
+                      </span>
+                    </div>
                     <span
                       className={`text-[9px] font-mono font-bold px-2 py-0.5 border rounded-none uppercase ${
                         isLive
