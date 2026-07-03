@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Match, Medal, Participant } from "../types";
 import { TEAM_NAMES } from "../initialData";
 import { calculateMedals } from "../utils/calcMedals";
+import { getDisplayMatchNum } from "../utils/matchUtils";
 import { 
   Trophy, 
   Clock, 
@@ -1128,8 +1129,8 @@ export default function DistrictSchedule({
                         <div className="flex justify-between text-[9px] font-mono">
                           <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
                             {m.isPotential ? "⏳ หากเข้ารอบ" : "รอบชิงตำแหน่ง"} {(() => {
-                              const matchNum = m.id.split("_").pop();
-                              return matchNum && !isNaN(Number(matchNum)) ? `(คู่ที่ ${matchNum})` : "";
+                              const displayNum = getDisplayMatchNum(m.id, m.sport);
+                              return displayNum ? `(คู่ที่ ${displayNum})` : "";
                             })()}
                           </span>
                           <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
@@ -1290,10 +1291,10 @@ export default function DistrictSchedule({
                                 {sportStyle.icon} {sportStyle.label}
                               </span>
                               {(() => {
-                                const matchNum = match.id.split("_").pop();
-                                return matchNum && !isNaN(Number(matchNum)) ? (
+                                const displayNum = getDisplayMatchNum(match.id, match.sport);
+                                return displayNum ? (
                                   <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs md:text-sm font-mono px-2.5 py-1 font-black uppercase rounded-none">
-                                    คู่ที่ {matchNum}
+                                    คู่ที่ {displayNum}
                                   </span>
                                 ) : null;
                               })()}
@@ -1685,13 +1686,13 @@ export default function DistrictSchedule({
                     </thead>
                     <tbody>
                       {filteredMatches.map((m) => {
-                        const matchNum = m.id.split("_").pop();
+                        const displayNum = getDisplayMatchNum(m.id, m.sport);
                         const isCompleted = m.status === "completed";
                         const isLive = m.status === "live";
 
                         return (
                           <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                            <td className="p-1 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{matchNum}</td>
+                            <td className="p-1 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{displayNum}</td>
                             <td className="p-1 border-r border-black font-mono font-medium text-xs">
                               <div>{m.date}</div>
                               <div className="font-bold">{m.time}</div>
@@ -1833,13 +1834,13 @@ export default function DistrictSchedule({
                 </thead>
                 <tbody>
                   {filteredMatches.map((m) => {
-                    const matchNum = m.id.split("_").pop();
+                    const displayNum = getDisplayMatchNum(m.id, m.sport);
                     const isCompleted = m.status === "completed";
                     const isLive = m.status === "live";
 
                     return (
                       <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                        <td className="p-1.5 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{matchNum}</td>
+                        <td className="p-1.5 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{displayNum}</td>
                         <td className="p-1.5 border-r border-black font-mono font-medium text-xs">
                           <div>{m.date}</div>
                           <div className="font-bold">{m.time}</div>

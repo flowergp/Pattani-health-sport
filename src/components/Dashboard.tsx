@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Match, Medal } from "../types";
 import { calculateMedals } from "../utils/calcMedals";
+import { getDisplayMatchNum } from "../utils/matchUtils";
 import { 
   Trophy, 
   Activity, 
@@ -257,10 +258,10 @@ export default function Dashboard({ matches, selectedDistrict }: DashboardProps)
                   <div className="flex justify-between items-start gap-2 mb-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {(() => {
-                        const matchNum = m.id.split("_").pop();
-                        return matchNum && !isNaN(Number(matchNum)) ? (
+                        const displayNum = getDisplayMatchNum(m.id, m.sport);
+                        return displayNum ? (
                           <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono px-2.5 py-1 font-black uppercase rounded-none">
-                            คู่ที่ {matchNum}
+                            คู่ที่ {displayNum}
                           </span>
                         ) : null;
                       })()}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Match, Participant } from "../types";
 import { calculateGroupStandings } from "../utils/calcStandings";
+import { getDisplayMatchNum } from "../utils/matchUtils";
 import { TEAM_NAMES } from "../initialData";
 import { 
   Clock, 
@@ -1078,7 +1079,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
         <div className="flex justify-between items-center mt-1.5 pt-1 border-t border-dashed border-slate-800">
           <span className="text-[10px] font-mono bg-amber-500/10 text-amber-400 px-2 py-0.5 border border-amber-500/30 font-black">
-            คู่ที่ {m.id.split("_").pop()}
+            คู่ที่ {getDisplayMatchNum(m.id, m.sport)}
           </span>
           {isLive && (
             <span className="text-[8px] text-[#00FF66] font-black animate-pulse font-mono">
@@ -1625,10 +1626,10 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                           
                           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                             {(() => {
-                              const matchNum = m.id.split("_").pop();
-                              return matchNum && !isNaN(Number(matchNum)) ? (
+                              const displayNum = getDisplayMatchNum(m.id, m.sport);
+                              return displayNum ? (
                                 <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs md:text-sm font-mono px-2.5 py-1 font-black uppercase block w-fit rounded-none">
-                                  คู่ที่ {matchNum}
+                                  คู่ที่ {displayNum}
                                 </span>
                               ) : null;
                             })()}
@@ -2683,13 +2684,13 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                           </thead>
                           <tbody>
                             {filteredMatches.map((m) => {
-                              const matchNum = m.id.split("_").pop();
+                              const displayNum = getDisplayMatchNum(m.id, m.sport);
                               const isCompleted = m.status === "completed";
                               const isLive = m.status === "live";
 
                               return (
                                 <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                                  <td className="p-1 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{matchNum}</td>
+                                  <td className="p-1 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{displayNum}</td>
                                   <td className="p-1 border-r border-black font-mono font-medium text-xs">
                                     <div>{m.date}</div>
                                     <div className="font-bold">{m.time}</div>
@@ -2767,8 +2768,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                               </thead>
                               <tbody>
                                 {koMatches.map((m) => {
-                                  const matchNum = m.id.split("_").pop();
-                                  const displayMatchNum = matchNum && !isNaN(Number(matchNum)) ? matchNum : "-";
+                                  const displayMatchNum = getDisplayMatchNum(m.id, m.sport);
                                   return (
                                     <tr key={m.id} className="border-b border-gray-300">
                                       <td className="p-1 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{displayMatchNum}</td>
@@ -2949,13 +2949,13 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                 </thead>
                 <tbody>
                   {filteredMatches.map((m) => {
-                    const matchNum = m.id.split("_").pop();
+                    const displayNum = getDisplayMatchNum(m.id, m.sport);
                     const isCompleted = m.status === "completed";
                     const isLive = m.status === "live";
 
                     return (
                       <tr key={m.id} className="border-b border-gray-300 hover:bg-gray-50 text-left">
-                        <td className="p-1.5 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{matchNum}</td>
+                        <td className="p-1.5 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{displayNum}</td>
                         <td className="p-1.5 border-r border-black font-mono font-medium text-xs">
                           <div>{m.date}</div>
                           <div className="font-bold">{m.time}</div>
@@ -3034,8 +3034,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                     </thead>
                     <tbody>
                       {koMatches.map((m) => {
-                        const matchNum = m.id.split("_").pop();
-                        const displayMatchNum = matchNum && !isNaN(Number(matchNum)) ? matchNum : "-";
+                        const displayMatchNum = getDisplayMatchNum(m.id, m.sport);
                         return (
                           <tr key={m.id} className="border-b border-gray-300">
                             <td className="p-1.5 border-r border-black font-black text-center bg-amber-50 text-amber-950 font-mono text-base">{displayMatchNum}</td>
