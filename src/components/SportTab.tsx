@@ -1438,11 +1438,7 @@ export default function SportTab({
                                     <td className="py-1.5 px-2 font-bold flex items-center justify-between gap-1 text-white min-h-[32px]">
                                       <div className="flex items-center gap-1.5 flex-wrap">
                                         <span className="font-mono text-slate-500">{i + 1}.</span> {st.team}
-                                        {isTied && (
-                                          <span className="text-[8px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1 py-0.5 font-mono font-black uppercase rounded-none" title="คะแนนและผลชนะเสมอกัน ต้องตัดสินด้วยผลจับฉลาก">
-                                            🗳️ เสมอ (จับฉลาก)
-                                          </span>
-                                        )}
+
                                       </div>
                                       {isTied && isLoggedIn && onUpdateDrawLots && (
                                         <div className="flex items-center gap-0.5 shrink-0 ml-2">
