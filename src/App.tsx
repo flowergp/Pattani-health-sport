@@ -487,6 +487,11 @@ export default function App() {
           const data = snapshot.data();
           const rawList: Match[] = Array.isArray(data?.matches) ? data.matches : [];
           saveMatchesLocally(cleanMatchesList(rawList));
+          // ✅ ดึง drawLots จาก Firestore ด้วย (ผลเปตอง, ลำดับจับฉลาก ฯลฯ)
+          if (data?.drawLots && typeof data.drawLots === "object") {
+            setDrawLots(data.drawLots);
+            safeLocalStorage.setItem("pattani_drawLots", JSON.stringify(data.drawLots));
+          }
           setLoading(false);
         },
         (error: any) => {
