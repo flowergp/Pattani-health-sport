@@ -102,14 +102,39 @@ function getDefaultUsers(): AdminUser[] {
   return [];
 }
 
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn("Storage access denied:", e);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("Storage access denied:", e);
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn("Storage access denied:", e);
+    }
+  }
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "track" | "petanque" | "volleyball" | "football" | "admins" | "my-schedule">("dashboard");
   const [isLocalFallback, setIsLocalFallback] = useState<boolean>(() => {
-    return localStorage.getItem("pattani_local_fallback") === "true";
+    return safeLocalStorage.getItem("pattani_local_fallback") === "true";
   });
   
   const [matches, setMatches] = useState<Match[]>(() => {
-    const saved = localStorage.getItem("pattani_matches");
+    const saved = safeLocalStorage.getItem("pattani_matches");
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as Match[];
@@ -120,7 +145,7 @@ export default function App() {
           );
           if (hasOldVolleyballIds) {
             console.log("Old volleyball matches detected in local storage. Clearing cache...");
-            localStorage.removeItem("pattani_matches");
+            safeLocalStorage.removeItem("pattani_matches");
             return getInitialMatches();
           }
 
@@ -143,7 +168,7 @@ export default function App() {
   }, [matches]);
 
   const [expenses, setExpenses] = useState<ExpenseItem[]>(() => {
-    const saved = localStorage.getItem("pattani_expenses");
+    const saved = safeLocalStorage.getItem("pattani_expenses");
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -155,7 +180,7 @@ export default function App() {
   });
 
   const [dbUsers, setDbUsers] = useState<AdminUser[]>(() => {
-    const saved = localStorage.getItem("pattani_users");
+    const saved = safeLocalStorage.getItem("pattani_users");
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -169,7 +194,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [dbError, setDbError] = useState<string | null>(() => {
-    if (localStorage.getItem("pattani_local_fallback") === "true") {
+    if (safeLocalStorage.getItem("pattani_local_fallback") === "true") {
       return "เปิดใช้งานโหมดสำรองความปลอดภัย (Local Safety Fallback Mode) เรียบร้อยแล้ว! เนื่องจากจำนวนการใช้งานคลาวด์ Firebase ฟรีส่วนกลางเกินขีดจำกัดสำหรับวันนี้ ระบบได้ปรับเข้าสู่โหมดการทำงานในเครื่องของคุณโดยอัตโนมัติ คุณสามารถแก้ไขผลคะแนนต่างๆ ได้ตามปกติ โดยข้อมูลทั้งหมดจะจัดเก็บอยู่ในเบราว์เซอร์เครื่องนี้อย่างปลอดภัย";
     }
     return null;
@@ -180,11 +205,11 @@ export default function App() {
 
   // Theme state: dark or light
   const [theme, setTheme] = useState<"dark" | "light">(() => {
-    return (localStorage.getItem("pattani_theme") as "dark" | "light") || "dark";
+    return (safeLocalStorage.getItem("pattani_theme") as "dark" | "light") || "dark";
   });
 
   useEffect(() => {
-    localStorage.setItem("pattani_theme", theme);
+    safeLocalStorage.setItem("pattani_theme", theme);
     if (theme === "light") {
       document.documentElement.classList.add("theme-light");
       document.documentElement.classList.remove("theme-dark");
@@ -217,10 +242,10 @@ export default function App() {
 
   // Admin authentication state
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return localStorage.getItem("isLoggedIn") === "true";
+    return safeLocalStorage.getItem("isLoggedIn") === "true";
   });
   const [currentUser, setCurrentUser] = useState<{ username: string; role: "admin" | "editor"; team?: string } | null>(() => {
-    const saved = localStorage.getItem("currentUser");
+    const saved = safeLocalStorage.getItem("currentUser");
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -245,14 +270,14 @@ export default function App() {
 
     if ((username.trim().toLowerCase() === "admin" && password === "1234") || matchedUser) {
       setIsLoggedIn(true);
-      localStorage.setItem("isLoggedIn", "true");
+      safeLocalStorage.setItem("isLoggedIn", "true");
       
       const loggedInInfo = matchedUser 
         ? { username: matchedUser.username, role: matchedUser.role, team: matchedUser.team } 
         : { username: "admin", role: "admin" as const };
         
       setCurrentUser(loggedInInfo);
-      localStorage.setItem("currentUser", JSON.stringify(loggedInInfo));
+      safeLocalStorage.setItem("currentUser", JSON.stringify(loggedInInfo));
       
       setShowLoginModal(false);
       setLoginError("");
@@ -266,8 +291,8 @@ export default function App() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("currentUser");
+    safeLocalStorage.removeItem("isLoggedIn");
+    safeLocalStorage.removeItem("currentUser");
     if (activeTab === "admins") {
       setActiveTab("dashboard");
     }
@@ -276,22 +301,22 @@ export default function App() {
   const saveMatchesLocally = (newMatches: Match[]) => {
     const sorted = [...newMatches].sort((a, b) => a.order - b.order);
     setMatches(sorted);
-    localStorage.setItem("pattani_matches", JSON.stringify(sorted));
+    safeLocalStorage.setItem("pattani_matches", JSON.stringify(sorted));
   };
 
   const saveExpensesLocally = (newExpenses: ExpenseItem[]) => {
     setExpenses(newExpenses);
-    localStorage.setItem("pattani_expenses", JSON.stringify(newExpenses));
+    safeLocalStorage.setItem("pattani_expenses", JSON.stringify(newExpenses));
   };
 
   const saveUsersLocally = (newUsers: AdminUser[]) => {
     setDbUsers(newUsers);
-    localStorage.setItem("pattani_users", JSON.stringify(newUsers));
+    safeLocalStorage.setItem("pattani_users", JSON.stringify(newUsers));
   };
 
   const enableLocalFallback = () => {
     setIsLocalFallback(true);
-    localStorage.setItem("pattani_local_fallback", "true");
+    safeLocalStorage.setItem("pattani_local_fallback", "true");
     setDbError(
       "เปิดใช้งานโหมดสำรองความปลอดภัย (Local Safety Fallback Mode) เรียบร้อยแล้ว! " +
       "เนื่องจากจำนวนการใช้งานคลาวด์ Firebase ฟรีส่วนกลางเกินขีดจำกัดสำหรับวันนี้ " +
@@ -311,7 +336,7 @@ export default function App() {
 
   // Turn off Firestore network if local fallback is active to completely silence Quota / Connection errors
   useEffect(() => {
-    if (localStorage.getItem("pattani_local_fallback") === "true" || isLocalFallback) {
+    if (safeLocalStorage.getItem("pattani_local_fallback") === "true" || isLocalFallback) {
       disableNetwork(db).catch((err) => {
         console.log("Failed to disable Firestore network on mount: ", err);
       });
@@ -321,7 +346,7 @@ export default function App() {
   // 1. Sync matches and expenses from Firestore
   useEffect(() => {
     // If we're already marked as local fallback, don't block with loading spinner
-    if (localStorage.getItem("pattani_local_fallback") === "true" || isLocalFallback) {
+    if (safeLocalStorage.getItem("pattani_local_fallback") === "true" || isLocalFallback) {
       setLoading(false);
       return;
     }
@@ -1151,7 +1176,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  localStorage.removeItem("pattani_local_fallback");
+                  safeLocalStorage.removeItem("pattani_local_fallback");
                   window.location.reload();
                 }}
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs uppercase tracking-wider rounded-none shrink-0 transition-all cursor-pointer border-0"

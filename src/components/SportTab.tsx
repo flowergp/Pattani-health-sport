@@ -777,7 +777,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
         if (matchStatus === "completed") {
           updates.scoreA = setsWonA;
           updates.scoreB = setsWonB;
-          updates.winner = setsWonA > setsWonB ? m.teamA : m.teamB;
+          updates.winner = setsWonA > setsWonB ? editTeamA : editTeamB;
         }
       }
 
