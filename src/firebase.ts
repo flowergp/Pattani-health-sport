@@ -6,6 +6,7 @@ import appletConfig from "../firebase-applet-config.json";
 const prodConfig = {
   apiKey: "AIzaSyBmITE7up6mCfJLDtRHvPlUHcftnHQG8So",
   authDomain: "ptnsports-25886.firebaseapp.com",
+  databaseURL: "https://ptnsports-25886-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "ptnsports-25886",
   storageBucket: "ptnsports-25886.firebasestorage.app",
   messagingSenderId: "396135126232",
@@ -17,22 +18,11 @@ const prodConfig = {
 const isProduction =
   typeof window !== "undefined" &&
   (window.location.hostname === "ptnsports-25886.web.app" ||
-   window.location.hostname === "ptnsports-25886.firebaseapp.com" ||
-   window.location.hostname.includes("ptnsports"));
+    window.location.hostname === "ptnsports-25886.firebaseapp.com" ||
+    window.location.hostname.includes("ptnsports"));
 
-const isSandbox = !isProduction;
-
-const firebaseConfig = isSandbox && appletConfig.projectId
-  ? {
-      apiKey: appletConfig.apiKey,
-      authDomain: appletConfig.authDomain,
-      projectId: appletConfig.projectId,
-      storageBucket: appletConfig.storageBucket,
-      messagingSenderId: appletConfig.messagingSenderId,
-      appId: appletConfig.appId,
-      measurementId: appletConfig.measurementId || ""
-    }
-  : prodConfig;
+// Always use the production configuration to connect to ptnsports-25886
+const firebaseConfig = prodConfig;
 
 const app = initializeApp(firebaseConfig);
 
@@ -43,10 +33,8 @@ try {
   console.log("Failed to set Firestore log level to silent: ", e);
 }
 
-// Specify firestoreDatabaseId if sandbox uses a named database
-const databaseId = isSandbox && appletConfig.firestoreDatabaseId
-  ? appletConfig.firestoreDatabaseId
-  : "(default)";
+// Always use default database for ptnsports-25886
+const databaseId = "(default)";
 
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,

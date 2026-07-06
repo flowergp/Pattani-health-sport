@@ -2,20 +2,31 @@ import { initializeApp } from "firebase/app";
 import { initializeFirestore, collection, getDocs, writeBatch, doc } from "firebase/firestore";
 import { getInitialMatches } from "../src/initialData.js";
 
+import * as fs from "fs";
+import * as path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const appletConfig = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, "../firebase-applet-config.json"), "utf8")
+);
+
 const firebaseConfig = {
-  projectId: "long-smoke-jwjrd",
-  appId: "1:769527903239:web:1981d65d477dce4426a6a2",
-  apiKey: "AIzaSyDw_VONXunFXPTs5PSwQFwHku48vtavFjQ",
-  authDomain: "long-smoke-jwjrd.firebaseapp.com",
-  firestoreDatabaseId: "ai-studio-sportstournament-0ab39319-6c78-455f-b2fd-9fb0d12953a0",
-  storageBucket: "long-smoke-jwjrd.firebasestorage.app",
-  messagingSenderId: "769527903239"
+  apiKey: appletConfig.apiKey,
+  authDomain: appletConfig.authDomain,
+  projectId: appletConfig.projectId,
+  storageBucket: appletConfig.storageBucket,
+  messagingSenderId: appletConfig.messagingSenderId,
+  appId: appletConfig.appId
 };
 
 const app = initializeApp(firebaseConfig);
+const databaseId = appletConfig.firestoreDatabaseId || "(default)";
 const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true
-}, firebaseConfig.firestoreDatabaseId);
+}, databaseId);
 
 async function main() {
   console.log("Starting reset of matches in Firestore...");
