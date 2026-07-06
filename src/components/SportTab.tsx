@@ -73,9 +73,21 @@ interface SportTabProps {
   onDeleteMatch: (id: string) => Promise<void>;
   isLoggedIn: boolean;
   selectedDistrict?: string;
+  drawLots?: { [key: string]: string[] };
+  onUpdateDrawLots?: (key: string, teamOrder: string[]) => Promise<void>;
 }
 
-export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, onDeleteMatch, isLoggedIn, selectedDistrict }: SportTabProps) {
+export default function SportTab({
+  sport,
+  matches,
+  onUpdateMatch,
+  onAddMatch,
+  onDeleteMatch,
+  isLoggedIn,
+  selectedDistrict,
+  drawLots = {},
+  onUpdateDrawLots
+}: SportTabProps) {
   // Filters state
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedRound, setSelectedRound] = useState<string>("all");
@@ -90,6 +102,31 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
   const [lastFilename, setLastFilename] = useState<string>("");
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
+
+  const handleSwapDrawLots = async (
+    team: string,
+    direction: "up" | "down",
+    standings: any[],
+    cat: string,
+    grpName: string
+  ) => {
+    if (!isLoggedIn || !onUpdateDrawLots) return;
+
+    const currentOrder = standings.map((s) => s.team);
+    const idx = currentOrder.indexOf(team);
+    if (idx === -1) return;
+
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= currentOrder.length) return;
+
+    const teamAtTarget = currentOrder[targetIdx];
+    const newOrder = [...currentOrder];
+    newOrder[idx] = teamAtTarget;
+    newOrder[targetIdx] = team;
+
+    const key = `football_${cat}_${grpName}`;
+    await onUpdateDrawLots(key, newOrder);
+  };
 
   const handleExportPDF = () => {
     setIsExporting(true);
@@ -755,31 +792,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
         updates.winner = null;
       }
 
-      if (sport === "volleyball") {
-        const vSets = [
-          { scoreA: Number(set1A) || 0, scoreB: Number(set1B) || 0 },
-          { scoreA: Number(set2A) || 0, scoreB: Number(set2B) || 0 },
-          { scoreA: Number(set3A) || 0, scoreB: Number(set3B) || 0 }
-        ];
-        updates.sets = vSets;
-
-        // Automatically compute final set score based on sets won
-        let setsWonA = 0;
-        let setsWonB = 0;
-        vSets.forEach((set, i) => {
-          // Volley set is usually up to 25, 3rd set to 15, but we check who scored more
-          if (set.scoreA > 0 || set.scoreB > 0) {
-            if (set.scoreA > set.scoreB) setsWonA += 1;
-            else if (set.scoreB > set.scoreA) setsWonB += 1;
-          }
-        });
-
-        if (matchStatus === "completed") {
-          updates.scoreA = setsWonA;
-          updates.scoreB = setsWonB;
-          updates.winner = setsWonA > setsWonB ? editTeamA : editTeamB;
-        }
-      }
+      // Volleyball sets are no longer calculated automatically, standard score entry is used instead.
 
       // Bracket-Match Automatic Progression for Petanque / Volleyball / Football!
       // When a knockout match is completed, we can propagate the winner to the next round!
@@ -1307,7 +1320,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
             const catGroups = Array.from(new Set(catMatches.filter(m => m.round === "รอบแรก" && m.group).map(m => m.group))).sort();
             
             // Check if there are any standings in this category
-            const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat).length > 0);
+            const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat, drawLots).length > 0);
             if (!hasStandings) return null;
 
             return (
@@ -1321,7 +1334,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {catGroups.map((grpName) => {
-                    const standings = calculateGroupStandings(matches, sport, grpName, cat);
+                    const standings = calculateGroupStandings(matches, sport, grpName, cat, drawLots);
                     if (standings.length === 0) return null;
 
                     return (
@@ -1342,22 +1355,56 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                               </tr>
                             </thead>
                             <tbody>
-                              {standings.map((st, i) => (
-                                <tr key={st.team} className="border-b border-slate-800/60 font-semibold bg-transparent hover:bg-slate-800/20 text-slate-300">
-                                  <td className="py-1.5 px-2 font-bold flex items-center gap-1 text-white">
-                                    <span className="font-mono text-slate-500">{i + 1}.</span> {st.team}
-                                  </td>
-                                  <td className="py-1.5 px-1 text-center font-mono">{st.played}</td>
-                                  <td className="py-1.5 px-1 text-center font-mono text-emerald-400">{st.won}</td>
-                                  <td className="py-1.5 px-1 text-center font-mono text-red-400">{st.lost}</td>
-                                  <td className={`py-1.5 px-1 text-center font-mono font-bold ${st.scoreDiff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    {st.scoreDiff > 0 ? `+${st.scoreDiff}` : st.scoreDiff}
-                                  </td>
-                                  <td className="py-1.5 px-2 text-center bg-[#FF5722]/5 font-mono font-black text-[11px] border-l border-slate-800/60 text-[#FF5722]">
-                                    {st.points}
-                                  </td>
-                                </tr>
-                              ))}
+                              {standings.map((st, i) => {
+                                const tiedTeams = standings.filter(item => item.points === st.points && item.won === st.won);
+                                const isTied = sport === "football" && tiedTeams.length > 1;
+
+                                return (
+                                  <tr key={st.team} className="border-b border-slate-800/60 font-semibold bg-transparent hover:bg-slate-800/20 text-slate-300">
+                                    <td className="py-1.5 px-2 font-bold flex items-center justify-between gap-1 text-white min-h-[32px]">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-mono text-slate-500">{i + 1}.</span> {st.team}
+                                        {isTied && (
+                                          <span className="text-[8px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1 py-0.5 font-mono font-black uppercase rounded-none" title="คะแนนและผลชนะเสมอกัน ต้องตัดสินด้วยผลจับฉลาก">
+                                            🗳️ เสมอ (จับฉลาก)
+                                          </span>
+                                        )}
+                                      </div>
+                                      {isTied && isLoggedIn && onUpdateDrawLots && (
+                                        <div className="flex items-center gap-0.5 shrink-0 ml-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSwapDrawLots(st.team, "up", standings, cat, grpName)}
+                                            disabled={i === 0 || standings[i - 1].points !== st.points || standings[i - 1].won !== st.won}
+                                            className="p-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-30 border border-slate-700 cursor-pointer rounded-none"
+                                            title="สลับขึ้น (ชนะจับฉลาก)"
+                                          >
+                                            <ChevronUp size={10} />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSwapDrawLots(st.team, "down", standings, cat, grpName)}
+                                            disabled={i === standings.length - 1 || standings[i + 1].points !== st.points || standings[i + 1].won !== st.won}
+                                            className="p-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-30 border border-slate-700 cursor-pointer rounded-none"
+                                            title="สลับลง (แพ้จับฉลาก)"
+                                          >
+                                            <ChevronDown size={10} />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="py-1.5 px-1 text-center font-mono">{st.played}</td>
+                                    <td className="py-1.5 px-1 text-center font-mono text-emerald-400">{st.won}</td>
+                                    <td className="py-1.5 px-1 text-center font-mono text-red-400">{st.lost}</td>
+                                    <td className={`py-1.5 px-1 text-center font-mono font-bold ${st.scoreDiff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                      {st.scoreDiff > 0 ? `+${st.scoreDiff}` : st.scoreDiff}
+                                    </td>
+                                    <td className="py-1.5 px-2 text-center bg-[#FF5722]/5 font-mono font-black text-[11px] border-l border-slate-800/60 text-[#FF5722]">
+                                      {st.points}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
@@ -1952,64 +1999,33 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                             </div>
                           </div>
 
-                          {sport === "volleyball" ? (
-                            // Volleyball set editor
-                            <div className="space-y-2">
-                              <span className="block text-[10px] font-mono font-bold text-slate-400">ระบุคะแนนเซต (Volleyball Set Scores):</span>
-                              <div className="grid grid-cols-3 gap-2 text-center">
-                                <div className="p-1.5 bg-[#151F32] border border-slate-800 rounded-none">
-                                  <span className="font-mono text-[9px] font-bold block text-slate-400">Set 1</span>
-                                  <div className="flex gap-1 justify-center mt-1 items-center">
-                                    <input type="text" value={set1A} onChange={e => setSet1A(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                                    <span className="text-slate-400">:</span>
-                                    <input type="text" value={set1B} onChange={e => setSet1B(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                                  </div>
-                                </div>
-
-                                <div className="p-1.5 bg-[#151F32] border border-slate-800 rounded-none">
-                                  <span className="font-mono text-[9px] font-bold block text-slate-400">Set 2</span>
-                                  <div className="flex gap-1 justify-center mt-1 items-center">
-                                    <input type="text" value={set2A} onChange={e => setSet2A(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                                    <span className="text-slate-400">:</span>
-                                    <input type="text" value={set2B} onChange={e => setSet2B(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                                  </div>
-                                </div>
-
-                                <div className="p-1.5 bg-[#151F32] border border-slate-800 rounded-none">
-                                  <span className="font-mono text-[9px] font-bold block text-slate-400">Set 3</span>
-                                  <div className="flex gap-1 justify-center mt-1 items-center">
-                                    <input type="text" value={set3A} onChange={e => setSet3A(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                                    <span className="text-slate-400">:</span>
-                                    <input type="text" value={set3B} onChange={e => setSet3B(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                                  </div>
-                                </div>
-                              </div>
+                          {/* Standard dual sport score editor */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-mono font-bold text-slate-400">
+                                {sport === "volleyball" ? "จำนวนเซตที่ชนะ ทีม A" : "คะแนนทีม A"}
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={scoreA !== null ? scoreA : ""}
+                                onChange={(e) => setScoreA(e.target.value === "" ? null : parseInt(e.target.value))}
+                                className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none font-mono"
+                              />
                             </div>
-                          ) : (
-                            // Standard dual sport score editor
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-1">
-                                <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม A</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={scoreA !== null ? scoreA : ""}
-                                  onChange={(e) => setScoreA(e.target.value === "" ? null : parseInt(e.target.value))}
-                                  className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none font-mono"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม B</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={scoreB !== null ? scoreB : ""}
-                                  onChange={(e) => setScoreB(e.target.value === "" ? null : parseInt(e.target.value))}
-                                  className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none font-mono"
-                                />
-                              </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-mono font-bold text-slate-400">
+                                {sport === "volleyball" ? "จำนวนเซตที่ชนะ ทีม B" : "คะแนนทีม B"}
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={scoreB !== null ? scoreB : ""}
+                                onChange={(e) => setScoreB(e.target.value === "" ? null : parseInt(e.target.value))}
+                                className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none font-mono"
+                              />
                             </div>
-                          )}
+                          </div>
                         </div>
                       )}
 
@@ -2334,62 +2350,33 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                   </div>
                 </div>
 
-                {sport === "volleyball" ? (
-                  <div className="space-y-2">
-                    <span className="block text-[10px] font-mono font-bold text-slate-400">ระบุคะแนนเซต (Volleyball Set Scores):</span>
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="p-1.5 bg-[#151F32] border border-slate-800 rounded-none">
-                        <span className="font-mono text-[9px] font-bold block text-slate-400">Set 1</span>
-                        <div className="flex gap-1 justify-center mt-1 items-center">
-                          <input type="text" value={set1A} onChange={e => setSet1A(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                          <span className="text-slate-400">:</span>
-                          <input type="text" value={set1B} onChange={e => setSet1B(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                        </div>
-                      </div>
-
-                      <div className="p-1.5 bg-[#151F32] border border-slate-800 rounded-none">
-                        <span className="font-mono text-[9px] font-bold block text-slate-400">Set 2</span>
-                        <div className="flex gap-1 justify-center mt-1 items-center">
-                          <input type="text" value={set2A} onChange={e => setSet2A(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                          <span className="text-slate-400">:</span>
-                          <input type="text" value={set2B} onChange={e => setSet2B(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                        </div>
-                      </div>
-
-                      <div className="p-1.5 bg-[#151F32] border border-slate-800 rounded-none">
-                        <span className="font-mono text-[9px] font-bold block text-slate-400">Set 3</span>
-                        <div className="flex gap-1 justify-center mt-1 items-center">
-                          <input type="text" value={set3A} onChange={e => setSet3A(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                          <span className="text-slate-400">:</span>
-                          <input type="text" value={set3B} onChange={e => setSet3B(e.target.value)} className="w-8 text-center bg-[#0A0F1D] text-white border border-slate-700 text-xs rounded-none" />
-                        </div>
-                      </div>
-                    </div>
+                {/* Standard dual sport score editor */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono font-bold text-slate-400">
+                      {sport === "volleyball" ? "จำนวนเซตที่ชนะ ทีม A" : "คะแนนทีม A"}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={scoreA !== null ? scoreA : ""}
+                      onChange={(e) => setScoreA(e.target.value === "" ? null : parseInt(e.target.value))}
+                      className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none font-mono"
+                    />
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม A</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={scoreA !== null ? scoreA : ""}
-                        onChange={(e) => setScoreA(e.target.value === "" ? null : parseInt(e.target.value))}
-                        className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none font-mono"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1">
-                      <label className="block text-[10px] font-mono font-bold text-slate-400">คะแนนทีม B</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={scoreB !== null ? scoreB : ""}
-                        onChange={(e) => setScoreB(e.target.value === "" ? null : parseInt(e.target.value))}
-                        className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none font-mono"
-                      />
-                    </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono font-bold text-slate-400">
+                      {sport === "volleyball" ? "จำนวนเซตที่ชนะ ทีม B" : "คะแนนทีม B"}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={scoreB !== null ? scoreB : ""}
+                      onChange={(e) => setScoreB(e.target.value === "" ? null : parseInt(e.target.value))}
+                      className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none font-mono"
+                    />
                   </div>
-                )}
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
@@ -2615,7 +2602,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                           const catMatches = sportMatches.filter(m => m.category === cat);
                           const catGroups = Array.from(new Set(catMatches.filter(m => m.round === "รอบแรก" && m.group).map(m => m.group))).sort();
                           
-                          const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat).length > 0);
+                          const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat, drawLots).length > 0);
                           if (!hasStandings) return null;
 
                           return (
@@ -2625,7 +2612,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {catGroups.map((grpName) => {
-                                  const standings = calculateGroupStandings(matches, sport, grpName, cat);
+                                  const standings = calculateGroupStandings(matches, sport, grpName, cat, drawLots);
                                   if (standings.length === 0) return null;
 
                                   return (
@@ -2880,7 +2867,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                 const catMatches = sportMatches.filter(m => m.category === cat);
                 const catGroups = Array.from(new Set(catMatches.filter(m => m.round === "รอบแรก" && m.group).map(m => m.group))).sort();
                 
-                const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat).length > 0);
+                const hasStandings = catGroups.some(grpName => calculateGroupStandings(matches, sport, grpName, cat, drawLots).length > 0);
                 if (!hasStandings) return null;
 
                 return (
@@ -2890,7 +2877,7 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {catGroups.map((grpName) => {
-                        const standings = calculateGroupStandings(matches, sport, grpName, cat);
+                        const standings = calculateGroupStandings(matches, sport, grpName, cat, drawLots);
                         if (standings.length === 0) return null;
 
                         return (

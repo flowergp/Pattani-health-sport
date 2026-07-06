@@ -1,6 +1,12 @@
 import { Match, TeamStanding } from "../types";
 
-export const calculateGroupStandings = (matches: Match[], sport: string, groupName: string, categoryName?: string): TeamStanding[] => {
+export const calculateGroupStandings = (
+  matches: Match[],
+  sport: string,
+  groupName: string,
+  categoryName?: string,
+  drawLots?: { [key: string]: string[] }
+): TeamStanding[] => {
   // Filter matches for this sport, group, round 'รอบแรก' and optionally category
   const groupMatches = matches.filter(
     (m) => m.sport === sport && 
@@ -79,7 +85,24 @@ export const calculateGroupStandings = (matches: Match[], sport: string, groupNa
     if (b.won !== a.won) {
       return b.won - a.won;
     }
-    // 3. Sort by score difference
+
+    if (sport === "football") {
+      // For football, goal difference has no effect. If points and wins are tied, use drawLots order if available.
+      if (drawLots) {
+        const key = `football_${categoryName || ""}_${groupName}`;
+        const order = drawLots[key];
+        if (order) {
+          const idxA = order.indexOf(a.team);
+          const idxB = order.indexOf(b.team);
+          if (idxA !== -1 && idxB !== -1) {
+            return idxA - idxB;
+          }
+        }
+      }
+      return 0; // Tied, stable/default sort
+    }
+
+    // 3. Sort by score difference (for other sports)
     return b.scoreDiff - a.scoreDiff;
   });
 };

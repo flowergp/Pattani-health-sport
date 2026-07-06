@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-export function resolveAllMatches(allMatches: Match[]): Match[] {
+export function resolveAllMatches(allMatches: Match[], drawLots?: { [key: string]: string[] }): Match[] {
   return allMatches.map(m => {
     if (m.sport === "track") return m;
     
@@ -54,7 +54,7 @@ export function resolveAllMatches(allMatches: Match[]): Match[] {
         const hasAnyCompleted = groupMatches.some(gm => gm.status === "completed");
         
         if (hasAnyCompleted) {
-          const standings = calculateGroupStandings(allMatches, m.sport, groupName, m.category);
+          const standings = calculateGroupStandings(allMatches, m.sport, groupName, m.category, drawLots);
           if (standings && standings.length >= rankNum) {
             teamA = standings[rankNum - 1].team;
             updated = true;
@@ -79,7 +79,7 @@ export function resolveAllMatches(allMatches: Match[]): Match[] {
         const hasAnyCompleted = groupMatches.some(gm => gm.status === "completed");
         
         if (hasAnyCompleted) {
-          const standings = calculateGroupStandings(allMatches, m.sport, groupName, m.category);
+          const standings = calculateGroupStandings(allMatches, m.sport, groupName, m.category, drawLots);
           if (standings && standings.length >= rankNum) {
             teamB = standings[rankNum - 1].team;
             updated = true;
@@ -175,9 +175,21 @@ export default function App() {
     return getInitialMatches();
   });
 
+  const [drawLots, setDrawLots] = useState<{ [key: string]: string[] }>(() => {
+    const saved = safeLocalStorage.getItem("pattani_drawLots");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // ignore
+      }
+    }
+    return {};
+  });
+
   const resolvedMatches = useMemo(() => {
-    return resolveAllMatches(matches);
-  }, [matches]);
+    return resolveAllMatches(matches, drawLots);
+  }, [matches, drawLots]);
 
 
   const [dbUsers, setDbUsers] = useState<AdminUser[]>(() => {
@@ -319,7 +331,11 @@ export default function App() {
     if (isLocalFallback) return;
     (async () => {
       try {
-        await setDoc(matchesDocRef(), { matches: list });
+        const writePromise = setDoc(matchesDocRef(), { matches: list, drawLots });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
+        );
+        await Promise.race([writePromise, timeoutPromise]);
       } catch (error: any) {
         console.error("Error saving matches to Firestore: ", error);
         if (isFatalDbError(error)) {
@@ -327,6 +343,25 @@ export default function App() {
         }
       }
     })();
+  };
+
+  const handleUpdateDrawLots = async (key: string, teamOrder: string[]) => {
+    const newDrawLots = { ...drawLots, [key]: teamOrder };
+    setDrawLots(newDrawLots);
+    safeLocalStorage.setItem("pattani_drawLots", JSON.stringify(newDrawLots));
+
+    if (isLocalFallback) return;
+
+    try {
+      const writePromise = setDoc(matchesDocRef(), { matches, drawLots: newDrawLots });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
+      );
+      await Promise.race([writePromise, timeoutPromise]);
+    } catch (error: any) {
+      console.error("Error saving draw lots: ", error);
+      enableLocalFallback();
+    }
   };
 
   const enableLocalFallback = () => {
@@ -1039,6 +1074,8 @@ export default function App() {
                     onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
                     selectedDistrict={selectedDistrict}
+                    drawLots={drawLots}
+                    onUpdateDrawLots={handleUpdateDrawLots}
                   />
                 )}
 
@@ -1051,6 +1088,8 @@ export default function App() {
                     onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
                     selectedDistrict={selectedDistrict}
+                    drawLots={drawLots}
+                    onUpdateDrawLots={handleUpdateDrawLots}
                   />
                 )}
 
@@ -1063,6 +1102,8 @@ export default function App() {
                     onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
                     selectedDistrict={selectedDistrict}
+                    drawLots={drawLots}
+                    onUpdateDrawLots={handleUpdateDrawLots}
                   />
                 )}
 
@@ -1075,6 +1116,8 @@ export default function App() {
                     onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
                     selectedDistrict={selectedDistrict}
+                    drawLots={drawLots}
+                    onUpdateDrawLots={handleUpdateDrawLots}
                   />
                 )}
 
