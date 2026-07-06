@@ -783,7 +783,8 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
 
       // Bracket-Match Automatic Progression for Petanque / Volleyball / Football!
       // When a knockout match is completed, we can propagate the winner to the next round!
-      if (matchStatus === "completed" && m.winner && m.round !== "รอบชิงชนะเลิศ" && m.round !== "ชิงที่ 3") {
+      const finalWinner = updates.winner;
+      if (matchStatus === "completed" && finalWinner && m.round !== "รอบชิงชนะเลิศ" && m.round !== "ชิงที่ 3") {
         // Find if this match determines a spot in a subsequent match
         // Let's analyze the match ID structures:
         // Match numbers:
@@ -801,57 +802,57 @@ export default function SportTab({ sport, matches, onUpdateMatch, onAddMatch, on
           // Petanque Progression (25-28 to 29-30, 29-30 to 31-32)
           if (m.sport === "petanque") {
             const prefix = m.id.replace(`_${matchNum}`, "");
-            if (matchNum === 25) await propagateWinner(prefix + "_29", m.winner, "teamA");
-            if (matchNum === 27) await propagateWinner(prefix + "_29", m.winner, "teamB");
-            if (matchNum === 26) await propagateWinner(prefix + "_30", m.winner, "teamA");
-            if (matchNum === 28) await propagateWinner(prefix + "_30", m.winner, "teamB");
+            if (matchNum === 25) await propagateWinner(prefix + "_29", finalWinner, "teamA");
+            if (matchNum === 27) await propagateWinner(prefix + "_29", finalWinner, "teamB");
+            if (matchNum === 26) await propagateWinner(prefix + "_30", finalWinner, "teamA");
+            if (matchNum === 28) await propagateWinner(prefix + "_30", finalWinner, "teamB");
 
             // From Semi finals to Final / 3rd Place
             if (matchNum === 29) {
-              const loser = m.winner === m.teamA ? m.teamB : m.teamA;
-              await propagateWinner(prefix + "_32", m.winner, "teamA"); // Final TeamA
-              await propagateWinner(prefix + "_31", loser!, "teamA"); // 3rd Place TeamA
+              const loser = finalWinner === editTeamA ? editTeamB : editTeamA;
+              await propagateWinner(prefix + "_32", finalWinner, "teamA"); // Final TeamA
+              await propagateWinner(prefix + "_31", loser, "teamA"); // 3rd Place TeamA
             }
             if (matchNum === 30) {
-              const loser = m.winner === m.teamA ? m.teamB : m.teamA;
-              await propagateWinner(prefix + "_32", m.winner, "teamB"); // Final TeamB
-              await propagateWinner(prefix + "_31", loser!, "teamB"); // 3rd Place TeamB
+              const loser = finalWinner === editTeamA ? editTeamB : editTeamA;
+              await propagateWinner(prefix + "_32", finalWinner, "teamB"); // Final TeamB
+              await propagateWinner(prefix + "_31", loser, "teamB"); // 3rd Place TeamB
             }
           }
 
           // Volleyball Progression (19-22 to 23-24, 23-24 to 25-26)
           if (m.sport === "volleyball") {
             const prefix = m.id.replace(`_${matchNum}`, "");
-            if (matchNum === 19) await propagateWinner(prefix + "_23", m.winner, "teamA");
-            if (matchNum === 21) await propagateWinner(prefix + "_23", m.winner, "teamB");
-            if (matchNum === 20) await propagateWinner(prefix + "_24", m.winner, "teamA");
-            if (matchNum === 22) await propagateWinner(prefix + "_24", m.winner, "teamB");
+            if (matchNum === 19) await propagateWinner(prefix + "_23", finalWinner, "teamA");
+            if (matchNum === 21) await propagateWinner(prefix + "_23", finalWinner, "teamB");
+            if (matchNum === 20) await propagateWinner(prefix + "_24", finalWinner, "teamA");
+            if (matchNum === 22) await propagateWinner(prefix + "_24", finalWinner, "teamB");
 
             if (matchNum === 23) {
-              const loser = m.winner === m.teamA ? m.teamB : m.teamA;
-              await propagateWinner(prefix + "_26", m.winner, "teamA"); // Final
-              await propagateWinner(prefix + "_25", loser!, "teamA"); // 3rd
+              const loser = finalWinner === editTeamA ? editTeamB : editTeamA;
+              await propagateWinner(prefix + "_26", finalWinner, "teamA"); // Final
+              await propagateWinner(prefix + "_25", loser, "teamA"); // 3rd
             }
             if (matchNum === 24) {
-              const loser = m.winner === m.teamA ? m.teamB : m.teamA;
-              await propagateWinner(prefix + "_26", m.winner, "teamB"); // Final
-              await propagateWinner(prefix + "_25", loser!, "teamB"); // 3rd
+              const loser = finalWinner === editTeamA ? editTeamB : editTeamA;
+              await propagateWinner(prefix + "_26", finalWinner, "teamB"); // Final
+              await propagateWinner(prefix + "_25", loser, "teamB"); // 3rd
             }
           }
 
           // Football Progression (19-22 QF, 23-24 SF, 25 3rd, 26 Final)
           if (m.sport === "football") {
             const prefix = m.id.replace(`_${matchNum}`, "");
-            if (matchNum === 19) await propagateWinner(prefix + "_23", m.winner, "teamA");
-            if (matchNum === 20) await propagateWinner(prefix + "_23", m.winner, "teamB");
-            if (matchNum === 21) await propagateWinner(prefix + "_24", m.winner, "teamA");
-            if (matchNum === 22) await propagateWinner(prefix + "_24", m.winner, "teamB");
+            if (matchNum === 19) await propagateWinner(prefix + "_23", finalWinner, "teamA");
+            if (matchNum === 20) await propagateWinner(prefix + "_23", finalWinner, "teamB");
+            if (matchNum === 21) await propagateWinner(prefix + "_24", finalWinner, "teamA");
+            if (matchNum === 22) await propagateWinner(prefix + "_24", finalWinner, "teamB");
 
             if (matchNum === 23) {
-              await propagateWinner(prefix + "_26", m.winner, "teamA"); // Final TeamA
+              await propagateWinner(prefix + "_26", finalWinner, "teamA"); // Final TeamA
             }
             if (matchNum === 24) {
-              await propagateWinner(prefix + "_26", m.winner, "teamB"); // Final TeamB
+              await propagateWinner(prefix + "_26", finalWinner, "teamB"); // Final TeamB
             }
           }
         }

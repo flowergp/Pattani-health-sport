@@ -564,13 +564,19 @@ export default function App() {
     saveMatchesLocally(updatedList);
 
     if (!isLocalFallback) {
-      try {
-        const matchRef = doc(db, "matches", id);
-        await setDoc(matchRef, updates, { merge: true });
-      } catch (error: any) {
-        console.error("Error updating match in Firestore: ", error);
-        enableLocalFallback();
-      }
+      (async () => {
+        try {
+          const matchRef = doc(db, "matches", id);
+          const writePromise = setDoc(matchRef, updates, { merge: true });
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
+          );
+          await Promise.race([writePromise, timeoutPromise]);
+        } catch (error: any) {
+          console.error("Error updating match in Firestore: ", error);
+          enableLocalFallback();
+        }
+      })();
     }
   };
 
@@ -590,12 +596,18 @@ export default function App() {
     saveMatchesLocally(updatedList);
 
     if (!isLocalFallback) {
-      try {
-        await setDoc(doc(db, "matches", newId), fullMatch);
-      } catch (error: any) {
-        console.error("Error adding match in Firestore: ", error);
-        enableLocalFallback();
-      }
+      (async () => {
+        try {
+          const writePromise = setDoc(doc(db, "matches", newId), fullMatch);
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
+          );
+          await Promise.race([writePromise, timeoutPromise]);
+        } catch (error: any) {
+          console.error("Error adding match in Firestore: ", error);
+          enableLocalFallback();
+        }
+      })();
     }
   };
 
@@ -607,12 +619,18 @@ export default function App() {
     saveMatchesLocally(updatedList);
 
     if (!isLocalFallback) {
-      try {
-        await deleteDoc(doc(db, "matches", id));
-      } catch (error: any) {
-        console.error("Error deleting match in Firestore: ", error);
-        enableLocalFallback();
-      }
+      (async () => {
+        try {
+          const writePromise = deleteDoc(doc(db, "matches", id));
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Delete connection timed out (4s)")), 4000)
+          );
+          await Promise.race([writePromise, timeoutPromise]);
+        } catch (error: any) {
+          console.error("Error deleting match in Firestore: ", error);
+          enableLocalFallback();
+        }
+      })();
     }
   };
 
