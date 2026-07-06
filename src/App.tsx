@@ -1062,6 +1062,7 @@ export default function App() {
                   <Dashboard 
                     matches={resolvedMatches} 
                     selectedDistrict={selectedDistrict}
+                    drawLots={drawLots}
                   />
                 )}
 
@@ -1126,6 +1127,7 @@ export default function App() {
                     matches={resolvedMatches}
                     selectedDistrict={selectedDistrict}
                     onSelectDistrict={setSelectedDistrict}
+                    drawLots={drawLots}
                   />
                 )}
 

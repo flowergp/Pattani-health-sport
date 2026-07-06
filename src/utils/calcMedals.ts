@@ -1,7 +1,7 @@
 import { Match, Medal } from "../types";
 import { TEAM_NAMES } from "../initialData";
 
-export const calculateMedals = (matches: Match[]): Medal[] => {
+export const calculateMedals = (matches: Match[], drawLots?: { [key: string]: string[] }): Medal[] => {
   const medalMap: { [team: string]: Medal } = {};
 
   // Initialize all teams
@@ -27,15 +27,30 @@ export const calculateMedals = (matches: Match[]): Medal[] => {
     if (bronzeWinner && medalMap[bronzeWinner]) medalMap[bronzeWinner].bronze += 1;
   });
 
-  // 2. Process Petanque, Volleyball, Football Finals and 3rd place matches
-  const tournamentSports = ["petanque", "volleyball", "football"] as const;
+  // 2. Process Petanque medals from drawLots (ผลการแข่งขัน 3 อันดับ dropdown)
+  // drawLots key format: "petanque_result_<category>" -> [gold, silver, bronze]
+  if (drawLots) {
+    const petanqueCategories = Array.from(new Set(
+      matches.filter(m => m.sport === "petanque").map(m => m.category).filter(Boolean)
+    ));
+    petanqueCategories.forEach((category) => {
+      const resultKey = `petanque_result_${category}`;
+      const result = drawLots[resultKey];
+      if (!result || result.length === 0) return;
+      const [gold, silver, bronze] = result;
+      if (gold && medalMap[gold]) medalMap[gold].gold += 1;
+      if (silver && medalMap[silver]) medalMap[silver].silver += 1;
+      if (bronze && medalMap[bronze]) medalMap[bronze].bronze += 1;
+    });
+  }
+
+  // 3. Process Volleyball, Football Finals and 3rd place matches
+  const tournamentSports = ["volleyball", "football"] as const;
 
   tournamentSports.forEach((sport) => {
     const sportMatches = matches.filter((m) => m.sport === sport && m.status === "completed");
 
-    // For Petanque, Volleyball, Football:
-    // Final matches are:
-    // - Petanque: 'petanque_ทั่วไป ช_32' etc (ends with _32)
+    // For Volleyball, Football:
     // - Volleyball: 'volley_men_26', 'volley_women_26'
     // - Football: 'football_men_22', 'football_women_22'
     const finals = sportMatches.filter((m) => m.round === "รอบชิงชนะเลิศ");

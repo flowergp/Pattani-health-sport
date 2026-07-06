@@ -21,7 +21,8 @@ import {
   Download,
   CheckCircle,
   Trophy,
-  Save
+  Save,
+  Calendar
 } from "lucide-react";
 
 // Helper to parse Thai date (e.g. "10 ก.ค. 69") to a comparable number
@@ -1291,7 +1292,7 @@ export default function SportTab({
                 ส่งออก PDF / พิมพ์ตาราง
               </button>
 
-              {sport === "petanque" && isLoggedIn && (
+              {sport === "petanque" && isLoggedIn && false && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1305,7 +1306,7 @@ export default function SportTab({
                 </button>
               )}
 
-              {isLoggedIn && (
+              {isLoggedIn && sport !== "petanque" && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1347,7 +1348,7 @@ export default function SportTab({
             </div>
           )}
 
-          {/* 🛠️ Selectable View Options (ซ่อนสำหรับ petanque - แสดงเฉพาะ matches) */}
+          {/* 🛠️ Selectable View Options (ซ่อนสำหรับ track และ petanque) */}
           {sport !== "track" && sport !== "petanque" && (
             <div className="pb-2 border-b border-slate-800/60">
               <span className="block text-[10px] font-bold uppercase text-slate-400 mb-2 flex items-center gap-1.5 font-mono">
@@ -1356,7 +1357,7 @@ export default function SportTab({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {[
                   { id: "all", label: "✨ แสดงทั้งหมด", desc: "รวมทุกส่วน" },
-                  { id: "standings", label: "📊 ตารางคะแนน", desc: "รอบแบ่งกลุ่ม" },
+                  ...(sport === "petanque" ? [] : [{ id: "standings", label: "📊 ตารางคะแนน", desc: "รอบแบ่งกลุ่ม" }]),
                   { id: "matches", label: "📋 รายการแข่งขัน", desc: "และผลลัพธ์" },
                   { id: "bracket", label: "🏆 ผังประกบคู่", desc: "รอบน็อคเอ้าท์" }
                 ].map((tab) => {
@@ -1381,41 +1382,11 @@ export default function SportTab({
             </div>
           )}
 
-          {/* Group Filter (Only for Petanque) */}
-          {sport === "petanque" && groupsList.length > 1 && (
-            <div className="w-full">
-              <label className="block text-[10px] font-mono font-bold uppercase text-slate-400 mb-1">สาย / กลุ่ม</label>
-              <select
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-semibold focus:outline-none focus:border-[#FF5722] rounded-none"
-              >
-                {groupsList.map((g) => (
-                  <option key={g} value={g}>
-                    {g === "all" ? "🎯 แสดงทุกสาย" : `สาย ${g}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
-      {/* Petanque Schedule notice when draw has not been held yet */}
-      {petanqueDrawNotHeld && (
-        <div className="border border-amber-500/30 bg-amber-500/5 p-4 rounded-none text-white max-w-4xl mx-auto shadow-md flex items-center gap-3">
-          <AlertCircle size={20} className="text-amber-500 shrink-0" />
-          <div className="text-left">
-            <h4 className="text-xs font-black uppercase text-amber-400">
-              📌 การจับสลากแบ่งสายเปตองจะจัดขึ้นในวันแข่งขัน
-            </h4>
-            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-              ตารางการแข่งขันและตารางคะแนนรอบแบ่งกลุ่มด้านล่างแสดงตามช่องประกบคู่จับสลาก (Slot) สำหรับการจับสลากแบ่งสายหน้าสนาม ณ วันแข่งขันจริง
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Petanque Schedule notice when draw has not been held yet (ซ่อน เนื่องจากแสดงเพียงวันแข่งขัน) */}
 
-      {/* 3. Group Standings Section (Only for Volleyball, Football — ซ่อนสำหรับ petanque) */}
+      {/* 3. Group Standings Section (ซ่อนสำหรับ track และ petanque) */}
       {sport !== "track" && sport !== "petanque" && selectedCategory !== "" && (activeView === "all" || activeView === "standings") && (
         <div className="space-y-4">
           {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
@@ -1521,7 +1492,7 @@ export default function SportTab({
         </div>
       )}
 
-      {/* 🏅 ผลการแข่งขัน 3 อันดับ (เฉพาะเปตอง) */}
+      {/* 🏅 ผลการแข่งขัน 3 อันดับ (เฉพาะเปตอง) — มีผลต่อตารางสรุปเหรียญ */}
       {sport === "petanque" && selectedCategory !== "" && selectedCategory !== "all" && (() => {
         const resultKey = `petanque_result_${selectedCategory}`;
         const savedResult: string[] = drawLots?.[resultKey] || [];
@@ -2253,7 +2224,41 @@ export default function SportTab({
       </div>
       )}
 
-      {/* 2. Knockout Bracket Display Card */}
+      {/* 4.5 Petanque Custom Schedule Block */}
+      {sport === "petanque" && (
+        <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white max-w-4xl mx-auto shadow-md">
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+            <Calendar className="text-[#FF5722]" size={20} />
+            <h3 className="text-base font-black uppercase text-white tracking-wide">
+              📅 กำหนดการแข่งขันเปตอง
+            </h3>
+          </div>
+          <div className="space-y-3 font-sans text-sm font-semibold">
+            <p className="text-slate-400 text-xs font-semibold leading-relaxed">
+              เริ่มแข่งขันเวลา <span className="text-[#00FF66] font-bold">09.00 น.</span> ณ สนามเปตอง โดยมีรายละเอียดดังนี้:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div className="p-4 bg-[#151F32] border border-slate-800 rounded-none flex flex-col items-center gap-1.5 text-center">
+                <span className="text-2xl">🥎</span>
+                <span className="text-xs font-bold text-slate-400 font-sans">ชายคู่</span>
+                <span className="text-xs font-black text-[#00FF66] font-mono bg-slate-950 px-2 py-0.5 border border-slate-800">6 ก.ค. 69</span>
+              </div>
+              <div className="p-4 bg-[#151F32] border border-slate-800 rounded-none flex flex-col items-center gap-1.5 text-center">
+                <span className="text-2xl">🥎</span>
+                <span className="text-xs font-bold text-slate-400 font-sans">หญิงคู่</span>
+                <span className="text-xs font-black text-[#00FF66] font-mono bg-slate-950 px-2 py-0.5 border border-slate-800">7 ก.ค. 69</span>
+              </div>
+              <div className="p-4 bg-[#151F32] border border-slate-800 rounded-none flex flex-col items-center gap-1.5 text-center">
+                <span className="text-2xl">🥎</span>
+                <span className="text-xs font-bold text-slate-400 font-sans">ทีมผสม</span>
+                <span className="text-xs font-black text-[#00FF66] font-mono bg-slate-950 px-2 py-0.5 border border-slate-800">8 ก.ค. 69</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Knockout Bracket Display Card (ซ่อนสำหรับ petanque ด้วย) */}
       {sport !== "track" && sport !== "petanque" && activeBracketCategory && (activeView === "all" || activeView === "bracket") && (
         <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
@@ -2762,7 +2767,7 @@ export default function SportTab({
                 ) : (
                   <>
                     {/* Group Standings (if applicable) */}
-                    {sport !== "track" && selectedCategory !== "" && (
+                    {sport !== "track" && sport !== "petanque" && selectedCategory !== "" && (
                       <div>
                         {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
                           const catMatches = sportMatches.filter(m => m.category === cat);
@@ -2904,8 +2909,8 @@ export default function SportTab({
                       )}
                     </div>
 
-                    {/* Bracket / Finals Report for Cup structure if category is selected and not track */}
-                    {sport !== "track" && selectedCategory !== "" && (
+                    {/* Bracket / Finals Report for Cup structure if category is selected and not track or petanque */}
+                    {sport !== "track" && sport !== "petanque" && selectedCategory !== "" && (
                       <div className="border border-black p-3 bg-gray-50/20">
                         <h3 className="text-xs sm:text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
                           🏆 ผลการแข่งขันรอบน็อคเอาท์ (Knockout Playoff Matches)
@@ -3027,7 +3032,7 @@ export default function SportTab({
           ) : (
             <>
               {/* Group Standings (if applicable) */}
-              {sport !== "track" && selectedCategory !== "" && (
+              {sport !== "track" && sport !== "petanque" && selectedCategory !== "" && (
             <div>
               {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
                 const catMatches = sportMatches.filter(m => m.category === cat);
@@ -3170,8 +3175,8 @@ export default function SportTab({
             )}
           </div>
 
-          {/* Bracket / Finals Report for Cup structure if category is selected and not track */}
-          {sport !== "track" && selectedCategory !== "" && (
+          {/* Bracket / Finals Report for Cup structure if category is selected and not track or petanque */}
+          {sport !== "track" && sport !== "petanque" && selectedCategory !== "" && (
             <div className="border border-black p-4 bg-gray-50/20">
               <h3 className="text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans">
                 🏆 ผลการแข่งขันรอบน็อคเอาท์ (Knockout Playoff Matches)

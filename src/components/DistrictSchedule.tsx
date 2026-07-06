@@ -90,12 +90,14 @@ interface DistrictScheduleProps {
   matches: Match[];
   selectedDistrict: string;
   onSelectDistrict: (district: string) => void;
+  drawLots?: { [key: string]: string[] };
 }
 
 export default function DistrictSchedule({ 
   matches, 
   selectedDistrict, 
-  onSelectDistrict 
+  onSelectDistrict,
+  drawLots
 }: DistrictScheduleProps) {
   // Local filters
   const [sportFilter, setSportFilter] = useState<string>("all");
@@ -375,8 +377,8 @@ export default function DistrictSchedule({
 
   // Get medals of all teams to compute selected district's rank
   const standings = useMemo(() => {
-    return calculateMedals(matches);
-  }, [matches]);
+    return calculateMedals(matches, drawLots);
+  }, [matches, drawLots]);
 
   const isPetanqueDrawHeld = useMemo(() => {
     const petanqueMatches = matches.filter(m => m.sport === "petanque");

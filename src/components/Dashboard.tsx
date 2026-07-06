@@ -19,9 +19,10 @@ import { motion } from "motion/react";
 interface DashboardProps {
   matches: Match[];
   selectedDistrict?: string;
+  drawLots?: { [key: string]: string[] };
 }
 
-export default function Dashboard({ matches, selectedDistrict }: DashboardProps) {
+export default function Dashboard({ matches, selectedDistrict, drawLots }: DashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const totalMatches = matches.length;
@@ -31,7 +32,7 @@ export default function Dashboard({ matches, selectedDistrict }: DashboardProps)
   const completionPercent = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0;
 
   // Calculate medals
-  const medalStandings = calculateMedals(matches);
+  const medalStandings = calculateMedals(matches, drawLots);
 
   // Filter medal standings by search term
   const filteredStandings = medalStandings.filter((team) =>
