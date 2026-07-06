@@ -1,10 +1,9 @@
 {
-  "projectId": "ptnsports-25886",
-  "appId": "1:396135126232:web:b99a9ff5289307f9ef33ad",
-  "apiKey": "AIzaSyBmITE7up6mCfJLDtRHvPlUHcftnHQG8So",
-  "authDomain": "ptnsports-25886.firebaseapp.com",
+  "projectId": "ptnsport-ad49e",
+  "appId": "1:940657150029:web:f2a3811c145743dbad7404",
+  "apiKey": "AIzaSyCMBS0rzdYy4uDuNfXjclD8AwlvUMVMFCY",
+  "authDomain": "ptnsport-ad49e.firebaseapp.com",
   "firestoreDatabaseId": "(default)",
-  "storageBucket": "ptnsports-25886.firebasestorage.app",
-  "messagingSenderId": "396135126232",
-  "measurementId": "G-QWXRPP2ZW8"
+  "storageBucket": "ptnsport-ad49e.firebasestorage.app",
+  "messagingSenderId": "940657150029"
 }

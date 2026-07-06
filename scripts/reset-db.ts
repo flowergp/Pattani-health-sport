@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { initializeFirestore, collection, getDocs, writeBatch, doc } from "firebase/firestore";
+import { initializeFirestore, collection, getDocs, writeBatch, doc, setDoc } from "firebase/firestore";
 import { getInitialMatches } from "../src/initialData.js";
 
 import * as fs from "fs";
@@ -31,35 +31,25 @@ const db = initializeFirestore(app, {
 async function main() {
   console.log("Starting reset of matches in Firestore...");
   const defaultMatches = getInitialMatches();
-  
-  console.log("Fetching existing matches to delete...");
+
+  // The app now stores all matches in ONE document: matches/_all.
+  // Clean up any legacy per-match docs, then write the consolidated doc.
+  console.log("Fetching legacy per-match docs to delete...");
   const snap = await getDocs(collection(db, "matches"));
-  
-  // We can delete them in batches of 400
-  const docIds = snap.docs.map(d => d.id);
+  const legacyIds = snap.docs.map(d => d.id).filter(id => id !== "_all");
   const deleteChunkSize = 400;
-  for (let i = 0; i < docIds.length; i += deleteChunkSize) {
-    const chunkIds = docIds.slice(i, i + deleteChunkSize);
+  for (let i = 0; i < legacyIds.length; i += deleteChunkSize) {
+    const chunkIds = legacyIds.slice(i, i + deleteChunkSize);
     const deleteBatch = writeBatch(db);
     chunkIds.forEach(id => {
       deleteBatch.delete(doc(db, "matches", id));
     });
     await deleteBatch.commit();
-    console.log(`Deleted chunk ${i} to ${i + chunkIds.length}`);
+    console.log(`Deleted legacy chunk ${i} to ${i + chunkIds.length}`);
   }
-  
-  console.log(`Writing ${defaultMatches.length} default matches...`);
-  const chunkSize = 200;
-  for (let i = 0; i < defaultMatches.length; i += chunkSize) {
-    const chunk = defaultMatches.slice(i, i + chunkSize);
-    const writeBatchInstance = writeBatch(db);
-    chunk.forEach((match) => {
-      const matchRef = doc(db, "matches", match.id);
-      writeBatchInstance.set(matchRef, match);
-    });
-    await writeBatchInstance.commit();
-    console.log(`Committed write chunk ${i} to ${i + chunk.length}`);
-  }
+
+  console.log(`Writing ${defaultMatches.length} default matches into matches/_all...`);
+  await setDoc(doc(db, "matches", "_all"), { matches: defaultMatches });
   console.log("Reset finished successfully!");
   process.exit(0);
 }

@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { 
-  collection, 
-  onSnapshot, 
-  setDoc, 
-  doc, 
-  deleteDoc, 
-  updateDoc, 
-  addDoc,
-  writeBatch,
+import {
+  collection,
+  onSnapshot,
+  setDoc,
+  doc,
   getDocs,
   disableNetwork
 } from "firebase/firestore";
@@ -98,6 +94,23 @@ export function resolveAllMatches(allMatches: Match[]): Match[] {
 
 function getDefaultUsers(): AdminUser[] {
   return [];
+}
+
+// All matches live in ONE Firestore document (matches/_all) and all users in
+// users/_all. Data is tiny (~65KB total, limit is 1MB) so a page load costs
+// 1 read instead of 200+, and a score update costs each viewer 1 read.
+// The doc IDs sit inside the collections already allowed by firestore.rules,
+// so no rules re-deploy is needed.
+const matchesDocRef = () => doc(db, "matches", "_all");
+const usersDocRef = () => doc(db, "users", "_all");
+
+function cleanMatchesList(rawList: Match[]): Match[] {
+  // Filter out corrupted petanque IDs from previous versions and deduplicate
+  const uniqueMap = new Map<string, Match>();
+  rawList
+    .filter((m) => m && m.id && !m.id.startsWith("petanque_ทั_") && !m.id.startsWith("petanque_ที_"))
+    .forEach((m) => uniqueMap.set(m.id, m));
+  return Array.from(uniqueMap.values()).sort((a, b) => a.order - b.order);
 }
 
 const safeLocalStorage = {
@@ -297,6 +310,23 @@ export default function App() {
     safeLocalStorage.setItem("pattani_users", JSON.stringify(newUsers));
   };
 
+  // Fire-and-forget write of the full matches list to the single doc (1 write)
+  const persistMatches = (list: Match[]) => {
+    if (isLocalFallback) return;
+    (async () => {
+      try {
+        const writePromise = setDoc(matchesDocRef(), { matches: list });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
+        );
+        await Promise.race([writePromise, timeoutPromise]);
+      } catch (error: any) {
+        console.error("Error saving matches to Firestore: ", error);
+        enableLocalFallback();
+      }
+    })();
+  };
+
   const enableLocalFallback = () => {
     setIsLocalFallback(true);
     safeLocalStorage.setItem("pattani_local_fallback", "true");
@@ -326,7 +356,7 @@ export default function App() {
     }
   }, [isLocalFallback]);
 
-  // 1. Sync matches and expenses from Firestore
+  // 1. Sync matches and users from Firestore (single-doc listeners: 1 read each)
   useEffect(() => {
     // If we're already marked as local fallback, don't block with loading spinner
     if (safeLocalStorage.getItem("pattani_local_fallback") === "true" || isLocalFallback) {
@@ -339,6 +369,8 @@ export default function App() {
 
     let unsubscribeMatches = () => {};
     let unsubscribeUsers = () => {};
+    let migratedMatches = false;
+    let migratedUsers = false;
 
     // 5-second timeout to fall back locally if Firestore is slow or quota-exceeded
     const timeoutId = setTimeout(() => {
@@ -347,47 +379,78 @@ export default function App() {
       setLoading(false);
     }, 5000);
 
+    // One-time migration: consolidate legacy per-match docs into matches/_all.
+    // Runs only when the server confirms matches/_all does not exist yet.
+    const migrateOrSeedMatches = async () => {
+      if (migratedMatches) return;
+      migratedMatches = true;
+      try {
+        console.log("matches/_all not found. Migrating legacy match docs...");
+        const legacySnap = await getDocs(collection(db, "matches"));
+        const legacyList: Match[] = [];
+        legacySnap.forEach((docSnap) => {
+          if (docSnap.id === "_all") return;
+          const data = docSnap.data() as Match;
+          if (data && data.id) {
+            legacyList.push(data);
+          }
+        });
+        const source = legacyList.length > 0 ? legacyList : getInitialMatches();
+        await setDoc(matchesDocRef(), { matches: cleanMatchesList(source) });
+        console.log(`Migrated ${source.length} matches into matches/_all`);
+      } catch (err: any) {
+        console.error("Matches migration error: ", err);
+        if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
+          enableLocalFallback();
+          setLoading(false);
+        }
+      }
+    };
+
+    const migrateOrSeedUsers = async () => {
+      if (migratedUsers) return;
+      migratedUsers = true;
+      try {
+        console.log("users/_all not found. Migrating legacy user docs...");
+        const legacySnap = await getDocs(collection(db, "users"));
+        const legacyList: AdminUser[] = [];
+        legacySnap.forEach((docSnap) => {
+          if (docSnap.id === "_all") return;
+          const data = docSnap.data();
+          legacyList.push({
+            id: docSnap.id,
+            username: data.username || "",
+            password: data.password || "",
+            role: data.role || "editor",
+            createdAt: data.createdAt || "",
+            team: data.team || ""
+          });
+        });
+        await setDoc(usersDocRef(), { users: legacyList });
+        console.log(`Migrated ${legacyList.length} users into users/_all`);
+      } catch (err: any) {
+        console.error("Users migration error: ", err);
+      }
+    };
+
     try {
-      // Sync matches
+      // Sync matches (single document)
       unsubscribeMatches = onSnapshot(
-        collection(db, "matches"),
-        async (snapshot) => {
-          clearTimeout(timeoutId);
-          if (snapshot.empty) {
-            console.log("Firestore matches collection is empty. Auto-seeding default matches...");
-            const defaultMatches = getInitialMatches();
-            try {
-              const batch = writeBatch(db);
-              defaultMatches.forEach((m) => {
-                batch.set(doc(db, "matches", m.id), m);
-              });
-              await batch.commit();
-              console.log("Auto-seeded matches collection successfully!");
-            } catch (err) {
-              console.error("Auto-seed matches error: ", err);
-            }
+        matchesDocRef(),
+        (snapshot) => {
+          const fromCache = snapshot.metadata.fromCache;
+          if (!snapshot.exists()) {
+            // A cache-only "missing" can just mean the doc was never cached;
+            // let the 5s timeout handle the offline case instead of seeding.
+            if (fromCache) return;
+            clearTimeout(timeoutId);
+            migrateOrSeedMatches();
             return;
           }
-
-          const matchesList: Match[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data() as Match;
-            if (data && data.id) {
-              matchesList.push(data);
-            }
-          });
-
-          // Filter out corrupted petanque IDs from previous versions and deduplicate
-          const uniqueMatchesMap = new Map<string, Match>();
-          matchesList
-            .filter((m) => m && m.id && !m.id.startsWith("petanque_ทั_") && !m.id.startsWith("petanque_ที_"))
-            .forEach((m) => {
-              uniqueMatchesMap.set(m.id, m);
-            });
-          const finalMatchesList = Array.from(uniqueMatchesMap.values());
-
-          const sortedList = finalMatchesList.sort((a, b) => a.order - b.order);
-          saveMatchesLocally(sortedList);
+          clearTimeout(timeoutId);
+          const data = snapshot.data();
+          const rawList: Match[] = Array.isArray(data?.matches) ? data.matches : [];
+          saveMatchesLocally(cleanMatchesList(rawList));
           setLoading(false);
         },
         (error: any) => {
@@ -398,24 +461,18 @@ export default function App() {
         }
       );
 
-
-      // Sync users
+      // Sync users (single document)
       unsubscribeUsers = onSnapshot(
-        collection(db, "users"),
-        async (snapshot) => {
-          const usersList: AdminUser[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            usersList.push({
-              id: docSnap.id,
-              username: data.username || "",
-              password: data.password || "",
-              role: data.role || "editor",
-              createdAt: data.createdAt || "",
-              team: data.team || ""
-            });
-          });
-          
+        usersDocRef(),
+        (snapshot) => {
+          const fromCache = snapshot.metadata.fromCache;
+          if (!snapshot.exists()) {
+            if (fromCache) return;
+            migrateOrSeedUsers();
+            return;
+          }
+          const data = snapshot.data();
+          const usersList: AdminUser[] = Array.isArray(data?.users) ? data.users : [];
           saveUsersLocally(usersList);
         },
         (error: any) => {
@@ -434,7 +491,7 @@ export default function App() {
       unsubscribeMatches();
       unsubscribeUsers();
     };
-  }, [db, isResetting, isLocalFallback]);
+  }, [isLocalFallback]);
 
   // Update selected district automatically when user logs in
   useEffect(() => {
@@ -458,29 +515,9 @@ export default function App() {
 
     if (!isLocalFallback) {
       try {
-        // Fetch all existing match docs first
-        const matchesSnap = await getDocs(collection(db, "matches"));
-        const batch = writeBatch(db);
-
-        // Delete existing
-        matchesSnap.forEach((d) => {
-          batch.delete(doc(db, "matches", d.id));
-        });
-        await batch.commit();
-
-        // Write new initial data in chunks (Firestore limit is 500 per batch)
-        const chunkSize = 200;
-        for (let i = 0; i < defaultMatches.length; i += chunkSize) {
-          const chunk = defaultMatches.slice(i, i + chunkSize);
-          const writeBatchInstance = writeBatch(db);
-          chunk.forEach((match) => {
-            const matchRef = doc(db, "matches", match.id);
-            writeBatchInstance.set(matchRef, match);
-          });
-          await writeBatchInstance.commit();
-        }
-
-        console.log("Seeded matches collection successfully!");
+        // Overwrite the single consolidated doc: 1 write total
+        await setDoc(matchesDocRef(), { matches: defaultMatches });
+        console.log("Reset matches/_all successfully!");
       } catch (err: any) {
         console.error("Batch seed error: ", err);
         if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
@@ -520,23 +557,18 @@ export default function App() {
     ];
 
     try {
-      const batch = writeBatch(db);
+      const districtUsers: AdminUser[] = [];
       districts.forEach((d, idx) => {
-        // Thai username
-        const thId = `user_th_${idx}`;
-        batch.set(doc(db, "users", thId), {
-          id: thId,
+        districtUsers.push({
+          id: `user_th_${idx}`,
           username: d.th,
           password: "1234",
           role: "editor",
           team: d.th,
           createdAt: new Date().toLocaleDateString("th-TH")
         });
-
-        // English username
-        const enId = `user_en_${idx}`;
-        batch.set(doc(db, "users", enId), {
-          id: enId,
+        districtUsers.push({
+          id: `user_en_${idx}`,
           username: d.en,
           password: "1234",
           role: "editor",
@@ -544,7 +576,14 @@ export default function App() {
           createdAt: new Date().toLocaleDateString("th-TH")
         });
       });
-      await batch.commit();
+
+      // Merge into existing users (by id) and save as one document: 1 write
+      const mergedMap = new Map<string, AdminUser>(dbUsers.map((u) => [u.id, u]));
+      districtUsers.forEach((u) => mergedMap.set(u.id, u));
+      const mergedList = Array.from(mergedMap.values());
+
+      saveUsersLocally(mergedList);
+      await setDoc(usersDocRef(), { users: mergedList });
       console.log("Seeded default district users!");
     } catch (err: any) {
       console.error("Error seeding default district users: ", err);
@@ -562,22 +601,7 @@ export default function App() {
     // Local-first update
     const updatedList = matches.map((m) => m.id === id ? { ...m, ...updates } : m);
     saveMatchesLocally(updatedList);
-
-    if (!isLocalFallback) {
-      (async () => {
-        try {
-          const matchRef = doc(db, "matches", id);
-          const writePromise = setDoc(matchRef, updates, { merge: true });
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
-          );
-          await Promise.race([writePromise, timeoutPromise]);
-        } catch (error: any) {
-          console.error("Error updating match in Firestore: ", error);
-          enableLocalFallback();
-        }
-      })();
-    }
+    persistMatches(updatedList);
   };
 
   const handleAddMatch = async (newMatch: Omit<Match, "id" | "order">) => {
@@ -594,21 +618,7 @@ export default function App() {
     // Local-first update
     const updatedList = [...matches, fullMatch];
     saveMatchesLocally(updatedList);
-
-    if (!isLocalFallback) {
-      (async () => {
-        try {
-          const writePromise = setDoc(doc(db, "matches", newId), fullMatch);
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
-          );
-          await Promise.race([writePromise, timeoutPromise]);
-        } catch (error: any) {
-          console.error("Error adding match in Firestore: ", error);
-          enableLocalFallback();
-        }
-      })();
-    }
+    persistMatches(updatedList);
   };
 
   const handleDeleteMatch = async (id: string) => {
@@ -617,21 +627,7 @@ export default function App() {
     // Local-first delete
     const updatedList = matches.filter((m) => m.id !== id);
     saveMatchesLocally(updatedList);
-
-    if (!isLocalFallback) {
-      (async () => {
-        try {
-          const writePromise = deleteDoc(doc(db, "matches", id));
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Delete connection timed out (4s)")), 4000)
-          );
-          await Promise.race([writePromise, timeoutPromise]);
-        } catch (error: any) {
-          console.error("Error deleting match in Firestore: ", error);
-          enableLocalFallback();
-        }
-      })();
-    }
+    persistMatches(updatedList);
   };
 
 
@@ -654,13 +650,7 @@ export default function App() {
 
     if (!isLocalFallback) {
       try {
-        await setDoc(doc(db, "users", newId), {
-          id: newId,
-          username,
-          password,
-          role,
-          createdAt: newUser.createdAt
-        });
+        await setDoc(usersDocRef(), { users: updatedList });
       } catch (error: any) {
         console.error("Error adding user: ", error);
         enableLocalFallback();
@@ -678,7 +668,7 @@ export default function App() {
 
     if (!isLocalFallback) {
       try {
-        await deleteDoc(doc(db, "users", id));
+        await setDoc(usersDocRef(), { users: updatedList });
       } catch (error: any) {
         console.error("Error deleting user: ", error);
         enableLocalFallback();
@@ -696,7 +686,7 @@ export default function App() {
 
     if (!isLocalFallback) {
       try {
-        await setDoc(doc(db, "users", id), updates, { merge: true });
+        await setDoc(usersDocRef(), { users: updatedList });
       } catch (error: any) {
         console.error("Error updating user: ", error);
         enableLocalFallback();

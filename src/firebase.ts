@@ -1,28 +1,20 @@
 import { initializeApp } from "firebase/app";
-import { initializeFirestore, setLogLevel } from "firebase/firestore";
-import appletConfig from "../firebase-applet-config.json";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  setLogLevel
+} from "firebase/firestore";
 
-// Default/Production configuration
-const prodConfig = {
-  apiKey: "AIzaSyBmITE7up6mCfJLDtRHvPlUHcftnHQG8So",
-  authDomain: "ptnsports-25886.firebaseapp.com",
-  databaseURL: "https://ptnsports-25886-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ptnsports-25886",
-  storageBucket: "ptnsports-25886.firebasestorage.app",
-  messagingSenderId: "396135126232",
-  appId: "1:396135126232:web:b99a9ff5289307f9ef33ad",
-  measurementId: "G-QWXRPP2ZW8"
+const firebaseConfig = {
+  apiKey: "AIzaSyCMBS0rzdYy4uDuNfXjclD8AwlvUMVMFCY",
+  authDomain: "ptnsport-ad49e.firebaseapp.com",
+  databaseURL: "https://ptnsport-ad49e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ptnsport-ad49e",
+  storageBucket: "ptnsport-ad49e.firebasestorage.app",
+  messagingSenderId: "940657150029",
+  appId: "1:940657150029:web:f2a3811c145743dbad7404"
 };
-
-// Detect if we are running in the sandbox/preview environment (anything that is NOT the production hosting domain)
-const isProduction =
-  typeof window !== "undefined" &&
-  (window.location.hostname === "ptnsports-25886.web.app" ||
-    window.location.hostname === "ptnsports-25886.firebaseapp.com" ||
-    window.location.hostname.includes("ptnsports"));
-
-// Always use the production configuration to connect to ptnsports-25886
-const firebaseConfig = prodConfig;
 
 const app = initializeApp(firebaseConfig);
 
@@ -33,12 +25,9 @@ try {
   console.log("Failed to set Firestore log level to silent: ", e);
 }
 
-// Always use default database for ptnsports-25886
-const databaseId = "(default)";
-
+// Persistent local cache: repeat visits are served from IndexedDB and only
+// changed documents are re-read from the server, keeping daily read quota low.
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
-  databaseId: databaseId
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
-
-

@@ -1,10 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // App data lives in single consolidated docs: matches/_all and users/_all.
+    // Legacy per-match/per-user docs in the same collections are still
+    // readable so the one-time client migration can consolidate them.
     match /matches/{matchId} {
-      allow read, write: if true;
-    }
-    match /expenses/{expenseId} {
       allow read, write: if true;
     }
     match /users/{userId} {
