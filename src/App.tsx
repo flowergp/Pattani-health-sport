@@ -434,11 +434,7 @@ export default function App() {
         (error: any) => {
           clearTimeout(timeoutId);
           console.error("Firestore matches subscription error: ", error);
-          if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-            enableLocalFallback();
-          } else {
-            setDbError("การเชื่อมต่อฐานข้อมูลล้มเหลว กำลังใช้ฐานข้อมูลในตัวเครื่องชั่วคราว");
-          }
+          enableLocalFallback();
           setLoading(false);
         }
       );
@@ -456,9 +452,7 @@ export default function App() {
         },
         (error: any) => {
           console.error("Firestore expenses subscription error: ", error);
-          if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-            enableLocalFallback();
-          }
+          enableLocalFallback();
         }
       );
 
@@ -483,9 +477,7 @@ export default function App() {
         },
         (error: any) => {
           console.error("Firestore users subscription error: ", error);
-          if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-            enableLocalFallback();
-          }
+          enableLocalFallback();
         }
       );
     } catch (e: any) {
@@ -672,12 +664,10 @@ export default function App() {
     if (!isLocalFallback) {
       try {
         const matchRef = doc(db, "matches", id);
-        await updateDoc(matchRef, updates);
+        await setDoc(matchRef, updates, { merge: true });
       } catch (error: any) {
         console.error("Error updating match in Firestore: ", error);
-        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
+        enableLocalFallback();
       }
     }
   };
@@ -702,9 +692,7 @@ export default function App() {
         await setDoc(doc(db, "matches", newId), fullMatch);
       } catch (error: any) {
         console.error("Error adding match in Firestore: ", error);
-        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
+        enableLocalFallback();
       }
     }
   };
@@ -721,9 +709,7 @@ export default function App() {
         await deleteDoc(doc(db, "matches", id));
       } catch (error: any) {
         console.error("Error deleting match in Firestore: ", error);
-        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
+        enableLocalFallback();
       }
     }
   };
@@ -756,9 +742,7 @@ export default function App() {
         });
       } catch (error: any) {
         console.error("Error adding expense: ", error);
-        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
+        enableLocalFallback();
       }
     }
   };
@@ -775,9 +759,7 @@ export default function App() {
         await deleteDoc(doc(db, "expenses", id));
       } catch (error: any) {
         console.error("Error deleting expense: ", error);
-        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
+        enableLocalFallback();
       }
     }
   };
@@ -800,12 +782,10 @@ export default function App() {
 
     if (!isLocalFallback) {
       try {
-        await updateDoc(doc(db, "expenses", id), updates);
+        await setDoc(doc(db, "expenses", id), updates, { merge: true });
       } catch (error: any) {
         console.error("Error updating expense: ", error);
-        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
+        enableLocalFallback();
       }
     }
   };
@@ -838,9 +818,7 @@ export default function App() {
         });
       } catch (error: any) {
         console.error("Error adding user: ", error);
-        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
+        enableLocalFallback();
         throw error;
       }
     }
@@ -858,9 +836,7 @@ export default function App() {
         await deleteDoc(doc(db, "users", id));
       } catch (error: any) {
         console.error("Error deleting user: ", error);
-        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
+        enableLocalFallback();
         throw error;
       }
     }
@@ -875,12 +851,10 @@ export default function App() {
 
     if (!isLocalFallback) {
       try {
-        await updateDoc(doc(db, "users", id), updates);
+        await setDoc(doc(db, "users", id), updates, { merge: true });
       } catch (error: any) {
         console.error("Error updating user: ", error);
-        if (error?.code === "resource-exhausted" || error?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
+        enableLocalFallback();
         throw error;
       }
     }
@@ -920,13 +894,23 @@ export default function App() {
               {theme === "dark" ? "☀️ โหมดสว่าง" : "🌙 โหมดมืด"}
             </button>
 
-            <div className="bg-[#1E293B] border border-slate-800 px-4 py-1.5 flex items-center font-mono text-[11px] text-slate-300">
-              <span className="relative flex h-2 w-2 mr-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF66]"></span>
-              </span>
-              SYSTEM: <span className="text-[#00FF66] ml-1.5 font-bold">LIVE ONLINE 🟢</span>
-            </div>
+            {isLocalFallback ? (
+              <div className="bg-[#1E293B] border border-amber-500/30 px-4 py-1.5 flex items-center font-mono text-[11px] text-amber-400">
+                <span className="relative flex h-2 w-2 mr-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                SYSTEM: <span className="text-amber-400 ml-1.5 font-bold">LOCAL SAFETY MODE 🟡</span>
+              </div>
+            ) : (
+              <div className="bg-[#1E293B] border border-slate-800 px-4 py-1.5 flex items-center font-mono text-[11px] text-slate-300">
+                <span className="relative flex h-2 w-2 mr-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF66]"></span>
+                </span>
+                SYSTEM: <span className="text-[#00FF66] ml-1.5 font-bold">LIVE ONLINE 🟢</span>
+              </div>
+            )}
 
             {isLoggedIn ? (
               <div className="flex items-center gap-2">
@@ -1154,6 +1138,29 @@ export default function App() {
         </div>
         
         {/* Error Notification */}
+        {dbError && (
+          <div className="bg-amber-950/40 border border-amber-900/60 p-4 mb-6 text-xs sm:text-sm font-bold text-amber-400 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-start gap-2.5">
+              <span className="text-amber-500 shrink-0 text-base">⚠️</span>
+              <div>
+                <p className="text-white font-black">แจ้งเตือนระบบฐานข้อมูล (Database Notice)</p>
+                <p className="mt-1 font-sans text-amber-400/90 leading-relaxed">{dbError}</p>
+              </div>
+            </div>
+            {isLocalFallback && (
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem("pattani_local_fallback");
+                  window.location.reload();
+                }}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs uppercase tracking-wider rounded-none shrink-0 transition-all cursor-pointer border-0"
+              >
+                🔄 ลองเชื่อมต่อฐานข้อมูลใหม่ (Retry Cloud)
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Loading Overlay */}
         {loading && (
