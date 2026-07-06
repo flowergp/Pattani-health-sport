@@ -19,7 +19,9 @@ import {
   ChevronUp,
   Printer,
   Download,
-  CheckCircle
+  CheckCircle,
+  Trophy,
+  Save
 } from "lucide-react";
 
 // Helper to parse Thai date (e.g. "10 ก.ค. 69") to a comparable number
@@ -75,6 +77,107 @@ interface SportTabProps {
   selectedDistrict?: string;
   drawLots?: { [key: string]: string[] };
   onUpdateDrawLots?: (key: string, teamOrder: string[]) => Promise<void>;
+}
+
+// สร้างเป็น component แยกเพื่อหลีกเลี่ยงปัญหา hooks ใน IIFE
+interface PetanqueResultFormProps {
+  medals: Array<{ rank: number; label: string; color: string; bg: string; value: string; key: string }>;
+  catTeams: string[];
+  onSave: (r1: string, r2: string, r3: string) => void;
+  currentR1: string;
+  currentR2: string;
+  currentR3: string;
+}
+
+function PetanqueResultForm({ medals, catTeams, onSave, currentR1, currentR2, currentR3 }: PetanqueResultFormProps) {
+  const [r1, setR1] = useState(currentR1);
+  const [r2, setR2] = useState(currentR2);
+  const [r3, setR3] = useState(currentR3);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // อัปเดตเมื่อ props เปลี่ยน (บันทึกแล้วกลับมา)
+  React.useEffect(() => {
+    setR1(currentR1);
+    setR2(currentR2);
+    setR3(currentR3);
+  }, [currentR1, currentR2, currentR3]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(r1, r2, r3);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // รายการ dropdown ที่แต่ละ rank เลือกได้ (กรองทีมที่เลือกไปแล้วใน rank อื่นออก)
+  const getAvailableTeams = (excludeVals: string[]) => [
+    "",
+    ...catTeams.filter(t => !excludeVals.includes(t)),
+  ];
+
+  const rankValues = [r1, r2, r3];
+  const rankSetters = [setR1, setR2, setR3];
+  const rankKeys = ["r1", "r2", "r3"];
+
+  return (
+    <div className="border border-slate-700 bg-[#0F172A] p-4 space-y-3 rounded-none">
+      <div className="flex items-center gap-2 mb-1">
+        <Save size={14} className="text-emerald-400" />
+        <span className="text-[11px] font-black uppercase text-emerald-400 font-mono">
+          เลือกผลการแข่งขัน (Admin เท่านั้น)
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {rankValues.map((val, idx) => {
+          const others = rankValues.filter((_, i) => i !== idx);
+          const available = getAvailableTeams(others);
+          return (
+            <div key={rankKeys[idx]}>
+              <label className="block text-[10px] font-bold font-mono uppercase text-slate-400 mb-1">
+                {idx === 0 ? "🥇 อันดับที่ 1 — ชนะเลิศ" : idx === 1 ? "🥈 อันดับที่ 2 — รองชนะเลิศ" : "🥉 อันดับที่ 3 — รองชนะเลิศ 2"}
+              </label>
+              <select
+                value={val}
+                onChange={(e) => rankSetters[idx](e.target.value)}
+                className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none cursor-pointer"
+              >
+                <option value="">— เลือกทีม —</option>
+                {/* สังเกต: TEAM_NAMES ที่ไม่ถูกเลือกใน rank อื่น */}
+                {available.filter(t => t !== "").map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+                {/* ถ้าทีมสองคู่ไม่มีในรายการ catTeams, เพิ่มเป็นตัวเลือก */}
+                {val && !available.includes(val) && (
+                  <option value={val}>{val}</option>
+                )}
+              </select>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-end pt-1">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving}
+          className={`px-5 py-2 font-bold text-xs uppercase tracking-wide border transition-all cursor-pointer rounded-none flex items-center gap-2 ${
+            saved
+              ? "bg-emerald-600 border-emerald-500 text-white"
+              : "bg-[#FF5722] hover:bg-[#E04E1D] border-[#FF5722] text-white"
+          } disabled:opacity-50`}
+        >
+          {isSaving ? "⏳ กำลังบันทึก..." : saved ? "✅ บันทึกสำเร็จ" : "💾 บันทึกผล 3 อันดับ"}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function SportTab({
@@ -1244,8 +1347,8 @@ export default function SportTab({
             </div>
           )}
 
-          {/* 🛠️ Selectable View Options */}
-          {sport !== "track" && (
+          {/* 🛠️ Selectable View Options (ซ่อนสำหรับ petanque - แสดงเฉพาะ matches) */}
+          {sport !== "track" && sport !== "petanque" && (
             <div className="pb-2 border-b border-slate-800/60">
               <span className="block text-[10px] font-bold uppercase text-slate-400 mb-2 flex items-center gap-1.5 font-mono">
                 🖥️ เลือกมุมมองที่ต้องการแสดงผล (Select display section):
@@ -1312,8 +1415,8 @@ export default function SportTab({
         </div>
       )}
 
-      {/* 3. Group Standings Section (Only for Petanque, Volleyball, Football) */}
-      {sport !== "track" && selectedCategory !== "" && (activeView === "all" || activeView === "standings") && (
+      {/* 3. Group Standings Section (Only for Volleyball, Football — ซ่อนสำหรับ petanque) */}
+      {sport !== "track" && sport !== "petanque" && selectedCategory !== "" && (activeView === "all" || activeView === "standings") && (
         <div className="space-y-4">
           {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
             const catMatches = sportMatches.filter(m => m.category === cat);
@@ -1417,6 +1520,69 @@ export default function SportTab({
           })}
         </div>
       )}
+
+      {/* 🏅 ผลการแข่งขัน 3 อันดับ (เฉพาะเปตอง) */}
+      {sport === "petanque" && selectedCategory !== "" && selectedCategory !== "all" && (() => {
+        const resultKey = `petanque_result_${selectedCategory}`;
+        const savedResult: string[] = drawLots?.[resultKey] || [];
+        const rank1 = savedResult[0] || "";
+        const rank2 = savedResult[1] || "";
+        const rank3 = savedResult[2] || "";
+
+        // ใช้ TEAM_NAMES ทั้ง 13 ทีมใน dropdown โดยตรง
+        const catTeams = TEAM_NAMES;
+
+        const handleSaveResult = async (r1: string, r2: string, r3: string) => {
+          if (!onUpdateDrawLots) return;
+          await onUpdateDrawLots(resultKey, [r1, r2, r3]);
+        };
+
+        const medals = [
+          { rank: 1, label: "🥇 อันดับที่ 1 (ชนะเลิศ)", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/40", value: rank1, key: "r1" },
+          { rank: 2, label: "🥈 อันดับที่ 2 (รองชนะเลิศ)", color: "text-slate-300", bg: "bg-slate-500/10 border-slate-500/40", value: rank2, key: "r2" },
+          { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศอันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
+        ];
+
+        return (
+          <div className="border border-emerald-500/30 bg-[#111827] p-5 space-y-4 rounded-none shadow-lg">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Trophy size={18} className="text-yellow-400" />
+              <h3 className="text-sm font-black uppercase text-white">
+                ผลการแข่งขัน 3 อันดับ — <span className="text-emerald-400">{selectedCategory}</span>
+              </h3>
+            </div>
+
+            {/* แสดงผล 3 อันดับแบบ read-only */}
+            {(rank1 || rank2 || rank3) && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {medals.map((m) => (
+                  <div key={m.key} className={`border ${m.bg} p-3 rounded-none flex flex-col items-center gap-1`}>
+                    <span className="text-2xl">{m.rank === 1 ? "🥇" : m.rank === 2 ? "🥈" : "🥉"}</span>
+                    <span className={`text-[10px] font-mono font-bold uppercase ${m.color}`}>
+                      {m.rank === 1 ? "ชนะเลิศ" : m.rank === 2 ? "รองชนะเลิศ" : "รองชนะเลิศ อันดับ 2"}
+                    </span>
+                    <span className={`text-sm font-black text-center ${m.value ? "text-white" : "text-slate-600"}`}>
+                      {m.value || "— ยังไม่ระบุ —"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ฟอร์มให้ admin เลือก dropdown */}
+            {isLoggedIn && onUpdateDrawLots && (
+              <PetanqueResultForm
+                medals={medals}
+                catTeams={catTeams}
+                onSave={handleSaveResult}
+                currentR1={rank1}
+                currentR2={rank2}
+                currentR3={rank3}
+              />
+            )}
+          </div>
+        );
+      })()}
 
       {/* 1.5 Petanque Seeding & Draw Form */}
       {sport === "petanque" && showPetanqueDrawForm && (
@@ -1644,8 +1810,8 @@ export default function SportTab({
 
       {/* 3. Add Custom Match Form (Collapsible) placeholder to keep order clear */}
 
-      {/* 4. Match List Grid */}
-      {activeView !== "bracket" && (activeView === "all" || activeView === "matches" || sport === "track" || selectedCategory === "") && (
+      {/* 4. Match List Grid (ซ่อนสำหรับ petanque) */}
+      {sport !== "petanque" && activeView !== "bracket" && (activeView === "all" || activeView === "matches" || sport === "track" || selectedCategory === "") && (
         <div className="space-y-4">
           <h3 className="text-base font-black uppercase text-white tracking-wide">
             📅 รายการแข่งขันและผลลัพธ์ {selectedCategory !== "" ? `(${filteredMatches.length})` : filteredMatches.length > 0 ? `(แสดงเฉพาะ คป.สอ. ${selectedDistrict || teamSearch}) (${filteredMatches.length})` : ""}
@@ -2088,7 +2254,7 @@ export default function SportTab({
       )}
 
       {/* 2. Knockout Bracket Display Card */}
-      {sport !== "track" && activeBracketCategory && (activeView === "all" || activeView === "bracket") && (
+      {sport !== "track" && sport !== "petanque" && activeBracketCategory && (activeView === "all" || activeView === "bracket") && (
         <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2">
