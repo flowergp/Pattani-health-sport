@@ -358,12 +358,12 @@ export default function App() {
     let unsubscribeExpenses = () => {};
     let unsubscribeUsers = () => {};
 
-    // 3-second timeout to fall back locally if Firestore is slow or quota-exceeded
+    // 5-second timeout to fall back locally if Firestore is slow or quota-exceeded
     const timeoutId = setTimeout(() => {
-      console.warn("Firestore connection timed out (3s). Enabling local fallback.");
+      console.warn("Firestore connection timed out (5s). Enabling local fallback.");
       enableLocalFallback();
       setLoading(false);
-    }, 3000);
+    }, 5000);
 
     try {
       // Sync matches
@@ -389,68 +389,20 @@ export default function App() {
 
           const matchesList: Match[] = [];
           snapshot.forEach((docSnap) => {
-            matchesList.push({ ...docSnap.data() } as Match);
+            const data = docSnap.data() as Match;
+            if (data && data.id) {
+              matchesList.push(data);
+            }
           });
 
-          const isThanyarak = (name: string | null | undefined) => {
-            if (!name) return false;
-            return name.includes("ธัญ");
-          };
-
-          let needsFirestoreSync = false;
-          const pendingUpdates: { id: string; data: Match }[] = [];
-
-          // Filter out "ธัญรักษ์" / "ธัญญารักษ์" matches, football matches for 3rd place, and any corrupted petanque IDs from previous versions
-          const cleanedMatchesList = matchesList
-            .filter(m => m.id && !m.id.startsWith("petanque_ทั_") && !m.id.startsWith("petanque_ที_"))
-            .filter(m => !isThanyarak(m.teamA) && !isThanyarak(m.teamB))
-            .filter(m => !(m.sport === "football" && m.round === "ชิงที่ 3"))
-            .map(m => {
-              let updated = false;
-              let participants = m.participants;
-              if (participants && participants.some(p => isThanyarak(p))) {
-                participants = participants.filter(p => !isThanyarak(p));
-                updated = true;
-              }
-              let ranks = m.ranks;
-              if (ranks) {
-                const originalLength = ranks.length;
-                ranks = ranks.filter(r => !isThanyarak(r.name));
-                if (ranks.length !== originalLength) {
-                  updated = true;
-                }
-              }
-              if (updated) {
-                const updatedMatch = { ...m, participants, ranks };
-                needsFirestoreSync = true;
-                pendingUpdates.push({ id: m.id, data: updatedMatch });
-                return updatedMatch;
-              }
-              return m;
-            });
-
-          // Deduplicate matches list by unique ID to be absolutely sure there are no duplicates in the application state
+          // Filter out corrupted petanque IDs from previous versions and deduplicate
           const uniqueMatchesMap = new Map<string, Match>();
-          cleanedMatchesList.forEach((m) => {
-            if (m.id) {
+          matchesList
+            .filter((m) => m && m.id && !m.id.startsWith("petanque_ทั_") && !m.id.startsWith("petanque_ที_"))
+            .forEach((m) => {
               uniqueMatchesMap.set(m.id, m);
-            }
-          });
-          let finalMatchesList = Array.from(uniqueMatchesMap.values());
-
-          // Write updates to Firestore if logged in
-          if (needsFirestoreSync && !isLocalFallback && isLoggedIn) {
-            try {
-              const batch = writeBatch(db);
-              pendingUpdates.forEach((upd) => {
-                batch.set(doc(db, "matches", upd.id), upd.data);
-              });
-              await batch.commit();
-              console.log("Successfully migrated football matches and cleaned up Thanyarak!");
-            } catch (err) {
-              console.error("Failed to sync migrated matches to Firestore: ", err);
-            }
-          }
+            });
+          const finalMatchesList = Array.from(uniqueMatchesMap.values());
 
           const sortedList = finalMatchesList.sort((a, b) => a.order - b.order);
           saveMatchesLocally(sortedList);
