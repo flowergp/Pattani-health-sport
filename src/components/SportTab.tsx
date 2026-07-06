@@ -124,7 +124,7 @@ export default function SportTab({
     newOrder[idx] = teamAtTarget;
     newOrder[targetIdx] = team;
 
-    const key = `football_${cat}_${grpName}`;
+    const key = `${sport}_${cat}_${grpName}`;
     await onUpdateDrawLots(key, newOrder);
   };
 
@@ -1357,7 +1357,7 @@ export default function SportTab({
                             <tbody>
                               {standings.map((st, i) => {
                                 const tiedTeams = standings.filter(item => item.points === st.points && item.won === st.won);
-                                const isTied = sport === "football" && tiedTeams.length > 1;
+                                const isTied = (sport === "football" || sport === "volleyball") && tiedTeams.length > 1;
 
                                 return (
                                   <tr key={st.team} className="border-b border-slate-800/60 font-semibold bg-transparent hover:bg-slate-800/20 text-slate-300">

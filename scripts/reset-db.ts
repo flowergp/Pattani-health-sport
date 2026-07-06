@@ -29,6 +29,8 @@ const db = initializeFirestore(app, {
 }, databaseId);
 
 async function main() {
+  console.log("Firebase config being used:", firebaseConfig);
+  console.log("Database ID being used:", databaseId);
   console.log("Starting reset of matches in Firestore...");
   const defaultMatches = getInitialMatches();
 

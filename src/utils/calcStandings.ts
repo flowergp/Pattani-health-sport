@@ -86,10 +86,10 @@ export const calculateGroupStandings = (
       return b.won - a.won;
     }
 
-    if (sport === "football") {
-      // For football, goal difference has no effect. If points and wins are tied, use drawLots order if available.
+    if (sport === "football" || sport === "volleyball") {
+      // For football and volleyball, if points and wins are tied, use drawLots order if available.
       if (drawLots) {
-        const key = `football_${categoryName || ""}_${groupName}`;
+        const key = `${sport}_${categoryName || ""}_${groupName}`;
         const order = drawLots[key];
         if (order) {
           const idxA = order.indexOf(a.team);
@@ -102,7 +102,7 @@ export const calculateGroupStandings = (
       return 0; // Tied, stable/default sort
     }
 
-    // 3. Sort by score difference (for other sports)
+    // 3. Sort by score difference (for other sports like Petanque)
     return b.scoreDiff - a.scoreDiff;
   });
 };
