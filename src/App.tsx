@@ -140,9 +140,10 @@ const safeLocalStorage = {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "track" | "petanque" | "volleyball" | "football" | "admins" | "my-schedule">("dashboard");
-  const [isLocalFallback, setIsLocalFallback] = useState<boolean>(() => {
-    return safeLocalStorage.getItem("pattani_local_fallback") === "true";
-  });
+  // Session-only: never persisted, so a single bad connection can't
+  // permanently silo a device in local mode — every reload retries the cloud
+  // (cheap now: 1 read per load with the single-doc layout).
+  const [isLocalFallback, setIsLocalFallback] = useState<boolean>(false);
   
   const [matches, setMatches] = useState<Match[]>(() => {
     const saved = safeLocalStorage.getItem("pattani_matches");
@@ -193,12 +194,7 @@ export default function App() {
 
   const [loading, setLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [dbError, setDbError] = useState<string | null>(() => {
-    if (safeLocalStorage.getItem("pattani_local_fallback") === "true") {
-      return "เปิดใช้งานโหมดสำรองความปลอดภัย (Local Safety Fallback Mode) เรียบร้อยแล้ว! เนื่องจากจำนวนการใช้งานคลาวด์ Firebase ฟรีส่วนกลางเกินขีดจำกัดสำหรับวันนี้ ระบบได้ปรับเข้าสู่โหมดการทำงานในเครื่องของคุณโดยอัตโนมัติ คุณสามารถแก้ไขผลคะแนนต่างๆ ได้ตามปกติ โดยข้อมูลทั้งหมดจะจัดเก็บอยู่ในเบราว์เซอร์เครื่องนี้อย่างปลอดภัย";
-    }
-    return null;
-  });
+  const [dbError, setDbError] = useState<string | null>(null);
 
   // Custom district filter state
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
@@ -310,33 +306,37 @@ export default function App() {
     safeLocalStorage.setItem("pattani_users", JSON.stringify(newUsers));
   };
 
+  // Only give up on the cloud for errors that won't heal on their own.
+  // Transient network blips are left to the SDK, which queues writes in the
+  // persistent cache and flushes them when the connection returns.
+  const isFatalDbError = (error: any) =>
+    error?.code === "resource-exhausted" ||
+    error?.code === "permission-denied" ||
+    error?.message?.includes("Quota");
+
   // Fire-and-forget write of the full matches list to the single doc (1 write)
   const persistMatches = (list: Match[]) => {
     if (isLocalFallback) return;
     (async () => {
       try {
-        const writePromise = setDoc(matchesDocRef(), { matches: list });
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
-        );
-        await Promise.race([writePromise, timeoutPromise]);
+        await setDoc(matchesDocRef(), { matches: list });
       } catch (error: any) {
         console.error("Error saving matches to Firestore: ", error);
-        enableLocalFallback();
+        if (isFatalDbError(error)) {
+          enableLocalFallback();
+        }
       }
     })();
   };
 
   const enableLocalFallback = () => {
     setIsLocalFallback(true);
-    safeLocalStorage.setItem("pattani_local_fallback", "true");
     setDbError(
-      "เปิดใช้งานโหมดสำรองความปลอดภัย (Local Safety Fallback Mode) เรียบร้อยแล้ว! " +
-      "เนื่องจากจำนวนการใช้งานคลาวด์ Firebase ฟรีส่วนกลางเกินขีดจำกัดสำหรับวันนี้ " +
-      "ระบบได้ปรับเข้าสู่โหมดการทำงานในเครื่องของคุณโดยอัตโนมัติ คุณสามารถดูผลลัพธ์ ตารางการแข่งขัน " +
-      "และแก้ไขผลคะแนนต่างๆ ได้ตามปกติ โดยข้อมูลทั้งหมดจะจัดเก็บอยู่ในเบราว์เซอร์เครื่องนี้อย่างปลอดภัย"
+      "เชื่อมต่อฐานข้อมูลกลางไม่สำเร็จในขณะนี้ ระบบจึงทำงานในโหมดสำรองชั่วคราว (Local Safety Fallback Mode) " +
+      "ข้อมูลที่แก้ไขจะถูกเก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น และจะยังไม่ถูกส่งขึ้นฐานข้อมูลกลาง " +
+      "กรุณากดปุ่ม \"ลองเชื่อมต่อฐานข้อมูลใหม่\" หรือรีเฟรชหน้าเว็บเมื่ออินเทอร์เน็ตกลับมาปกติ"
     );
-    
+
     // Auto-seed local matches if current matches list is empty
     if (matches.length === 0) {
       saveMatchesLocally(getInitialMatches());
@@ -347,11 +347,11 @@ export default function App() {
     });
   };
 
-  // Turn off Firestore network if local fallback is active to completely silence Quota / Connection errors
+  // Flip Firestore back online when leaving fallback within the session
   useEffect(() => {
-    if (safeLocalStorage.getItem("pattani_local_fallback") === "true" || isLocalFallback) {
+    if (isLocalFallback) {
       disableNetwork(db).catch((err) => {
-        console.log("Failed to disable Firestore network on mount: ", err);
+        console.log("Failed to disable Firestore network: ", err);
       });
     }
   }, [isLocalFallback]);
@@ -359,7 +359,7 @@ export default function App() {
   // 1. Sync matches and users from Firestore (single-doc listeners: 1 read each)
   useEffect(() => {
     // If we're already marked as local fallback, don't block with loading spinner
-    if (safeLocalStorage.getItem("pattani_local_fallback") === "true" || isLocalFallback) {
+    if (isLocalFallback) {
       setLoading(false);
       return;
     }
@@ -372,12 +372,13 @@ export default function App() {
     let migratedMatches = false;
     let migratedUsers = false;
 
-    // 5-second timeout to fall back locally if Firestore is slow or quota-exceeded
+    // Fall back locally if Firestore can't deliver a first snapshot in time
+    // (slow mobile first loads need headroom; cached loads resolve instantly)
     const timeoutId = setTimeout(() => {
-      console.warn("Firestore connection timed out (5s). Enabling local fallback.");
+      console.warn("Firestore connection timed out (10s). Enabling local fallback.");
       enableLocalFallback();
       setLoading(false);
-    }, 5000);
+    }, 10000);
 
     // One-time migration: consolidate legacy per-match docs into matches/_all.
     // Runs only when the server confirms matches/_all does not exist yet.
@@ -653,7 +654,7 @@ export default function App() {
         await setDoc(usersDocRef(), { users: updatedList });
       } catch (error: any) {
         console.error("Error adding user: ", error);
-        enableLocalFallback();
+        if (isFatalDbError(error)) enableLocalFallback();
         throw error;
       }
     }
@@ -671,7 +672,7 @@ export default function App() {
         await setDoc(usersDocRef(), { users: updatedList });
       } catch (error: any) {
         console.error("Error deleting user: ", error);
-        enableLocalFallback();
+        if (isFatalDbError(error)) enableLocalFallback();
         throw error;
       }
     }
@@ -689,7 +690,7 @@ export default function App() {
         await setDoc(usersDocRef(), { users: updatedList });
       } catch (error: any) {
         console.error("Error updating user: ", error);
-        enableLocalFallback();
+        if (isFatalDbError(error)) enableLocalFallback();
         throw error;
       }
     }
