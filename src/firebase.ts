@@ -13,14 +13,14 @@ const prodConfig = {
   measurementId: "G-QWXRPP2ZW8"
 };
 
-// Detect if we are running in the sandbox/preview environment
-const isSandbox =
+// Detect if we are running in the sandbox/preview environment (anything that is NOT the production hosting domain)
+const isProduction =
   typeof window !== "undefined" &&
-  (window.location.hostname.includes("googleusercontent.com") ||
-   window.location.hostname.includes("usercontent.google.com") ||
-   window.location.hostname.includes("localhost") ||
-   window.location.hostname === "127.0.0.1" ||
-   window.location.hostname === "0.0.0.0");
+  (window.location.hostname === "ptnsports-25886.web.app" ||
+   window.location.hostname === "ptnsports-25886.firebaseapp.com" ||
+   window.location.hostname.includes("ptnsports"));
+
+const isSandbox = !isProduction;
 
 const firebaseConfig = isSandbox && appletConfig.projectId
   ? {
