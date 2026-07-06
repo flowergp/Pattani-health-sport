@@ -1,4 +1,4 @@
-import { Match, ExpenseItem } from "./types";
+import { Match } from "./types";
 
 export const TEAM_NAMES = [
   "เมือง",
@@ -14,15 +14,6 @@ export const TEAM_NAMES = [
   "กะพ้อ",
   "ทุ่งยางแดง",
   "สสจ.ปัตตานี"
-];
-
-export const INITIAL_EXPENSES: ExpenseItem[] = [
-  { id: "exp_1", name: "คลิปบอร์ด", quantity: 4, pricePerUnit: 45, total: 180 },
-  { id: "exp_2", name: "ดินสอ+ยางลบ", quantity: 4, pricePerUnit: 10, total: 40 },
-  { id: "exp_3", name: "เชือกไนล่อน 1 ม้วน (ขนาด 5 มม.)", quantity: 1, pricePerUnit: 350, total: 350 },
-  { id: "exp_4", name: "ตะปู ขนาด 3 นิ้ว (ครึ่ง กก.)", quantity: 1, pricePerUnit: 50, total: 50 },
-  { id: "exp_5", name: "ตลับเมตร", quantity: 2, pricePerUnit: 35, total: 70 },
-  { id: "exp_6", name: "ปากกาเคมี", quantity: 4, pricePerUnit: 25, total: 100 }
 ];
 
 export const getInitialMatches = (): Match[] => {

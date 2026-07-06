@@ -12,18 +12,16 @@ import {
   disableNetwork
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Match, ExpenseItem, AdminUser } from "./types";
-import { getInitialMatches, INITIAL_EXPENSES, TEAM_NAMES } from "./initialData";
+import { Match, AdminUser } from "./types";
+import { getInitialMatches, TEAM_NAMES } from "./initialData";
 import Dashboard from "./components/Dashboard";
 import SportTab from "./components/SportTab";
-import ExpenseManager from "./components/ExpenseManager";
 import UserManager from "./components/UserManager";
 import DistrictSchedule from "./components/DistrictSchedule";
 import { calculateGroupStandings } from "./utils/calcStandings";
 import { 
   Trophy, 
   Award, 
-  Coins, 
   Sliders, 
   RefreshCw, 
   Flame, 
@@ -167,17 +165,6 @@ export default function App() {
     return resolveAllMatches(matches);
   }, [matches]);
 
-  const [expenses, setExpenses] = useState<ExpenseItem[]>(() => {
-    const saved = safeLocalStorage.getItem("pattani_expenses");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        // ignore
-      }
-    }
-    return INITIAL_EXPENSES;
-  });
 
   const [dbUsers, setDbUsers] = useState<AdminUser[]>(() => {
     const saved = safeLocalStorage.getItem("pattani_users");
@@ -304,10 +291,6 @@ export default function App() {
     safeLocalStorage.setItem("pattani_matches", JSON.stringify(sorted));
   };
 
-  const saveExpensesLocally = (newExpenses: ExpenseItem[]) => {
-    setExpenses(newExpenses);
-    safeLocalStorage.setItem("pattani_expenses", JSON.stringify(newExpenses));
-  };
 
   const saveUsersLocally = (newUsers: AdminUser[]) => {
     setDbUsers(newUsers);
@@ -355,7 +338,6 @@ export default function App() {
     setDbError(null);
 
     let unsubscribeMatches = () => {};
-    let unsubscribeExpenses = () => {};
     let unsubscribeUsers = () => {};
 
     // 5-second timeout to fall back locally if Firestore is slow or quota-exceeded
@@ -416,22 +398,6 @@ export default function App() {
         }
       );
 
-      // Sync expenses
-      unsubscribeExpenses = onSnapshot(
-        collection(db, "expenses"),
-        async (snapshot) => {
-          const expensesList: ExpenseItem[] = [];
-          snapshot.forEach((docSnap) => {
-            expensesList.push({ id: docSnap.id, ...docSnap.data() } as ExpenseItem);
-          });
-
-          saveExpensesLocally(expensesList);
-        },
-        (error: any) => {
-          console.error("Firestore expenses subscription error: ", error);
-          enableLocalFallback();
-        }
-      );
 
       // Sync users
       unsubscribeUsers = onSnapshot(
@@ -466,7 +432,6 @@ export default function App() {
     return () => {
       clearTimeout(timeoutId);
       unsubscribeMatches();
-      unsubscribeExpenses();
       unsubscribeUsers();
     };
   }, [db, isResetting, isLocalFallback]);
@@ -533,22 +498,6 @@ export default function App() {
     }
   };
 
-  const seedDefaultExpenses = async () => {
-    if (isLocalFallback) return;
-    try {
-      const batch = writeBatch(db);
-      INITIAL_EXPENSES.forEach((item) => {
-        const expRef = doc(db, "expenses", item.id);
-        batch.set(expRef, item);
-      });
-      await batch.commit();
-    } catch (err: any) {
-      console.error("Error seeding default expenses: ", err);
-      if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
-        enableLocalFallback();
-      }
-    }
-  };
 
   const seedDefaultDistrictUsers = async () => {
     if (isLocalFallback) return;
@@ -605,30 +554,6 @@ export default function App() {
     }
   };
 
-  const resetExpenses = async () => {
-    if (!isLoggedIn) return;
-    
-    // Reset locally first
-    saveExpensesLocally(INITIAL_EXPENSES);
-
-    if (!isLocalFallback) {
-      try {
-        // Delete existing
-        const snap = await getDocs(collection(db, "expenses"));
-        const batch = writeBatch(db);
-        snap.forEach((d) => {
-          batch.delete(doc(db, "expenses", d.id));
-        });
-        await batch.commit();
-        await seedDefaultExpenses();
-      } catch (err: any) {
-        console.error("Error resetting expenses: ", err);
-        if (err?.code === "resource-exhausted" || err?.message?.includes("Quota")) {
-          enableLocalFallback();
-        }
-      }
-    }
-  };
 
   // 3. Score/Match updates
   const handleUpdateMatch = async (id: string, updates: Partial<Match>) => {
@@ -691,81 +616,6 @@ export default function App() {
     }
   };
 
-  // 4. Budget/Expenses actions
-  const handleAddExpense = async (item: Omit<ExpenseItem, "id" | "total">) => {
-    if (!isLoggedIn) return;
-
-    const total = item.quantity * item.pricePerUnit;
-    const newId = `exp_custom_${Date.now()}`;
-    const newExpense: ExpenseItem = {
-      id: newId,
-      name: item.name,
-      quantity: item.quantity,
-      pricePerUnit: item.pricePerUnit,
-      total
-    };
-
-    // Local-first update
-    const updatedList = [...expenses, newExpense];
-    saveExpensesLocally(updatedList);
-
-    if (!isLocalFallback) {
-      try {
-        await setDoc(doc(db, "expenses", newId), {
-          name: item.name,
-          quantity: item.quantity,
-          pricePerUnit: item.pricePerUnit,
-          total
-        });
-      } catch (error: any) {
-        console.error("Error adding expense: ", error);
-        enableLocalFallback();
-      }
-    }
-  };
-
-  const handleDeleteExpense = async (id: string) => {
-    if (!isLoggedIn) return;
-
-    // Local-first update
-    const updatedList = expenses.filter((e) => e.id !== id);
-    saveExpensesLocally(updatedList);
-
-    if (!isLocalFallback) {
-      try {
-        await deleteDoc(doc(db, "expenses", id));
-      } catch (error: any) {
-        console.error("Error deleting expense: ", error);
-        enableLocalFallback();
-      }
-    }
-  };
-
-  const handleUpdateExpense = async (id: string, updates: Partial<ExpenseItem>) => {
-    if (!isLoggedIn) return;
-
-    // Local-first update
-    const updatedList = expenses.map((e) => {
-      if (e.id === id) {
-        const merged = { ...e, ...updates };
-        if (updates.quantity !== undefined || updates.pricePerUnit !== undefined) {
-          merged.total = merged.quantity * merged.pricePerUnit;
-        }
-        return merged;
-      }
-      return e;
-    });
-    saveExpensesLocally(updatedList);
-
-    if (!isLocalFallback) {
-      try {
-        await setDoc(doc(db, "expenses", id), updates, { merge: true });
-      } catch (error: any) {
-        console.error("Error updating expense: ", error);
-        enableLocalFallback();
-      }
-    }
-  };
 
   // 5. User action handlers
   const handleAddUser = async (username: string, password: string, role: "admin" | "editor") => {

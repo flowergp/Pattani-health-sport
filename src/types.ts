@@ -49,14 +49,6 @@ export interface Medal {
   bronze: number;
 }
 
-export interface ExpenseItem {
-  id: string;
-  name: string;
-  quantity: number;
-  pricePerUnit: number;
-  total: number;
-}
-
 export interface AdminUser {
   id: string;
   username: string;
