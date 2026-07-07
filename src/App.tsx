@@ -327,11 +327,12 @@ export default function App() {
     error?.message?.includes("Quota");
 
   // Fire-and-forget write of the full matches list to the single doc (1 write)
-  const persistMatches = (list: Match[]) => {
+  // รับ currentDrawLots เป็น parameter เพื่อหลีกเลี่ยง stale closure bug
+  const persistMatches = (list: Match[], currentDrawLots: { [key: string]: string[] } = drawLots) => {
     if (isLocalFallback) return;
     (async () => {
       try {
-        const writePromise = setDoc(matchesDocRef(), { matches: list, drawLots });
+        const writePromise = setDoc(matchesDocRef(), { matches: list, drawLots: currentDrawLots });
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
         );
@@ -353,6 +354,7 @@ export default function App() {
     if (isLocalFallback) return;
 
     try {
+      // ส่ง newDrawLots ที่อัปเดตแล้วไปพร้อม matches เพื่อป้องกัน stale closure
       const writePromise = setDoc(matchesDocRef(), { matches, drawLots: newDrawLots });
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Write connection timed out (4s)")), 4000)
