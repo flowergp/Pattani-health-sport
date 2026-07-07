@@ -103,6 +103,7 @@ export default function DistrictSchedule({
   const [sportFilter, setSportFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [exportSuccess, setExportSuccess] = useState<boolean>(false);
@@ -110,6 +111,7 @@ export default function DistrictSchedule({
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
   const [activeBracketSport, setActiveBracketSport] = useState<string>("football_men");
+  const [showBracket, setShowBracket] = useState<boolean>(false);
 
   const handleExportPDF = () => {
     setIsExporting(true);
@@ -636,11 +638,31 @@ export default function DistrictSchedule({
   const roundSF = useMemo(() => bracketMatchesForSport.filter(m => m.round === "รอบรองชนะเลิศ"), [bracketMatchesForSport]);
   const roundFinals = useMemo(() => bracketMatchesForSport.filter(m => m.round === "รอบชิงชนะเลิศ" || m.round === "ชิงที่ 3"), [bracketMatchesForSport]);
 
-  // Filtered district matches based on pills + search
+  // All available dates from district matches (for date picker)
+  const availableDates = useMemo(() => {
+    if (!selectedDistrict || !districtProfile) return [];
+    const dateSet = new Set<string>();
+    districtProfile.matches.forEach(m => {
+      if (m.date && m.date !== "ไม่ระบุวัน") dateSet.add(m.date);
+    });
+    return Array.from(dateSet).sort((a, b) => parseThaiDateToValue(a) - parseThaiDateToValue(b));
+  }, [selectedDistrict, districtProfile]);
+
+  // Reset selectedDate when district changes
+  useEffect(() => {
+    setSelectedDate("");
+  }, [selectedDistrict]);
+
+  // Filtered district matches based on date + pills + search
   const filteredMatches = useMemo(() => {
     if (!selectedDistrict || !districtProfile) return [];
+    // If no date selected, return empty (prompt user to select a date)
+    if (!selectedDate) return [];
 
     return districtProfile.matches.filter(m => {
+      // 0. Date filter — must match selected date
+      if (m.date !== selectedDate) return false;
+
       // 1. Sport filter
       if (sportFilter !== "all" && m.sport !== sportFilter) return false;
 
@@ -673,7 +695,7 @@ export default function DistrictSchedule({
       // 3. Fallback to order
       return a.order - b.order;
     });
-  }, [selectedDistrict, districtProfile, sportFilter, statusFilter, searchQuery]);
+  }, [selectedDistrict, districtProfile, selectedDate, sportFilter, statusFilter, searchQuery]);
 
   // Group matches by Date
   const matchesByDate = useMemo(() => {
@@ -898,9 +920,14 @@ export default function DistrictSchedule({
 
           </div>
 
-          {/* 2.5 Visual Tournament Bracket Pathway */}
-          <div className="bg-[#111827] border border-slate-800 p-5 space-y-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          {/* 2.5 Visual Tournament Bracket Pathway — Collapsible */}
+          <div className="bg-[#111827] border border-slate-800 rounded-none overflow-hidden">
+            {/* Clickable Header to toggle */}
+            <button
+              type="button"
+              onClick={() => setShowBracket(prev => !prev)}
+              className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 cursor-pointer hover:bg-[#1E293B] transition-colors duration-150 text-left"
+            >
               <div className="space-y-1">
                 <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF5722]">
                   tournament map
@@ -912,329 +939,413 @@ export default function DistrictSchedule({
                   แผนภาพสรุปเส้นทางการแข่งขันและประกบคู่ของ <span className="text-[#00FF66] font-bold">{selectedDistrict}</span> หากสามารถรักษาผลงานผ่านเข้ารอบถัดไปได้สำเร็จ
                 </p>
               </div>
-
-              {/* Legend */}
-              <div className="flex flex-wrap gap-3 text-[10px] font-bold">
-                <div className="flex items-center gap-1.5 text-slate-300">
-                  <span className="w-3 h-3 bg-slate-900 border border-slate-800 inline-block"></span>
-                  <span>โปรแกรมปกติ / ยืนยันคู่แล้ว</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-amber-400">
-                  <span className="w-3 h-3 bg-[#16120E] border border-dashed border-amber-500/50 inline-block"></span>
-                  <span>หากผ่านเข้ารอบ (Potential Path)</span>
-                </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className={`text-[10px] font-mono font-bold px-3 py-1 border rounded-none transition-all ${
+                  showBracket
+                    ? "bg-[#FF5722] border-[#FF5722] text-white"
+                    : "bg-slate-900 border-slate-700 text-slate-400"
+                }`}>
+                  {showBracket ? "▲ ซ่อนผังประกบคู่" : "▼ แสดงผังประกบคู่"}
+                </span>
               </div>
-            </div>
+            </button>
 
-            {/* Sport Selector Pills for Bracket */}
-            <div className="flex flex-wrap gap-1">
-              {bracketSports.map(sportOpt => {
-                // Check if district participates in this sport category
-                const hasMatches = districtProfile.matches.some(m => 
-                  m.sport === sportOpt.sport && 
-                  isSameCategory(m.category, sportOpt.category)
-                );
-                if (!hasMatches) return null;
-
-                const isSelected = activeBracketSport === sportOpt.id;
-                return (
-                  <button
-                    key={sportOpt.id}
-                    onClick={() => setActiveBracketSport(sportOpt.id)}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all cursor-pointer border rounded-none ${
-                      isSelected
-                        ? "bg-[#FF5722] text-white border-[#FF5722]"
-                        : "bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {sportOpt.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Bracket columns - Flow layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-              
-              {/* Column 1: Group Stage */}
-              <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
-                  <span className="text-xs font-black text-slate-200">1. รอบแรก (แบ่งกลุ่ม)</span>
-                  <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
-                    {roundGroupStage.length} แมตช์
-                  </span>
+            {/* Collapsible Content */}
+            {showBracket && (
+              <div className="border-t border-slate-800 p-5 space-y-4">
+                {/* Legend */}
+                <div className="flex flex-wrap gap-3 text-[10px] font-bold">
+                  <div className="flex items-center gap-1.5 text-slate-300">
+                    <span className="w-3 h-3 bg-slate-900 border border-slate-800 inline-block"></span>
+                    <span>โปรแกรมปกติ / ยืนยันคู่แล้ว</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-amber-400">
+                    <span className="w-3 h-3 bg-[#16120E] border border-dashed border-amber-500/50 inline-block"></span>
+                    <span>หากผ่านเข้ารอบ (Potential Path)</span>
+                  </div>
                 </div>
-                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                  {roundGroupStage.length === 0 ? (
-                    <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีการแข่งขันรอบแรกในสายนี้</div>
-                  ) : (
-                    roundGroupStage.map(m => (
-                      <div 
-                        key={m.id} 
-                        className="bg-[#111827] border border-slate-800/80 p-2 text-[11px] space-y-1 hover:border-slate-700 transition-colors"
-                      >
-                        <div className="flex justify-between text-[9px] font-mono text-slate-400">
-                          <span className="font-bold text-[#FF5722]">{m.group}</span>
-                          <span>{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
-                        </div>
-                        <div className="flex justify-between items-center font-sans font-bold pt-0.5">
-                          <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : "text-slate-300"}>
-                            {m.teamA}
-                          </span>
-                          <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
-                          <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : "text-slate-300"}>
-                            {m.teamB}
-                          </span>
-                        </div>
-                        {m.status === "completed" ? (
-                          <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5 mt-1">
-                            ผลการแข่ง: {m.scoreA} - {m.scoreB}
-                          </div>
-                        ) : m.status === "live" ? (
-                          <div className="text-[9px] font-mono text-center font-black bg-red-950/20 border border-red-900/30 text-red-400 py-0.5 mt-1 animate-pulse">
-                            กำลังแข่ง 🔴
-                          </div>
-                        ) : (
-                          <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5 mt-1">
-                            {m.date}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
 
-              {/* Column 2: Quarter-finals */}
-              <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
-                  <span className="text-xs font-black text-slate-200">2. รอบ 8 ทีมสุดท้าย</span>
-                  <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
-                    {roundQF.length} แมตช์
-                  </span>
-                </div>
-                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                  {roundQF.length === 0 ? (
-                    <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีการประกบคู่รอบนี้</div>
-                  ) : (
-                    roundQF.map(m => (
-                      <div 
-                        key={m.id} 
-                        className={`p-2 text-[11px] space-y-1.5 transition-colors ${
-                          m.isPotential 
-                            ? "border border-dashed border-amber-500/40 bg-[#16120E] hover:border-amber-500/60" 
-                            : "bg-[#111827] border border-slate-800 hover:border-slate-700"
+                {/* Sport Selector Pills for Bracket */}
+                <div className="flex flex-wrap gap-1">
+                  {bracketSports.map(sportOpt => {
+                    // Check if district participates in this sport category
+                    const hasMatches = districtProfile.matches.some(m => 
+                      m.sport === sportOpt.sport && 
+                      isSameCategory(m.category, sportOpt.category)
+                    );
+                    if (!hasMatches) return null;
+
+                    const isSelected = activeBracketSport === sportOpt.id;
+                    return (
+                      <button
+                        key={sportOpt.id}
+                        onClick={() => setActiveBracketSport(sportOpt.id)}
+                        className={`px-3 py-1.5 text-xs font-bold transition-all cursor-pointer border rounded-none ${
+                          isSelected
+                            ? "bg-[#FF5722] text-white border-[#FF5722]"
+                            : "bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
                         }`}
                       >
-                        <div className="flex justify-between text-[9px] font-mono">
-                          <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
-                            {m.isPotential ? "⏳ หากเข้ารอบ" : "ยืนยันคู่แข่งขัน"}
-                          </span>
-                          <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
-                        </div>
-                        <div className="flex justify-between items-center font-sans font-bold">
-                          <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamA?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
-                            {m.teamA}
-                          </span>
-                          <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
-                          <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamB?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
-                            {m.teamB}
-                          </span>
-                        </div>
-                        {m.status === "completed" ? (
-                          <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5">
-                            ผลการแข่ง: {m.scoreA} - {m.scoreB}
+                        {sportOpt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Bracket columns - Flow layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                  
+                  {/* Column 1: Group Stage */}
+                  <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
+                      <span className="text-xs font-black text-slate-200">1. รอบแรก (แบ่งกลุ่ม)</span>
+                      <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
+                        {roundGroupStage.length} แมตช์
+                      </span>
+                    </div>
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                      {roundGroupStage.length === 0 ? (
+                        <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีการแข่งขันรอบแรกในสายนี้</div>
+                      ) : (
+                        roundGroupStage.map(m => (
+                          <div 
+                            key={m.id} 
+                            className="bg-[#111827] border border-slate-800/80 p-2 text-[11px] space-y-1 hover:border-slate-700 transition-colors"
+                          >
+                            <div className="flex justify-between text-[9px] font-mono text-slate-400">
+                              <span className="font-bold text-[#FF5722]">{m.group}</span>
+                              <span>{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
+                            </div>
+                            <div className="flex justify-between items-center font-sans font-bold pt-0.5">
+                              <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : "text-slate-300"}>
+                                {m.teamA}
+                              </span>
+                              <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
+                              <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : "text-slate-300"}>
+                                {m.teamB}
+                              </span>
+                            </div>
+                            {m.status === "completed" ? (
+                              <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5 mt-1">
+                                ผลการแข่ง: {m.scoreA} - {m.scoreB}
+                              </div>
+                            ) : m.status === "live" ? (
+                              <div className="text-[9px] font-mono text-center font-black bg-red-950/20 border border-red-900/30 text-red-400 py-0.5 mt-1 animate-pulse">
+                                กำลังแข่ง 🔴
+                              </div>
+                            ) : (
+                              <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5 mt-1">
+                                {m.date}
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5">
-                            {m.date}
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Column 2: Quarter-finals */}
+                  <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
+                      <span className="text-xs font-black text-slate-200">2. รอบ 8 ทีมสุดท้าย</span>
+                      <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
+                        {roundQF.length} แมตช์
+                      </span>
+                    </div>
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                      {roundQF.length === 0 ? (
+                        <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีการประกบคู่รอบนี้</div>
+                      ) : (
+                        roundQF.map(m => (
+                          <div 
+                            key={m.id} 
+                            className={`p-2 text-[11px] space-y-1.5 transition-colors ${
+                              m.isPotential 
+                                ? "border border-dashed border-amber-500/40 bg-[#16120E] hover:border-amber-500/60" 
+                                : "bg-[#111827] border border-slate-800 hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex justify-between text-[9px] font-mono">
+                              <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
+                                {m.isPotential ? "⏳ หากเข้ารอบ" : "ยืนยันคู่แข่งขัน"}
+                              </span>
+                              <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
+                            </div>
+                            <div className="flex justify-between items-center font-sans font-bold">
+                              <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamA?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                                {m.teamA}
+                              </span>
+                              <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
+                              <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamB?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                                {m.teamB}
+                              </span>
+                            </div>
+                            {m.status === "completed" ? (
+                              <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5">
+                                ผลการแข่ง: {m.scoreA} - {m.scoreB}
+                              </div>
+                            ) : (
+                              <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5">
+                                {m.date}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    ))
-                  )}
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Column 3: Semifinals */}
+                  <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
+                      <span className="text-xs font-black text-slate-200">3. รอบรองชนะเลิศ</span>
+                      <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
+                        {roundSF.length} แมตช์
+                      </span>
+                    </div>
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                      {roundSF.length === 0 ? (
+                        <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีการประกบคู่รอบนี้</div>
+                      ) : (
+                        roundSF.map(m => (
+                          <div 
+                            key={m.id} 
+                            className={`p-2 text-[11px] space-y-1.5 transition-colors ${
+                              m.isPotential 
+                                ? "border border-dashed border-amber-500/40 bg-[#16120E] hover:border-amber-500/60" 
+                                : "bg-[#111827] border border-slate-800 hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex justify-between text-[9px] font-mono">
+                              <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
+                                {m.isPotential ? "⏳ หากเข้ารอบ" : "ยืนยันคู่แข่งขัน"}
+                              </span>
+                              <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
+                            </div>
+                            <div className="flex justify-between items-center font-sans font-bold">
+                              <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamA?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                                {m.teamA}
+                              </span>
+                              <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
+                              <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamB?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                                {m.teamB}
+                              </span>
+                            </div>
+                            {m.status === "completed" ? (
+                              <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5">
+                                ผลการแข่ง: {m.scoreA} - {m.scoreB}
+                              </div>
+                            ) : (
+                              <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5">
+                                {m.date}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Column 4: Finals / 3rd Place */}
+                  <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
+                      <span className="text-xs font-black text-slate-200">4. รอบชิงชนะเลิศ</span>
+                      <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
+                        {roundFinals.length} แมตช์
+                      </span>
+                    </div>
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                      {roundFinals.length === 0 ? (
+                        <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีข้อมูลรอบชิงชนะเลิศ</div>
+                      ) : (
+                        roundFinals.map(m => (
+                          <div 
+                            key={m.id} 
+                            className={`p-2 text-[11px] space-y-1.5 transition-colors ${
+                              m.isPotential 
+                                ? "border border-dashed border-amber-500/40 bg-[#16120E] hover:border-amber-500/60" 
+                                : "bg-[#111827] border border-slate-800 hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex justify-between text-[9px] font-mono">
+                              <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
+                                {m.isPotential ? "⏳ หากเข้ารอบ" : "รอบชิงตำแหน่ง"} {(() => {
+                                  const displayNum = getDisplayMatchNum(m.id, m.sport);
+                                  return displayNum ? `(คู่ที่ ${displayNum})` : "";
+                                })()}
+                              </span>
+                              <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-300 font-bold text-center bg-slate-900 border border-slate-800/80 py-0.5 font-mono">
+                              {m.round}
+                            </div>
+                            <div className="flex justify-between items-center font-sans font-bold">
+                              <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamA?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                                {m.teamA}
+                              </span>
+                              <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
+                              <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamB?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
+                                {m.teamB}
+                              </span>
+                            </div>
+                            {m.status === "completed" ? (
+                              <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5">
+                                ผลการแข่ง: {m.scoreA} - {m.scoreB}
+                              </div>
+                            ) : (
+                              <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5">
+                                {m.date}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
                 </div>
               </div>
-
-              {/* Column 3: Semifinals */}
-              <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
-                  <span className="text-xs font-black text-slate-200">3. รอบรองชนะเลิศ</span>
-                  <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
-                    {roundSF.length} แมตช์
-                  </span>
-                </div>
-                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                  {roundSF.length === 0 ? (
-                    <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีการประกบคู่รอบนี้</div>
-                  ) : (
-                    roundSF.map(m => (
-                      <div 
-                        key={m.id} 
-                        className={`p-2 text-[11px] space-y-1.5 transition-colors ${
-                          m.isPotential 
-                            ? "border border-dashed border-amber-500/40 bg-[#16120E] hover:border-amber-500/60" 
-                            : "bg-[#111827] border border-slate-800 hover:border-slate-700"
-                        }`}
-                      >
-                        <div className="flex justify-between text-[9px] font-mono">
-                          <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
-                            {m.isPotential ? "⏳ หากเข้ารอบ" : "ยืนยันคู่แข่งขัน"}
-                          </span>
-                          <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
-                        </div>
-                        <div className="flex justify-between items-center font-sans font-bold">
-                          <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamA?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
-                            {m.teamA}
-                          </span>
-                          <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
-                          <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamB?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
-                            {m.teamB}
-                          </span>
-                        </div>
-                        {m.status === "completed" ? (
-                          <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5">
-                            ผลการแข่ง: {m.scoreA} - {m.scoreB}
-                          </div>
-                        ) : (
-                          <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5">
-                            {m.date}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Column 4: Finals / 3rd Place */}
-              <div className="space-y-3 bg-[#0A0F1D]/60 p-3 border border-slate-800">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1">
-                  <span className="text-xs font-black text-slate-200">4. รอบชิงชนะเลิศ</span>
-                  <span className="text-[9px] font-mono font-bold bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-slate-400">
-                    {roundFinals.length} แมตช์
-                  </span>
-                </div>
-                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                  {roundFinals.length === 0 ? (
-                    <div className="text-[10px] text-slate-500 py-6 text-center italic">ไม่มีข้อมูลรอบชิงชนะเลิศ</div>
-                  ) : (
-                    roundFinals.map(m => (
-                      <div 
-                        key={m.id} 
-                        className={`p-2 text-[11px] space-y-1.5 transition-colors ${
-                          m.isPotential 
-                            ? "border border-dashed border-amber-500/40 bg-[#16120E] hover:border-amber-500/60" 
-                            : "bg-[#111827] border border-slate-800 hover:border-slate-700"
-                        }`}
-                      >
-                        <div className="flex justify-between text-[9px] font-mono">
-                          <span className={m.isPotential ? "text-amber-400 font-extrabold" : "text-slate-400 font-bold"}>
-                            {m.isPotential ? "⏳ หากเข้ารอบ" : "รอบชิงตำแหน่ง"} {(() => {
-                              const displayNum = getDisplayMatchNum(m.id, m.sport);
-                              return displayNum ? `(คู่ที่ ${displayNum})` : "";
-                            })()}
-                          </span>
-                          <span className="text-slate-400">{m.time} | {m.court.replace("สนามที่", "สนาม")}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-300 font-bold text-center bg-slate-900 border border-slate-800/80 py-0.5 font-mono">
-                          {m.round}
-                        </div>
-                        <div className="flex justify-between items-center font-sans font-bold">
-                          <span className={m.teamA === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamA?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
-                            {m.teamA}
-                          </span>
-                          <span className="text-slate-500 font-mono text-[9px] bg-slate-900 px-1 border border-slate-800">VS</span>
-                          <span className={m.teamB === selectedDistrict ? "text-[#00FF66] font-extrabold" : m.teamB?.includes(selectedDistrict) ? "text-[#00FF66]" : "text-slate-300"}>
-                            {m.teamB}
-                          </span>
-                        </div>
-                        {m.status === "completed" ? (
-                          <div className="text-[9px] font-mono text-center font-black bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 py-0.5">
-                            ผลการแข่ง: {m.scoreA} - {m.scoreB}
-                          </div>
-                        ) : (
-                          <div className="text-[9px] font-mono text-center text-slate-500 bg-slate-900/40 border border-slate-800/80 py-0.5">
-                            {m.date}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-            </div>
+            )}
           </div>
 
+
           {/* 3. Toolbar & Filters */}
-          <div className="bg-[#111827] border border-slate-800 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            
-            {/* Filter sport pills */}
-            <div className="flex flex-wrap gap-1">
-              {[
-                { id: "all", label: "🏆 กีฬาทั้งหมด" },
-                { id: "football", label: "⚽ ฟุตบอล" },
-                { id: "volleyball", label: "🏐 วอลเลย์บอล" },
-                { id: "petanque", label: "🥎 เปตอง" },
-                { id: "track", label: "🏃 กรีฑา/วิ่ง" }
-              ].map((pill) => {
-                const isActive = sportFilter === pill.id;
-                return (
-                  <button
-                    key={pill.id}
-                    onClick={() => setSportFilter(pill.id)}
-                    className={`px-3 py-1.5 font-bold text-xs cursor-pointer transition-all ${
-                      isActive 
-                        ? "bg-[#FF5722] text-white border border-[#FF5722]" 
-                        : "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    {pill.label}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="bg-[#111827] border border-slate-800 p-4 space-y-4">
 
-            {/* Search and Status Selectors */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              {/* Status Select */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="p-2 bg-[#0A0F1D] text-slate-300 border border-slate-800 text-xs font-bold focus:outline-none focus:border-[#FF5722] rounded-none"
-              >
-                <option value="all">📊 ทุกสถานะแข่งขัน</option>
-                <option value="live">🔴 กำลังแข่งขันสด (Live)</option>
-                <option value="pending">⏳ ยังไม่แข่งขัน (Upcoming)</option>
-                <option value="completed">🟢 สิ้นสุดแข่งขันแล้ว (Finished)</option>
-              </select>
-
-              {/* Search Bar */}
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search size={14} className="text-slate-500" />
+            {/* Date Picker Row */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-[#FF5722]" />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">
+                  เลือกวันที่ต้องการดูโปรแกรมแข่งขัน
                 </span>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ค้นหา รอบแข่ง / ฝ่ายตรงข้าม..."
-                  className="pl-9 pr-3 py-2 bg-[#0A0F1D] border border-slate-800 text-xs text-white placeholder-slate-500 rounded-none w-full sm:w-56 focus:outline-none focus:border-[#FF5722]"
-                />
+                {selectedDate && (
+                  <button
+                    onClick={() => setSelectedDate("")}
+                    className="ml-auto text-[10px] font-bold text-slate-500 hover:text-red-400 cursor-pointer transition-colors font-mono"
+                  >
+                    ✕ ล้างวัน
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {availableDates.length === 0 ? (
+                  <span className="text-xs text-slate-500 font-mono italic">ไม่พบข้อมูลวันแข่งขัน</span>
+                ) : (
+                  availableDates.map(date => {
+                    const isActive = selectedDate === date;
+                    const matchCount = districtProfile?.matches.filter(m => m.date === date && !m.isPotential).length ?? 0;
+                    return (
+                      <button
+                        key={date}
+                        onClick={() => setSelectedDate(isActive ? "" : date)}
+                        className={`flex flex-col items-center px-4 py-2 border font-bold text-xs cursor-pointer transition-all rounded-none ${
+                          isActive
+                            ? "bg-[#FF5722] border-[#FF5722] text-white shadow-[0_0_10px_rgba(255,87,34,0.3)]"
+                            : "bg-[#151F32] border-slate-700 text-slate-300 hover:border-[#FF5722]/60 hover:text-white hover:bg-[#1E293B]"
+                        }`}
+                      >
+                        <span className="text-xs font-black">{date}</span>
+                        <span className={`text-[9px] font-mono mt-0.5 ${isActive ? "text-white/80" : "text-slate-500"}`}>
+                          {matchCount} แมตช์
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
 
+            {/* Filter Row — only show when date is selected */}
+            {selectedDate && (
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-slate-800">
+                {/* Filter sport pills */}
+                <div className="flex flex-wrap gap-1">
+                  {[
+                    { id: "all", label: "🏆 กีฬาทั้งหมด" },
+                    { id: "football", label: "⚽ ฟุตบอล" },
+                    { id: "volleyball", label: "🏐 วอลเลย์บอล" },
+                    { id: "petanque", label: "🥎 เปตอง" },
+                    { id: "track", label: "🏃 กรีฑา/วิ่ง" }
+                  ].map((pill) => {
+                    const isActive = sportFilter === pill.id;
+                    return (
+                      <button
+                        key={pill.id}
+                        onClick={() => setSportFilter(pill.id)}
+                        className={`px-3 py-1.5 font-bold text-xs cursor-pointer transition-all ${
+                          isActive 
+                            ? "bg-[#FF5722] text-white border border-[#FF5722]" 
+                            : "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        {pill.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Search and Status Selectors */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  {/* Status Select */}
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="p-2 bg-[#0A0F1D] text-slate-300 border border-slate-800 text-xs font-bold focus:outline-none focus:border-[#FF5722] rounded-none"
+                  >
+                    <option value="all">📊 ทุกสถานะแข่งขัน</option>
+                    <option value="live">🔴 กำลังแข่งขันสด (Live)</option>
+                    <option value="pending">⏳ ยังไม่แข่งขัน (Upcoming)</option>
+                    <option value="completed">🟢 สิ้นสุดแข่งขันแล้ว (Finished)</option>
+                  </select>
+
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <Search size={14} className="text-slate-500" />
+                    </span>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="ค้นหา รอบแข่ง / ฝ่ายตรงข้าม..."
+                      className="pl-9 pr-3 py-2 bg-[#0A0F1D] border border-slate-800 text-xs text-white placeholder-slate-500 rounded-none w-full sm:w-56 focus:outline-none focus:border-[#FF5722]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 4. Matches Timeline */}
           <div className="space-y-8">
-            {matchesByDate.length === 0 ? (
+            {!selectedDate ? (
+              <div className="border border-dashed border-[#FF5722]/30 bg-[#111827] py-16 text-center space-y-3">
+                <Calendar className="mx-auto text-[#FF5722] opacity-60" size={40} />
+                <h4 className="text-base font-black text-slate-300 uppercase tracking-wide">เลือกวันที่เพื่อดูโปรแกรมแข่งขัน</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium leading-relaxed">
+                  กรุณาคลิกเลือกวันที่ด้านบน เพื่อแสดงโปรแกรมการแข่งขันของ <span className="text-[#00FF66] font-bold">{selectedDistrict}</span> ในวันนั้น
+                </p>
+                {availableDates.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-2 pt-2">
+                    {availableDates.map(date => (
+                      <button
+                        key={date}
+                        onClick={() => setSelectedDate(date)}
+                        className="px-4 py-1.5 bg-[#FF5722]/10 hover:bg-[#FF5722]/20 border border-[#FF5722]/40 text-[#FF5722] text-xs font-bold cursor-pointer transition-all rounded-none"
+                      >
+                        📅 {date}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : matchesByDate.length === 0 ? (
               <div className="border border-dashed border-slate-800 bg-[#111827] py-16 text-center space-y-2">
                 <AlertCircle className="mx-auto text-slate-600" size={32} />
                 <h4 className="text-base font-black text-slate-400 uppercase tracking-wide">ไม่พบโปรแกรมการแข่งขัน</h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
-                  ไม่พบบันทึกการแข่งขันที่ตรงตามเงื่อนไขตัวกรองของคุณ ลองเปลี่ยนประเภทกีฬาหรือล้างข้อความค้นหาของคุณ
+                  ไม่พบบันทึกการแข่งขันใน <span className="text-amber-400 font-bold">{selectedDate}</span> ที่ตรงตามเงื่อนไขตัวกรองของคุณ
                 </p>
                 {(sportFilter !== "all" || statusFilter !== "all" || searchQuery !== "") && (
                   <button
