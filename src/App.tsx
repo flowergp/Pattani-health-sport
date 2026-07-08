@@ -29,6 +29,47 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 
 export function resolveAllMatches(allMatches: Match[], drawLots?: { [key: string]: string[] }): Match[] {
+  // Build a lookup: match display-number → winner/loser for knockout brackets
+  // Match numbers are derived from the numeric suffix of the match ID (e.g. volley_men_19 → 19)
+  // We also need to scope lookups by sport + category to avoid cross-sport collisions.
+  // Format: key = `${sport}_${category}_${matchNum}` → { winner, loser }
+  const bracketResultMap: Record<string, { winner: string | null; loser: string | null }> = {};
+  allMatches.forEach(m => {
+    if (m.sport === "track") return;
+    if (m.status !== "completed") return;
+    if (!m.winner || m.winner === "เสมอ") return;
+    const suffix = m.id.split("_").pop();
+    const matchNum = Number(suffix);
+    if (isNaN(matchNum)) return;
+    const key = `${m.sport}_${m.category}_${matchNum}`;
+    const winner = m.winner;
+    const loser = winner === m.teamA ? m.teamB : m.teamA;
+    bracketResultMap[key] = { winner: winner || null, loser: loser || null };
+  });
+
+  const winnerRegex = /ผู้ชนะคู่ที่\s*(\d+)/;
+  const loserRegex = /ผู้แพ้คู่ที่\s*(\d+)/;
+
+  const resolveTeam = (label: string | undefined, sport: string, category: string): string | undefined => {
+    if (!label) return label;
+
+    const winnerMatch = label.match(winnerRegex);
+    if (winnerMatch) {
+      const num = parseInt(winnerMatch[1], 10);
+      const result = bracketResultMap[`${sport}_${category}_${num}`];
+      if (result?.winner) return result.winner;
+    }
+
+    const loserMatch = label.match(loserRegex);
+    if (loserMatch) {
+      const num = parseInt(loserMatch[1], 10);
+      const result = bracketResultMap[`${sport}_${category}_${num}`];
+      if (result?.loser) return result.loser;
+    }
+
+    return label;
+  };
+
   return allMatches.map(m => {
     if (m.sport === "track") return m;
     
@@ -36,10 +77,11 @@ export function resolveAllMatches(allMatches: Match[], drawLots?: { [key: string
     let teamB = m.teamB;
     let updated = false;
 
-    const regex = /ที่\s*(\d+)\s*สาย\s*([A-D])/i;
+    // 1. Resolve group-stage placeholders: "ที่ X สาย A"
+    const groupRegex = /ที่\s*(\d+)\s*สาย\s*([A-D])/i;
 
     if (teamA) {
-      const matchA = teamA.match(regex);
+      const matchA = teamA.match(groupRegex);
       if (matchA) {
         const rankNum = parseInt(matchA[1], 10);
         const groupLetter = matchA[2].toUpperCase();
@@ -64,7 +106,7 @@ export function resolveAllMatches(allMatches: Match[], drawLots?: { [key: string
     }
 
     if (teamB) {
-      const matchB = teamB.match(regex);
+      const matchB = teamB.match(groupRegex);
       if (matchB) {
         const rankNum = parseInt(matchB[1], 10);
         const groupLetter = matchB[2].toUpperCase();
@@ -86,6 +128,18 @@ export function resolveAllMatches(allMatches: Match[], drawLots?: { [key: string
           }
         }
       }
+    }
+
+    // 2. Resolve knockout bracket placeholders: "ผู้ชนะคู่ที่ XX" / "ผู้แพ้คู่ที่ XX"
+    const resolvedA = resolveTeam(teamA, m.sport, m.category);
+    if (resolvedA && resolvedA !== teamA) {
+      teamA = resolvedA;
+      updated = true;
+    }
+    const resolvedB = resolveTeam(teamB, m.sport, m.category);
+    if (resolvedB && resolvedB !== teamB) {
+      teamB = resolvedB;
+      updated = true;
     }
 
     return updated ? { ...m, teamA, teamB } : m;
@@ -647,6 +701,18 @@ export default function App() {
     persistMatches(updatedList);
   };
 
+  const handleUpdateMatches = async (updatesList: { id: string; updates: Partial<Match> }[]) => {
+    if (!isLoggedIn) return;
+
+    // Local-first update for multiple matches
+    const updatedList = matches.map((m) => {
+      const matchUpdate = updatesList.find(u => u.id === m.id);
+      return matchUpdate ? { ...m, ...matchUpdate.updates } : m;
+    });
+    saveMatchesLocally(updatedList);
+    persistMatches(updatedList);
+  };
+
   const handleAddMatch = async (newMatch: Omit<Match, "id" | "order">) => {
     if (!isLoggedIn) return;
 
@@ -1078,6 +1144,7 @@ export default function App() {
                     sport="track"
                     matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
+                    onUpdateMatches={handleUpdateMatches}
                     onAddMatch={handleAddMatch}
                     onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
@@ -1092,6 +1159,7 @@ export default function App() {
                     sport="petanque"
                     matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
+                    onUpdateMatches={handleUpdateMatches}
                     onAddMatch={handleAddMatch}
                     onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
@@ -1106,6 +1174,7 @@ export default function App() {
                     sport="volleyball"
                     matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
+                    onUpdateMatches={handleUpdateMatches}
                     onAddMatch={handleAddMatch}
                     onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}
@@ -1120,6 +1189,7 @@ export default function App() {
                     sport="football"
                     matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
+                    onUpdateMatches={handleUpdateMatches}
                     onAddMatch={handleAddMatch}
                     onDeleteMatch={handleDeleteMatch}
                     isLoggedIn={isLoggedIn}

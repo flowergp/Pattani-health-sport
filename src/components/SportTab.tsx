@@ -72,6 +72,7 @@ interface SportTabProps {
   sport: "track" | "petanque" | "volleyball" | "football";
   matches: Match[];
   onUpdateMatch: (id: string, updates: Partial<Match>) => Promise<void>;
+  onUpdateMatches?: (updatesList: { id: string; updates: Partial<Match> }[]) => Promise<void>;
   onAddMatch: (match: Omit<Match, "id" | "order">) => Promise<void>;
   onDeleteMatch: (id: string) => Promise<void>;
   isLoggedIn: boolean;
@@ -185,6 +186,7 @@ export default function SportTab({
   sport,
   matches,
   onUpdateMatch,
+  onUpdateMatches,
   onAddMatch,
   onDeleteMatch,
   isLoggedIn,
@@ -826,6 +828,8 @@ export default function SportTab({
       group: editGroup
     };
 
+    const batchUpdates: { id: string; updates: Partial<Match> }[] = [];
+
     if (sport === "track") {
       // Build final ranks array based on input
       const finalRanks: Participant[] = Object.entries(trackRanks)
@@ -870,9 +874,12 @@ export default function SportTab({
           // If we have qualifiers, merge them and update the final round match
           const mergedParticipants = [...currentTop4, ...sisterTop4];
           if (mergedParticipants.length > 0) {
-            await onUpdateMatch(finalMatch.id, {
-              participants: mergedParticipants,
-              ranks: mergedParticipants.map(name => ({ name }))
+            batchUpdates.push({
+              id: finalMatch.id,
+              updates: {
+                participants: mergedParticipants,
+                ranks: mergedParticipants.map(name => ({ name }))
+              }
             });
           }
         }
@@ -898,6 +905,18 @@ export default function SportTab({
 
       // Volleyball sets are no longer calculated automatically, standard score entry is used instead.
 
+      const propagate = (targetMatchId: string, teamName: string, slot: "teamA" | "teamB") => {
+        const target = matches.find(tm => tm.id === targetMatchId);
+        if (target) {
+          const existing = batchUpdates.find(u => u.id === targetMatchId);
+          if (existing) {
+            existing.updates[slot] = teamName;
+          } else {
+            batchUpdates.push({ id: targetMatchId, updates: { [slot]: teamName } });
+          }
+        }
+      };
+
       // Bracket-Match Automatic Progression for Petanque / Volleyball / Football!
       // When a knockout match is completed, we can propagate the winner to the next round!
       const finalWinner = updates.winner;
@@ -919,64 +938,73 @@ export default function SportTab({
           // Petanque Progression (25-28 to 29-30, 29-30 to 31-32)
           if (m.sport === "petanque") {
             const prefix = m.id.replace(`_${matchNum}`, "");
-            if (matchNum === 25) await propagateWinner(prefix + "_29", finalWinner, "teamA");
-            if (matchNum === 27) await propagateWinner(prefix + "_29", finalWinner, "teamB");
-            if (matchNum === 26) await propagateWinner(prefix + "_30", finalWinner, "teamA");
-            if (matchNum === 28) await propagateWinner(prefix + "_30", finalWinner, "teamB");
+            if (matchNum === 25) propagate(prefix + "_29", finalWinner, "teamA");
+            if (matchNum === 27) propagate(prefix + "_29", finalWinner, "teamB");
+            if (matchNum === 26) propagate(prefix + "_30", finalWinner, "teamA");
+            if (matchNum === 28) propagate(prefix + "_30", finalWinner, "teamB");
 
             // From Semi finals to Final / 3rd Place
             if (matchNum === 29) {
               const loser = finalWinner === editTeamA ? editTeamB : editTeamA;
-              await propagateWinner(prefix + "_32", finalWinner, "teamA"); // Final TeamA
-              await propagateWinner(prefix + "_31", loser, "teamA"); // 3rd Place TeamA
+              propagate(prefix + "_32", finalWinner, "teamA"); // Final TeamA
+              propagate(prefix + "_31", loser, "teamA"); // 3rd Place TeamA
             }
             if (matchNum === 30) {
               const loser = finalWinner === editTeamA ? editTeamB : editTeamA;
-              await propagateWinner(prefix + "_32", finalWinner, "teamB"); // Final TeamB
-              await propagateWinner(prefix + "_31", loser, "teamB"); // 3rd Place TeamB
+              propagate(prefix + "_32", finalWinner, "teamB"); // Final TeamB
+              propagate(prefix + "_31", loser, "teamB"); // 3rd Place TeamB
             }
           }
 
           // Volleyball Progression (19-22 to 23-24, 23-24 to 25-26)
           if (m.sport === "volleyball") {
             const prefix = m.id.replace(`_${matchNum}`, "");
-            if (matchNum === 19) await propagateWinner(prefix + "_23", finalWinner, "teamA");
-            if (matchNum === 21) await propagateWinner(prefix + "_23", finalWinner, "teamB");
-            if (matchNum === 20) await propagateWinner(prefix + "_24", finalWinner, "teamA");
-            if (matchNum === 22) await propagateWinner(prefix + "_24", finalWinner, "teamB");
+            if (matchNum === 19) propagate(prefix + "_23", finalWinner, "teamA");
+            if (matchNum === 21) propagate(prefix + "_23", finalWinner, "teamB");
+            if (matchNum === 20) propagate(prefix + "_24", finalWinner, "teamA");
+            if (matchNum === 22) propagate(prefix + "_24", finalWinner, "teamB");
 
             if (matchNum === 23) {
               const loser = finalWinner === editTeamA ? editTeamB : editTeamA;
-              await propagateWinner(prefix + "_26", finalWinner, "teamA"); // Final
-              await propagateWinner(prefix + "_25", loser, "teamA"); // 3rd
+              propagate(prefix + "_26", finalWinner, "teamA"); // Final
+              propagate(prefix + "_25", loser, "teamA"); // 3rd
             }
             if (matchNum === 24) {
               const loser = finalWinner === editTeamA ? editTeamB : editTeamA;
-              await propagateWinner(prefix + "_26", finalWinner, "teamB"); // Final
-              await propagateWinner(prefix + "_25", loser, "teamB"); // 3rd
+              propagate(prefix + "_26", finalWinner, "teamB"); // Final
+              propagate(prefix + "_25", loser, "teamB"); // 3rd
             }
           }
 
           // Football Progression (19-22 QF, 23-24 SF, 25 3rd, 26 Final)
           if (m.sport === "football") {
             const prefix = m.id.replace(`_${matchNum}`, "");
-            if (matchNum === 19) await propagateWinner(prefix + "_23", finalWinner, "teamA");
-            if (matchNum === 20) await propagateWinner(prefix + "_23", finalWinner, "teamB");
-            if (matchNum === 21) await propagateWinner(prefix + "_24", finalWinner, "teamA");
-            if (matchNum === 22) await propagateWinner(prefix + "_24", finalWinner, "teamB");
+            if (matchNum === 19) propagate(prefix + "_23", finalWinner, "teamA");
+            if (matchNum === 20) propagate(prefix + "_23", finalWinner, "teamB");
+            if (matchNum === 21) propagate(prefix + "_24", finalWinner, "teamA");
+            if (matchNum === 22) propagate(prefix + "_24", finalWinner, "teamB");
 
             if (matchNum === 23) {
-              await propagateWinner(prefix + "_26", finalWinner, "teamA"); // Final TeamA
+              propagate(prefix + "_26", finalWinner, "teamA"); // Final TeamA
             }
             if (matchNum === 24) {
-              await propagateWinner(prefix + "_26", finalWinner, "teamB"); // Final TeamB
+              propagate(prefix + "_26", finalWinner, "teamB"); // Final TeamB
             }
           }
         }
       }
     }
 
-    await onUpdateMatch(m.id, updates);
+    batchUpdates.push({ id: m.id, updates });
+
+    if (onUpdateMatches) {
+      await onUpdateMatches(batchUpdates);
+    } else {
+      for (const u of batchUpdates) {
+        await onUpdateMatch(u.id, u.updates);
+      }
+    }
+
     setEditingMatchId(null);
   };
 
@@ -1019,14 +1047,6 @@ export default function SportTab({
       await onDeleteMatch(matchId);
     } catch (err) {
       console.error("Failed to delete match: ", err);
-    }
-  };
-
-  const propagateWinner = async (targetMatchId: string, winnerName: string, slot: "teamA" | "teamB") => {
-    // Check if target match exists
-    const target = matches.find(m => m.id === targetMatchId);
-    if (target) {
-      await onUpdateMatch(targetMatchId, { [slot]: winnerName });
     }
   };
 
@@ -1357,7 +1377,7 @@ export default function SportTab({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {[
                   { id: "all", label: "✨ แสดงทั้งหมด", desc: "รวมทุกส่วน" },
-                  ...(sport === "petanque" ? [] : [{ id: "standings", label: "📊 ตารางคะแนน", desc: "รอบแบ่งกลุ่ม" }]),
+                  { id: "standings", label: "📊 ตารางคะแนน", desc: "รอบแบ่งกลุ่ม" },
                   { id: "matches", label: "📋 รายการแข่งขัน", desc: "และผลลัพธ์" },
                   { id: "bracket", label: "🏆 ผังประกบคู่", desc: "รอบน็อคเอ้าท์" }
                 ].map((tab) => {
