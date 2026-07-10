@@ -34,6 +34,8 @@ export const calculateMedals = (matches: Match[], drawLots?: { [key: string]: st
 
   // 1b. Process Track Direct Results from drawLots (ระบบวิ่งใหม่: บันทึกผลโดยตรงไม่ผ่านรอบ)
   // drawLots key format: "track_direct_result_<category>" -> [rank1, rank2, rank3]
+  // NOTE: สรุป 3 อันดับคะแนนรวมของการวิ่ง (Track Overall Summary) จะไม่ถูกนับในตารางสรุปเหรียญรางวัลนี้
+  // โดยจะนับเฉพาะเหรียญรางวัลจากประเภทการวิ่งแต่ละรุ่นโดยตรงเท่านั้น เพื่อไม่ให้เกิดเหรียญซ้ำซ้อน
   if (drawLots) {
     const trackCategories = Array.from(new Set(
       matches.filter(m => m.sport === "track").map(m => m.category).filter(Boolean)
@@ -53,6 +55,8 @@ export const calculateMedals = (matches: Match[], drawLots?: { [key: string]: st
 
   // 2. Process Petanque medals from drawLots
   // drawLots key format: "petanque_result_<category>" -> [gold, silver, bronze]
+  // NOTE: สรุป 3 อันดับคะแนนรวมของเปตอง (Petanque Overall Summary) จะไม่ถูกนับในตารางสรุปเหรียญรางวัลนี้
+  // โดยจะนับเฉพาะเหรียญรางวัลจากประเภทเปตองแต่ละรุ่นโดยตรงเท่านั้น เพื่อไม่ให้เกิดเหรียญซ้ำซ้อน
   if (drawLots) {
     const petanqueCategories = Array.from(new Set(
       matches.filter(m => m.sport === "petanque").map(m => m.category).filter(Boolean)

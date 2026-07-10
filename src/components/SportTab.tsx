@@ -913,9 +913,9 @@ export default function SportTab({
     setSelectedCourt("all");
   }, [selectedCategory]);
 
-  // Auto-select first non-empty category for non-track sports if empty
+  // Auto-select first non-empty category for non-track and non-petanque sports if empty
   useEffect(() => {
-    if (sport !== "track" && selectedCategory === "") {
+    if (sport !== "track" && sport !== "petanque" && selectedCategory === "") {
       const nonEmptyCats = Array.from(new Set(sportMatches.map((m) => m.category))).filter(Boolean);
       if (nonEmptyCats.length > 0) {
         setSelectedCategory(nonEmptyCats[0]);
@@ -924,7 +924,7 @@ export default function SportTab({
   }, [sport, sportMatches, selectedCategory]);
 
   // Get unique categories for this sport
-  const categories = sport === "track"
+  const categories = (sport === "track" || sport === "petanque")
     ? ["", ...Array.from(new Set(sportMatches.map((m) => m.category))).filter(Boolean)]
     : Array.from(new Set(sportMatches.map((m) => m.category))).filter(Boolean);
   // Get unique rounds for this sport
@@ -1668,7 +1668,7 @@ export default function SportTab({
                         : "bg-[#1E293B] text-slate-300 border-slate-700 hover:bg-[#2D3748]"
                     }`}
                   >
-                    {c === "" ? (sport === "track" ? "✨ แสดงทั้งหมด" : "⚠️ กรุณาเลือกประเภท") : c}
+                    {c === "" ? (sport === "track" || sport === "petanque" ? "✨ แสดงทั้งหมด" : "⚠️ กรุณาเลือกประเภท") : c}
                   </button>
                 );
               })}
@@ -1816,7 +1816,105 @@ export default function SportTab({
       )}
 
       {/* 🏅 ผลการแข่งขัน 3 อันดับ (เฉพาะเปตอง) — มีผลต่อตารางสรุปเหรียญ */}
-      {sport === "petanque" && selectedCategory !== "" && selectedCategory !== "all" && (() => {
+      {sport === "petanque" && (() => {
+        const isShowAll = !selectedCategory || selectedCategory === "" || selectedCategory === "all";
+
+        if (isShowAll) {
+          // ── โหมด "แสดงทั้งหมด": รวมเหรียญเปตองทุกประเภทจาก drawLots ──
+          const medalScore: Record<string, { gold: number; silver: number; bronze: number }> = {};
+          const petanqueKeys = Object.keys(drawLots || {}).filter(k => k.startsWith("petanque_result_"));
+          const categoriesWithResult: { cat: string; r1: string; r2: string; r3: string }[] = [];
+
+          petanqueKeys.forEach(key => {
+            const catName = key.replace("petanque_result_", "");
+            const res: string[] = (drawLots as any)[key] || [];
+            const r1 = res[0] || "";
+            const r2 = res[1] || "";
+            const r3 = res[2] || "";
+            if (!r1 && !r2 && !r3) return;
+            categoriesWithResult.push({ cat: catName, r1, r2, r3 });
+            [r1, r2, r3].forEach((team, idx) => {
+              if (!team) return;
+              if (!medalScore[team]) medalScore[team] = { gold: 0, silver: 0, bronze: 0 };
+              if (idx === 0) medalScore[team].gold++;
+              else if (idx === 1) medalScore[team].silver++;
+              else medalScore[team].bronze++;
+            });
+          });
+
+          const ranked = Object.entries(medalScore)
+            .sort(([, a], [, b]) => {
+              if (b.gold !== a.gold) return b.gold - a.gold;
+              if (b.silver !== a.silver) return b.silver - a.silver;
+              return b.bronze - a.bronze;
+            })
+            .slice(0, 3);
+
+          const medalBgs = [
+            "bg-yellow-500/10 border-yellow-500/40",
+            "bg-slate-300/10 border-slate-400/40",
+            "bg-amber-700/10 border-amber-700/40",
+          ];
+          const medalIcons = ["🥇", "🥈", "🥉"];
+          const medalLabels = ["ชนะเลิศรวมสูงสุด", "รองชนะเลิศรวม", "อันดับสามรวม"];
+          const medalColors = ["text-yellow-400", "text-slate-300", "text-amber-600"];
+
+          return (
+            <div className="border border-emerald-500/30 bg-[#111827] p-5 space-y-4 rounded-none shadow-lg">
+              <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+                <Trophy size={18} className="text-yellow-400" />
+                <h3 className="text-sm font-black uppercase text-white">
+                  🏆 สรุปผลการแข่งขันเปตอง <span className="text-emerald-400">รวมทุกประเภท</span>
+                  <span className="ml-2 text-[10px] font-mono font-bold text-slate-400 normal-case">({categoriesWithResult.length} ประเภทที่มีผล)</span>
+                </h3>
+              </div>
+
+              {ranked.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {ranked.map(([team, score], idx) => (
+                    <div key={team} className={`border ${medalBgs[idx]} p-4 rounded-none flex flex-col items-center gap-1.5`}>
+                      <span className="text-3xl">{medalIcons[idx]}</span>
+                      <span className={`text-[10px] font-mono font-bold uppercase ${medalColors[idx]}`}>
+                        {medalLabels[idx]}
+                      </span>
+                      <span className="text-base font-black text-center text-white mt-1">{team}</span>
+                      <div className="flex gap-2 mt-1 text-[10px] font-mono font-bold">
+                        {score.gold > 0 && <span className="text-yellow-400">🥇×{score.gold}</span>}
+                        {score.silver > 0 && <span className="text-slate-300">🥈×{score.silver}</span>}
+                        {score.bronze > 0 && <span className="text-amber-600">🥉×{score.bronze}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-slate-500 py-8 text-xs font-mono italic">
+                  ⏳ ยังไม่มีผลการแข่งขันเปตองประเภทใดเลย
+                </div>
+              )}
+
+              {/* รายละเอียดแยกตามประเภท */}
+              {categoriesWithResult.length > 0 && (
+                <div className="border-t border-slate-800 pt-3 space-y-2">
+                  <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block">📋 ผลแยกตามประเภท:</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {categoriesWithResult.map(({ cat, r1, r2, r3 }) => (
+                      <div key={cat} className="bg-slate-900/60 border border-slate-800 p-2.5 space-y-1">
+                        <span className="text-[10px] font-black text-[#00FF66] font-mono block truncate">🥎 {cat}</span>
+                        <div className="space-y-0.5">
+                          {r1 && <div className="text-[10px] font-mono text-slate-300"><span className="text-yellow-400">🥇</span> {r1}</div>}
+                          {r2 && <div className="text-[10px] font-mono text-slate-300"><span className="text-slate-400">🥈</span> {r2}</div>}
+                          {r3 && <div className="text-[10px] font-mono text-slate-300"><span className="text-amber-600">🥉</span> {r3}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // ── โหมดเลือกประเภทเฉพาะ ──
         const resultKey = `petanque_result_${selectedCategory}`;
         const savedResult: string[] = drawLots?.[resultKey] || [];
         const rank1 = savedResult[0] || "";
@@ -3433,17 +3531,49 @@ export default function SportTab({
                 ) : (
                   <>
                     {/* 🏅 สรุปผลการจัดอันดับ 3 อันดับแรก (Top 3 Standings PDF) */}
-                    {selectedCategory !== "" && (
+                    {(selectedCategory !== "" || sport === "track" || sport === "petanque") && (
                       <div className="border border-black p-4 mb-4 bg-gray-50/20">
                         <h3 className="text-xs sm:text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans flex items-center gap-1">
-                          🏅 สรุปผลการจัดอันดับ 3 อันดับแรก (Top 3 Standings)
+                          🏅 {selectedCategory === "" ? `สรุปผลการจัดอันดับ 3 อันดับแรก (คะแนนรวม${sport === "track" ? "วิ่ง" : "เปตอง"})` : "สรุปผลการจัดอันดับ 3 อันดับแรก (Top 3 Standings)"}
                         </h3>
                         {(() => {
                           let r1 = "";
                           let r2 = "";
                           let r3 = "";
 
-                          if (sport === "volleyball" || sport === "football") {
+                          if (selectedCategory === "") {
+                            // คำนวณสรุปผลคะแนนรวมของประเภทเปตองหรือประเภทวิ่ง
+                            const prefix = sport === "track" ? "track_direct_result_" : "petanque_result_";
+                            const medalScore: Record<string, { gold: number; silver: number; bronze: number }> = {};
+                            const keys = Object.keys(drawLots || {}).filter(k => k.startsWith(prefix));
+                            
+                            keys.forEach(key => {
+                              const res: string[] = (drawLots as any)[key] || [];
+                              const tr1 = res[0] || "";
+                              const tr2 = res[1] || "";
+                              const tr3 = res[2] || "";
+                              if (!tr1 && !tr2 && !tr3) return;
+                              [tr1, tr2, tr3].forEach((team, idx) => {
+                                if (!team) return;
+                                if (!medalScore[team]) medalScore[team] = { gold: 0, silver: 0, bronze: 0 };
+                                if (idx === 0) medalScore[team].gold++;
+                                else if (idx === 1) medalScore[team].silver++;
+                                else medalScore[team].bronze++;
+                              });
+                            });
+
+                            const ranked = Object.entries(medalScore)
+                              .sort(([, a], [, b]) => {
+                                if (b.gold !== a.gold) return b.gold - a.gold;
+                                if (b.silver !== a.silver) return b.silver - a.silver;
+                                return b.bronze - a.bronze;
+                              })
+                              .slice(0, 3);
+                            
+                            r1 = ranked[0]?.[0] || "";
+                            r2 = ranked[1]?.[0] || "";
+                            r3 = ranked[2]?.[0] || "";
+                          } else if (sport === "volleyball" || sport === "football") {
                             const finalMatch = matches.find(
                               (m) => m.sport === sport && m.category === selectedCategory && m.round === "รอบชิงชนะเลิศ"
                             );
