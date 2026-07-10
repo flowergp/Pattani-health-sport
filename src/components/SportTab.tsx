@@ -2457,10 +2457,10 @@ export default function SportTab({
             <div className="border border-dashed border-slate-800 bg-[#111827] p-8 text-center rounded-none text-white">
               <AlertCircle className="mx-auto text-[#FF5722] mb-3" size={32} />
               <h4 className="text-base font-black uppercase tracking-wide">
-                {sport === "track" ? "ไม่พบรายการแข่งขัน" : "กรุณาเลือกประเภทการแข่งขัน"}
+                {(sport as string) === "track" ? "ไม่พบรายการแข่งขัน" : "กรุณาเลือกประเภทการแข่งขัน"}
               </h4>
               <p className="text-xs text-slate-400 mt-2 font-semibold font-mono max-w-xl mx-auto leading-relaxed">
-                {sport === "track"
+                {(sport as string) === "track"
                   ? "ไม่พบบันทึกการแข่งขันกรีฑาในประเภทที่เลือก หรือรายการนี้ยังไม่มีการจัดแข่งในตาราง"
                   : selectedDistrict 
                     ? `ไม่พบรายการแข่งขันของ คป.สอ. ${selectedDistrict} ในกีฬานี้ หรือกรุณาเลือกประเภทการแข่งขันด้านบน` 

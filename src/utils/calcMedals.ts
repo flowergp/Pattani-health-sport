@@ -67,8 +67,9 @@ export const calculateMedals = (matches: Match[], drawLots?: { [key: string]: st
       if (bronze && medalMap[bronze]) medalMap[bronze].bronze += 1;
     });
 
-    // 3. Process Parade medals from drawLots
+    // 3. Process Parade medals from drawLots (Excluded as requested)
     // drawLots key format: "parade_result_<category>" -> [gold, silver, bronze]
+    /*
     const paradeCategories = Array.from(new Set(
       matches.filter(m => m.sport === "parade").map(m => m.category).filter(Boolean)
     ));
@@ -81,9 +82,11 @@ export const calculateMedals = (matches: Match[], drawLots?: { [key: string]: st
       if (silver && medalMap[silver]) medalMap[silver].silver += 1;
       if (bronze && medalMap[bronze]) medalMap[bronze].bronze += 1;
     });
+    */
 
-    // 4. Process Cheerleader medals from drawLots
+    // 4. Process Cheerleader medals from drawLots (Excluded as requested)
     // drawLots key format: "cheerleader_result_<category>" -> [gold, silver, bronze]
+    /*
     const cheerleaderCategories = Array.from(new Set(
       matches.filter(m => m.sport === "cheerleader").map(m => m.category).filter(Boolean)
     ));
@@ -96,6 +99,7 @@ export const calculateMedals = (matches: Match[], drawLots?: { [key: string]: st
       if (silver && medalMap[silver]) medalMap[silver].silver += 1;
       if (bronze && medalMap[bronze]) medalMap[bronze].bronze += 1;
     });
+    */
 
     // 5. Process Fun Sport medals from drawLots
     // drawLots key format: "fun_sport_result_<category>" -> [gold, silver, bronze]
