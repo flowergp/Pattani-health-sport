@@ -2061,6 +2061,74 @@ export default function SportTab({
         );
       })()}
 
+      {/* ⚽/🏐 ผลการแข่งขัน 3 อันดับ (ฟุตบอล / วอลเลย์บอล) — คำนวณอัตโนมัติจากแมตช์ชิงชนะเลิศและชิงที่ 3 */}
+      {(sport === "volleyball" || sport === "football") && selectedCategory !== "" && selectedCategory !== "all" && (() => {
+        const finalMatch = matches.find(
+          (m) => m.sport === sport && m.category === selectedCategory && m.round === "รอบชิงชนะเลิศ"
+        );
+        const thirdPlaceMatch = matches.find(
+          (m) => m.sport === sport && m.category === selectedCategory && m.round === "ชิงที่ 3"
+        );
+
+        let rank1 = "";
+        let rank2 = "";
+        let rank3 = "";
+
+        if (finalMatch && finalMatch.status === "completed") {
+          if (finalMatch.scoreA !== null && finalMatch.scoreB !== null) {
+            rank1 = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.teamA : finalMatch.teamB;
+            rank2 = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.teamB : finalMatch.teamA;
+          } else if (finalMatch.winner) {
+            rank1 = finalMatch.winner;
+            rank2 = finalMatch.winner === finalMatch.teamA ? finalMatch.teamB : finalMatch.teamA;
+          }
+        }
+
+        if (thirdPlaceMatch && thirdPlaceMatch.status === "completed") {
+          if (thirdPlaceMatch.scoreA !== null && thirdPlaceMatch.scoreB !== null) {
+            rank3 = thirdPlaceMatch.scoreA > thirdPlaceMatch.scoreB ? thirdPlaceMatch.teamA : thirdPlaceMatch.teamB;
+          } else if (thirdPlaceMatch.winner) {
+            rank3 = thirdPlaceMatch.winner;
+          }
+        }
+
+        const medals = [
+          { rank: 1, label: "🥇 อันดับที่ 1 (ชนะเลิศ)", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/40", value: rank1, key: "r1" },
+          { rank: 2, label: "🥈 อันดับที่ 2 (รองชนะเลิศ)", color: "text-slate-300", bg: "bg-slate-500/10 border-slate-500/40", value: rank2, key: "r2" },
+          { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศอันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
+        ];
+
+        return (
+          <div className="border border-[#FF5722]/30 bg-[#111827] p-5 space-y-4 rounded-none shadow-lg">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Trophy size={18} className="text-yellow-400" />
+              <h3 className="text-sm font-black uppercase text-white">
+                สรุปผลการแข่งขัน 3 อันดับแรก — <span className="text-emerald-400">{selectedCategory}</span>
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {medals.map((m) => (
+                <div key={m.key} className={`border ${m.bg} p-3 rounded-none flex flex-col items-center gap-1`}>
+                  <span className="text-2xl">{m.rank === 1 ? "🥇" : m.rank === 2 ? "🥈" : "🥉"}</span>
+                  <span className={`text-[10px] font-mono font-bold uppercase ${m.color}`}>
+                    {m.rank === 1 ? "ชนะเลิศ" : m.rank === 2 ? "รองชนะเลิศ" : "รองชนะเลิศ อันดับ 2"}
+                  </span>
+                  <span className={`text-sm font-black text-center ${m.value ? "text-white" : "text-slate-500 italic"}`}>
+                    {m.value || "— ยังไม่มีผลสรุป —"}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {!rank1 && !rank2 && !rank3 && (
+              <p className="text-[10.5px] font-semibold text-slate-400 text-center font-mono leading-relaxed mt-2 bg-slate-900/40 p-2.5 border border-slate-800/60">
+                💡 หมายเหตุ: ผลการจัดอันดับ 3 อันดับแรกจะสรุปให้โดยอัตโนมัติเมื่อแมตช์ "รอบชิงชนะเลิศ" และ "ชิงที่ 3" แข่งขันเสร็จสิ้นและบันทึกคะแนนเรียบร้อยแล้ว
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
       {/* 🏃 ผลการแข่งขัน (กรีฑา/วิ่ง) */}
       {sport === "track" && (() => {
         const isShowAll = !selectedCategory || selectedCategory === "" || selectedCategory === "all";
@@ -3425,6 +3493,93 @@ export default function SportTab({
                   </div>
                 ) : (
                   <>
+                    {/* 🏅 สรุปผลการจัดอันดับ 3 อันดับแรก (Top 3 Standings PDF) */}
+                    {selectedCategory !== "" && (
+                      <div className="border border-black p-4 mb-4 bg-gray-50/20">
+                        <h3 className="text-xs sm:text-sm font-bold border-b-2 border-black pb-1 mb-2 uppercase text-black font-sans flex items-center gap-1">
+                          🏅 สรุปผลการจัดอันดับ 3 อันดับแรก (Top 3 Standings)
+                        </h3>
+                        {(() => {
+                          let r1 = "";
+                          let r2 = "";
+                          let r3 = "";
+
+                          if (sport === "volleyball" || sport === "football") {
+                            const finalMatch = matches.find(
+                              (m) => m.sport === sport && m.category === selectedCategory && m.round === "รอบชิงชนะเลิศ"
+                            );
+                            const thirdPlaceMatch = matches.find(
+                              (m) => m.sport === sport && m.category === selectedCategory && m.round === "ชิงที่ 3"
+                            );
+
+                            if (finalMatch && finalMatch.status === "completed") {
+                              if (finalMatch.scoreA !== null && finalMatch.scoreB !== null) {
+                                r1 = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.teamA : finalMatch.teamB;
+                                r2 = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.teamB : finalMatch.teamA;
+                              } else if (finalMatch.winner) {
+                                r1 = finalMatch.winner;
+                                r2 = finalMatch.winner === finalMatch.teamA ? finalMatch.teamB : finalMatch.teamA;
+                              }
+                            }
+
+                            if (thirdPlaceMatch && thirdPlaceMatch.status === "completed") {
+                              if (thirdPlaceMatch.scoreA !== null && thirdPlaceMatch.scoreB !== null) {
+                                r3 = thirdPlaceMatch.scoreA > thirdPlaceMatch.scoreB ? thirdPlaceMatch.teamA : thirdPlaceMatch.teamB;
+                              } else if (thirdPlaceMatch.winner) {
+                                r3 = thirdPlaceMatch.winner;
+                              }
+                            }
+                          } else if (sport === "petanque") {
+                            const savedResult = drawLots?.[`petanque_result_${selectedCategory}`] || [];
+                            r1 = savedResult[0] || "";
+                            r2 = savedResult[1] || "";
+                            r3 = savedResult[2] || "";
+                          } else if (sport === "fun_sport") {
+                            const savedResult = drawLots?.[`fun_sport_result_${selectedCategory}`] || [];
+                            r1 = savedResult[0] || "";
+                            r2 = savedResult[1] || "";
+                            r3 = savedResult[2] || "";
+                          } else if (sport === "track") {
+                            const savedResult = drawLots?.[`track_direct_result_${selectedCategory}`] || [];
+                            r1 = savedResult[0] || "";
+                            r2 = savedResult[1] || "";
+                            r3 = savedResult[2] || "";
+                          } else if (sport === "parade") {
+                            const savedResult = drawLots?.[`parade_result_${selectedCategory}`] || [];
+                            r1 = savedResult[0] || "";
+                            r2 = savedResult[1] || "";
+                            r3 = savedResult[2] || "";
+                          } else if (sport === "cheerleader") {
+                            const savedResult = drawLots?.[`cheerleader_result_${selectedCategory}`] || [];
+                            r1 = savedResult[0] || "";
+                            r2 = savedResult[1] || "";
+                            r3 = savedResult[2] || "";
+                          }
+
+                          if (!r1 && !r2 && !r3) {
+                            return <p className="text-xs text-gray-500 italic font-sans">ยังไม่มีผลการจัดอันดับอย่างเป็นทางการ</p>;
+                          }
+
+                          return (
+                            <div className="grid grid-cols-3 gap-2 text-center text-xs font-sans">
+                              <div className="border border-gray-300 p-2 bg-yellow-500/5">
+                                <span className="font-bold block text-yellow-600">🥇 ชนะเลิศ</span>
+                                <span className="font-black text-black">{r1 || "—"}</span>
+                              </div>
+                              <div className="border border-gray-300 p-2 bg-slate-300/5">
+                                <span className="font-bold block text-slate-500">🥈 รองชนะเลิศ อันดับ 1</span>
+                                <span className="font-black text-black">{r2 || "—"}</span>
+                              </div>
+                              <div className="border border-gray-300 p-2 bg-amber-700/5">
+                                <span className="font-bold block text-amber-600">🥉 รองชนะเลิศ อันดับ 2</span>
+                                <span className="font-black text-black">{r3 || "—"}</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
                     {/* Group Standings (if applicable) */}
                     {sport !== "track" && sport !== "petanque" && selectedCategory !== "" && (
                       <div>
