@@ -754,35 +754,17 @@ export const getInitialMatches = (): Match[] => {
     order: currentOrder++
   });
 
-  // --- 5. PARADE (พาเหรด) ---
-  // ที่ 1, 2, 3, 4 — บันทึกผลผ่าน drawLots key: "parade_result_พาเหรด"
+  // --- 5. PARADE & CHEERLEADER (พาเหรดและประกวดกองเชียร์) ---
+  // ที่ 1, 2, 3 — บันทึกผลผ่าน drawLots key: "parade_result_พาเหรดและประกวดกองเชียร์"
   matches.push({
     id: "parade_result_1",
     sport: "parade",
-    category: "พาเหรด",
+    category: "พาเหรดและประกวดกองเชียร์",
     gender: "ผสม",
     group: "",
     round: "รอบชิงชนะเลิศ",
     court: "สนามกีฬา",
     time: "08.00 น.",
-    date: "10 ก.ค. 69",
-    status: "pending",
-    participants: [],
-    ranks: [],
-    order: currentOrder++
-  });
-
-  // --- 6. CHEERLEADER (ประกวดกองเชียร์) ---
-  // ที่ 1, 2, 3, 4 — บันทึกผลผ่าน drawLots key: "cheerleader_result_ประกวดกองเชียร์"
-  matches.push({
-    id: "cheerleader_result_1",
-    sport: "cheerleader",
-    category: "ประกวดกองเชียร์",
-    gender: "ผสม",
-    group: "",
-    round: "รอบชิงชนะเลิศ",
-    court: "สนามกีฬา",
-    time: "10.00 น.",
     date: "10 ก.ค. 69",
     status: "pending",
     participants: [],

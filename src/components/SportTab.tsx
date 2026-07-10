@@ -1834,7 +1834,7 @@ export default function SportTab({
         const medals = [
           { rank: 1, label: "🥇 อันดับที่ 1 (ชนะเลิศ)", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/40", value: rank1, key: "r1" },
           { rank: 2, label: "🥈 อันดับที่ 2 (รองชนะเลิศ)", color: "text-slate-300", bg: "bg-slate-500/10 border-slate-500/40", value: rank2, key: "r2" },
-          { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศอันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
+          { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศ อันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
         ];
 
         return (
@@ -1878,26 +1878,24 @@ export default function SportTab({
         );
       })()}
 
-      {/* 🎺 ผลการแข่งขัน (พาเหรด) — เหมือนเปตอง */}
+      {/* 🎺 ผลการแข่งขัน (พาเหรดและประกวดกองเชียร์) — เหมือนเปตอง */}
       {sport === "parade" && (() => {
-        const cat = selectedCategory && selectedCategory !== "all" ? selectedCategory : "พาเหรด";
+        const cat = selectedCategory && selectedCategory !== "all" ? selectedCategory : "พาเหรดและประกวดกองเชียร์";
         const resultKey = `parade_result_${cat}`;
         const savedResult: string[] = drawLots?.[resultKey] || [];
         const rank1 = savedResult[0] || "";
         const rank2 = savedResult[1] || "";
         const rank3 = savedResult[2] || "";
-        const rank4 = savedResult[3] || "";
 
-        const handleSaveResult = async (r1: string, r2: string, r3: string, r4?: string) => {
+        const handleSaveResult = async (r1: string, r2: string, r3: string) => {
           if (!onUpdateDrawLots) return;
-          await onUpdateDrawLots(resultKey, [r1, r2, r3, r4 || ""].filter((_, i) => i < 4));
+          await onUpdateDrawLots(resultKey, [r1, r2, r3]);
         };
 
         const medals = [
           { rank: 1, label: "🥇 อันดับที่ 1 (ชนะเลิศ)", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/40", value: rank1, key: "r1" },
           { rank: 2, label: "🥈 อันดับที่ 2 (รองชนะเลิศ)", color: "text-slate-300", bg: "bg-slate-500/10 border-slate-500/40", value: rank2, key: "r2" },
           { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศ อันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
-          { rank: 4, label: "🏅 อันดับที่ 4 (รองชนะเลิศ อันดับ 3)", color: "text-amber-700", bg: "bg-amber-800/10 border-amber-800/40", value: rank4, key: "r4" },
         ];
 
         return (
@@ -1905,17 +1903,17 @@ export default function SportTab({
             <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
               <Trophy size={18} className="text-yellow-400" />
               <h3 className="text-sm font-black uppercase text-white">
-                ผลการแข่งขัน 4 อันดับ — <span className="text-emerald-400">{cat}</span>
+                ผลการแข่งขัน 3 อันดับ — <span className="text-emerald-400">{cat}</span>
               </h3>
             </div>
 
-            {(rank1 || rank2 || rank3 || rank4) && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {(rank1 || rank2 || rank3) && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {medals.map((m) => (
                   <div key={m.key} className={`border ${m.bg} p-3 rounded-none flex flex-col items-center gap-1`}>
-                    <span className="text-2xl">{m.rank === 1 ? "🥇" : m.rank === 2 ? "🥈" : m.rank === 3 ? "🥉" : "🏅"}</span>
+                    <span className="text-2xl">{m.rank === 1 ? "🥇" : m.rank === 2 ? "🥈" : "🥉"}</span>
                     <span className={`text-[10px] font-mono font-bold uppercase ${m.color}`}>
-                      {m.rank === 1 ? "ชนะเลิศ" : m.rank === 2 ? "รองชนะเลิศ" : m.rank === 3 ? "อันดับสาม" : "อันดับสี่"}
+                      {m.rank === 1 ? "ชนะเลิศ" : m.rank === 2 ? "รองชนะเลิศ" : "รองชนะเลิศ อันดับ 2"}
                     </span>
                     <span className={`text-sm font-black text-center ${m.value ? "text-white" : "text-slate-600"}`}>
                       {m.value || "— ยังไม่ระบุ —"}
@@ -1926,79 +1924,20 @@ export default function SportTab({
             )}
 
             {isLoggedIn && onUpdateDrawLots && (
-              <Parade4ResultForm
+              <PetanqueResultForm
+                medals={medals}
                 catTeams={TEAM_NAMES}
-                onSave={(r1, r2, r3, r4) => handleSaveResult(r1, r2, r3, r4)}
+                onSave={handleSaveResult}
                 currentR1={rank1}
                 currentR2={rank2}
                 currentR3={rank3}
-                currentR4={rank4}
               />
             )}
           </div>
         );
       })()}
 
-      {/* 📣 ผลการแข่งขัน (ประกวดกองเชียร์) — เหมือนเปตอง */}
-      {sport === "cheerleader" && (() => {
-        const cat = selectedCategory && selectedCategory !== "all" ? selectedCategory : "ประกวดกองเชียร์";
-        const resultKey = `cheerleader_result_${cat}`;
-        const savedResult: string[] = drawLots?.[resultKey] || [];
-        const rank1 = savedResult[0] || "";
-        const rank2 = savedResult[1] || "";
-        const rank3 = savedResult[2] || "";
-        const rank4 = savedResult[3] || "";
 
-        const handleSaveResult = async (r1: string, r2: string, r3: string, r4?: string) => {
-          if (!onUpdateDrawLots) return;
-          await onUpdateDrawLots(resultKey, [r1, r2, r3, r4 || ""].filter((_, i) => i < 4));
-        };
-
-        const medals = [
-          { rank: 1, label: "🥇 อันดับที่ 1 (ชนะเลิศ)", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/40", value: rank1, key: "r1" },
-          { rank: 2, label: "🥈 อันดับที่ 2 (รองชนะเลิศ)", color: "text-slate-300", bg: "bg-slate-500/10 border-slate-500/40", value: rank2, key: "r2" },
-          { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศ อันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
-          { rank: 4, label: "🏅 อันดับที่ 4 (รองชนะเลิศ อันดับ 3)", color: "text-amber-700", bg: "bg-amber-800/10 border-amber-800/40", value: rank4, key: "r4" },
-        ];
-
-        return (
-          <div className="border border-emerald-500/30 bg-[#111827] p-5 space-y-4 rounded-none shadow-lg">
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Trophy size={18} className="text-yellow-400" />
-              <h3 className="text-sm font-black uppercase text-white">
-                ผลการแข่งขัน 4 อันดับ — <span className="text-emerald-400">{cat}</span>
-              </h3>
-            </div>
-
-            {(rank1 || rank2 || rank3 || rank4) && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {medals.map((m) => (
-                  <div key={m.key} className={`border ${m.bg} p-3 rounded-none flex flex-col items-center gap-1`}>
-                    <span className="text-2xl">{m.rank === 1 ? "🥇" : m.rank === 2 ? "🥈" : m.rank === 3 ? "🥉" : "🏅"}</span>
-                    <span className={`text-[10px] font-mono font-bold uppercase ${m.color}`}>
-                      {m.rank === 1 ? "ชนะเลิศ" : m.rank === 2 ? "รองชนะเลิศ" : m.rank === 3 ? "อันดับสาม" : "อันดับสี่"}
-                    </span>
-                    <span className={`text-sm font-black text-center ${m.value ? "text-white" : "text-slate-600"}`}>
-                      {m.value || "— ยังไม่ระบุ —"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {isLoggedIn && onUpdateDrawLots && (
-              <Parade4ResultForm
-                catTeams={TEAM_NAMES}
-                onSave={(r1, r2, r3, r4) => handleSaveResult(r1, r2, r3, r4)}
-                currentR1={rank1}
-                currentR2={rank2}
-                currentR3={rank3}
-                currentR4={rank4}
-              />
-            )}
-          </div>
-        );
-      })()}
 
       {/* 🎉 ผลการแข่งขัน (กีฬามหาสนุก) — เหมือนเปตอง */}
       {sport === "fun_sport" && (() => {
@@ -3457,7 +3396,7 @@ export default function SportTab({
                     sport === "volleyball" ? "วอลเลย์บอล (Volleyball)" :
                     sport === "petanque" ? "เปตอง (Petanque)" :
                     sport === "track" ? "กรีฑา (Track & Field)" :
-                    sport === "parade" ? "พาเหรด" :
+                    sport === "parade" ? "พาเหรดและประกวดกองเชียร์" :
                     sport === "cheerleader" ? "ประกวดกองเชียร์" :
                     sport === "fun_sport" ? "กีฬามหาสนุก" : sport
                   }</strong></span>

@@ -920,8 +920,7 @@ export default function App() {
                   { id: "volleyball", label: "🏐 วอลเลย์บอล", activeColor: "#FF5722" },
                   { id: "petanque", label: "🥎 เปตอง", activeColor: "#10B981" },
                   { id: "track", label: "🏃 กรีฑา/วิ่ง", activeColor: "#00FF66" },
-                  { id: "parade", label: "🎺 พาเหรด", activeColor: "#A855F7" },
-                  { id: "cheerleader", label: "📣 ประกวดกองเชียร์", activeColor: "#EC4899" },
+                  { id: "parade", label: "🎺 พาเหรดและประกวดกองเชียร์", activeColor: "#A855F7" },
                   { id: "fun_sport", label: "🎉 กีฬามหาสนุก", activeColor: "#F59E0B" },
                 ].map((tab) => {
                   const isActive = activeTab === tab.id;
@@ -1217,20 +1216,6 @@ export default function App() {
                   />
                 )}
 
-                {activeTab === "cheerleader" && (
-                  <SportTab
-                    sport="cheerleader"
-                    matches={resolvedMatches}
-                    onUpdateMatch={handleUpdateMatch}
-                    onUpdateMatches={handleUpdateMatches}
-                    onAddMatch={handleAddMatch}
-                    onDeleteMatch={handleDeleteMatch}
-                    isLoggedIn={isLoggedIn}
-                    selectedDistrict={selectedDistrict}
-                    drawLots={drawLots}
-                    onUpdateDrawLots={handleUpdateDrawLots}
-                  />
-                )}
 
                 {activeTab === "fun_sport" && (
                   <SportTab
