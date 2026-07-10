@@ -193,7 +193,7 @@ const safeLocalStorage = {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "track" | "petanque" | "volleyball" | "football" | "admins" | "my-schedule">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "track" | "petanque" | "volleyball" | "football" | "parade" | "cheerleader" | "fun_sport" | "admins" | "my-schedule">("dashboard");
   // Session-only: never persisted, so a single bad connection can't
   // permanently silo a device in local mode — every reload retries the cloud
   // (cheap now: 1 read per load with the single-doc layout).
@@ -920,6 +920,9 @@ export default function App() {
                   { id: "volleyball", label: "🏐 วอลเลย์บอล", activeColor: "#FF5722" },
                   { id: "petanque", label: "🥎 เปตอง", activeColor: "#10B981" },
                   { id: "track", label: "🏃 กรีฑา/วิ่ง", activeColor: "#00FF66" },
+                  { id: "parade", label: "🎺 พาเหรด", activeColor: "#A855F7" },
+                  { id: "cheerleader", label: "📣 ประกวดกองเชียร์", activeColor: "#EC4899" },
+                  { id: "fun_sport", label: "🎉 กีฬามหาสนุก", activeColor: "#F59E0B" },
                 ].map((tab) => {
                   const isActive = activeTab === tab.id;
                   return (
@@ -1187,6 +1190,51 @@ export default function App() {
                 {activeTab === "football" && (
                   <SportTab
                     sport="football"
+                    matches={resolvedMatches}
+                    onUpdateMatch={handleUpdateMatch}
+                    onUpdateMatches={handleUpdateMatches}
+                    onAddMatch={handleAddMatch}
+                    onDeleteMatch={handleDeleteMatch}
+                    isLoggedIn={isLoggedIn}
+                    selectedDistrict={selectedDistrict}
+                    drawLots={drawLots}
+                    onUpdateDrawLots={handleUpdateDrawLots}
+                  />
+                )}
+
+                {activeTab === "parade" && (
+                  <SportTab
+                    sport="parade"
+                    matches={resolvedMatches}
+                    onUpdateMatch={handleUpdateMatch}
+                    onUpdateMatches={handleUpdateMatches}
+                    onAddMatch={handleAddMatch}
+                    onDeleteMatch={handleDeleteMatch}
+                    isLoggedIn={isLoggedIn}
+                    selectedDistrict={selectedDistrict}
+                    drawLots={drawLots}
+                    onUpdateDrawLots={handleUpdateDrawLots}
+                  />
+                )}
+
+                {activeTab === "cheerleader" && (
+                  <SportTab
+                    sport="cheerleader"
+                    matches={resolvedMatches}
+                    onUpdateMatch={handleUpdateMatch}
+                    onUpdateMatches={handleUpdateMatches}
+                    onAddMatch={handleAddMatch}
+                    onDeleteMatch={handleDeleteMatch}
+                    isLoggedIn={isLoggedIn}
+                    selectedDistrict={selectedDistrict}
+                    drawLots={drawLots}
+                    onUpdateDrawLots={handleUpdateDrawLots}
+                  />
+                )}
+
+                {activeTab === "fun_sport" && (
+                  <SportTab
+                    sport="fun_sport"
                     matches={resolvedMatches}
                     onUpdateMatch={handleUpdateMatch}
                     onUpdateMatches={handleUpdateMatches}

@@ -69,7 +69,7 @@ function parseTimeToMinutes(timeStr: string): number {
 }
 
 interface SportTabProps {
-  sport: "track" | "petanque" | "volleyball" | "football";
+  sport: "track" | "petanque" | "volleyball" | "football" | "parade" | "cheerleader" | "fun_sport";
   matches: Match[];
   onUpdateMatch: (id: string, updates: Partial<Match>) => Promise<void>;
   onUpdateMatches?: (updatesList: { id: string; updates: Partial<Match> }[]) => Promise<void>;
@@ -181,6 +181,313 @@ function PetanqueResultForm({ medals, catTeams, onSave, currentR1, currentR2, cu
     </div>
   );
 }
+
+// ===== Parade4ResultForm: เหมือน PetanqueResultForm แต่มี 4 อันดับ (พาเหรด/กองเชียร์) =====
+interface Parade4ResultFormProps {
+  catTeams: string[];
+  onSave: (r1: string, r2: string, r3: string, r4: string) => void;
+  currentR1: string;
+  currentR2: string;
+  currentR3: string;
+  currentR4: string;
+}
+
+function Parade4ResultForm({ catTeams, onSave, currentR1, currentR2, currentR3, currentR4 }: Parade4ResultFormProps) {
+  const [r1, setR1] = useState(currentR1);
+  const [r2, setR2] = useState(currentR2);
+  const [r3, setR3] = useState(currentR3);
+  const [r4, setR4] = useState(currentR4);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  React.useEffect(() => {
+    setR1(currentR1);
+    setR2(currentR2);
+    setR3(currentR3);
+    setR4(currentR4);
+  }, [currentR1, currentR2, currentR3, currentR4]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(r1, r2, r3, r4);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getAvailableTeams = (excludeVals: string[]) => [
+    "",
+    ...catTeams.filter(t => !excludeVals.includes(t)),
+  ];
+
+  const rankValues = [r1, r2, r3, r4];
+  const rankSetters = [setR1, setR2, setR3, setR4];
+  const rankKeys = ["r1", "r2", "r3", "r4"];
+  const rankLabels = [
+    "🥇 อันดับที่ 1 — ชนะเลิศ",
+    "🥈 อันดับที่ 2 — รองชนะเลิศ",
+    "🥉 อันดับที่ 3 — รองชนะเลิศ อันดับ 2",
+    "🏅 อันดับที่ 4 — รองชนะเลิศ อันดับ 3",
+  ];
+
+  return (
+    <div className="border border-slate-700 bg-[#0F172A] p-4 space-y-3 rounded-none">
+      <div className="flex items-center gap-2 mb-1">
+        <Save size={14} className="text-emerald-400" />
+        <span className="text-[11px] font-black uppercase text-emerald-400 font-mono">
+          เลือกผลการแข่งขัน (Admin เท่านั้น)
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {rankValues.map((val, idx) => {
+          const others = rankValues.filter((_, i) => i !== idx);
+          const available = getAvailableTeams(others);
+          return (
+            <div key={rankKeys[idx]}>
+              <label className="block text-[10px] font-bold font-mono uppercase text-slate-400 mb-1">
+                {rankLabels[idx]}
+              </label>
+              <select
+                value={val}
+                onChange={(e) => rankSetters[idx](e.target.value)}
+                className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-bold focus:outline-none focus:border-emerald-500 rounded-none cursor-pointer"
+              >
+                <option value="">— เลือกทีม —</option>
+                {available.filter(t => t !== "").map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+                {val && !available.includes(val) && (
+                  <option value={val}>{val}</option>
+                )}
+              </select>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-end pt-1">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving}
+          className={`px-5 py-2 font-bold text-xs uppercase tracking-wide border transition-all cursor-pointer rounded-none flex items-center gap-2 ${
+            saved
+              ? "bg-emerald-600 border-emerald-500 text-white"
+              : "bg-[#FF5722] hover:bg-[#E04E1D] border-[#FF5722] text-white"
+          } disabled:opacity-50`}
+        >
+          {isSaving ? "⏳ กำลังบันทึก..." : saved ? "✅ บันทึกสำเร็จ" : "💾 บันทึกผล 4 อันดับ"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+interface RankResultFormProps {
+  numRanks: 3 | 4; // จำนวนอันดับที่ต้องเลือก
+  catTeams: string[];
+  onSave: (ranks: string[]) => void;
+  currentRanks: string[];
+  sportLabel: string; // ชื่อกีฬา เช่น "พาเหรด"
+}
+
+function RankResultForm({ numRanks, catTeams, onSave, currentRanks, sportLabel }: RankResultFormProps) {
+  const initRanks = Array.from({ length: numRanks }, (_, i) => currentRanks[i] || "");
+  const [ranks, setRanks] = useState<string[]>(initRanks);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  React.useEffect(() => {
+    setRanks(Array.from({ length: numRanks }, (_, i) => currentRanks[i] || ""));
+  }, [currentRanks, numRanks]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(ranks);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getAvailableTeams = (excludeVals: string[]) => [
+    "",
+    ...catTeams.filter(t => !excludeVals.includes(t)),
+  ];
+
+  const rankLabels = [
+    "🥇 อันดับที่ 1 — ชนะเลิศ",
+    "🥈 อันดับที่ 2 — รองชนะเลิศ",
+    "🥉 อันดับที่ 3 — อันดับสาม",
+    "🏅 อันดับที่ 4 — อันดับสี่",
+  ];
+
+  return (
+    <div className="border border-slate-700 bg-[#0F172A] p-4 space-y-3 rounded-none">
+      <div className="flex items-center gap-2 mb-1">
+        <Save size={14} className="text-purple-400" />
+        <span className="text-[11px] font-black uppercase text-purple-400 font-mono">
+          เลือกผลการแข่งขัน {sportLabel} (Admin เท่านั้น)
+        </span>
+      </div>
+
+      <div className={`grid grid-cols-1 ${numRanks === 4 ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"} gap-3`}>
+        {ranks.map((val, idx) => {
+          const others = ranks.filter((_, i) => i !== idx);
+          const available = getAvailableTeams(others);
+          return (
+            <div key={idx}>
+              <label className="block text-[10px] font-bold font-mono uppercase text-slate-400 mb-1">
+                {rankLabels[idx]}
+              </label>
+              <select
+                value={val}
+                onChange={(e) => {
+                  const newRanks = [...ranks];
+                  newRanks[idx] = e.target.value;
+                  setRanks(newRanks);
+                }}
+                className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-bold focus:outline-none focus:border-purple-500 rounded-none cursor-pointer"
+              >
+                <option value="">— เลือกทีม —</option>
+                {available.filter(t => t !== "").map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+                {val && !available.includes(val) && (
+                  <option value={val}>{val}</option>
+                )}
+              </select>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-end pt-1">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving}
+          className={`px-5 py-2 font-bold text-xs uppercase tracking-wide border transition-all cursor-pointer rounded-none flex items-center gap-2 ${
+            saved
+              ? "bg-emerald-600 border-emerald-500 text-white"
+              : "bg-purple-600 hover:bg-purple-500 border-purple-500 text-white"
+          } disabled:opacity-50`}
+        >
+          {isSaving ? "⏳ กำลังบันทึก..." : saved ? "✅ บันทึกสำเร็จ" : `💾 บันทึกผล ${numRanks} อันดับ`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ===== TrackDirectResultForm: บันทึกผลวิ่งโดยตรง (ที่ 1-3 เลือกจาก dropdown) =====
+interface TrackDirectResultFormProps {
+  category: string;
+  currentRanks: string[];
+  onSave: (ranks: string[]) => void;
+}
+
+function TrackDirectResultForm({ category, currentRanks, onSave }: TrackDirectResultFormProps) {
+  const NUM_RANKS = 3;
+  const initRanks = Array.from({ length: NUM_RANKS }, (_, i) => currentRanks[i] || "");
+  const [ranks, setRanks] = useState<string[]>(initRanks);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  React.useEffect(() => {
+    setRanks(Array.from({ length: NUM_RANKS }, (_, i) => currentRanks[i] || ""));
+  }, [currentRanks]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(ranks);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getAvailableTeams = (excludeVals: string[]) =>
+    TEAM_NAMES.filter(t => !excludeVals.includes(t));
+
+  const rankConfig = [
+    { label: "🥇 ที่ 1 — เหรียญทอง", color: "text-amber-400" },
+    { label: "🥈 ที่ 2 — เหรียญเงิน", color: "text-slate-300" },
+    { label: "🥉 ที่ 3 — เหรียญทองแดง", color: "text-amber-600" },
+  ];
+
+  return (
+    <div className="border border-[#00FF66]/30 bg-[#0F172A] p-4 space-y-3 rounded-none">
+      <div className="flex items-center gap-2 mb-1">
+        <Save size={14} className="text-[#00FF66]" />
+        <span className="text-[11px] font-black uppercase text-[#00FF66] font-mono">
+          บันทึกผลการแข่งขัน {category}
+        </span>
+      </div>
+      <p className="text-[10px] text-slate-400 font-mono">
+        ✨ เลือกทีมโดยตรง — ที่ 1, 2, 3 เท่านั้น ไม่ต้องผ่านรอบคัดเลือก
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {ranks.map((val, idx) => {
+          const others = ranks.filter((_, i) => i !== idx);
+          const available = getAvailableTeams(others.filter(Boolean));
+          const cfg = rankConfig[idx];
+          return (
+            <div key={idx}>
+              <label className={`block text-[10px] font-bold font-mono uppercase mb-1 ${cfg.color}`}>
+                {cfg.label}
+              </label>
+              <select
+                value={val}
+                onChange={(e) => {
+                  const newRanks = [...ranks];
+                  newRanks[idx] = e.target.value;
+                  setRanks(newRanks);
+                }}
+                className="w-full p-2 bg-[#0A0F1D] text-white border border-slate-700 text-xs font-bold focus:outline-none focus:border-[#00FF66] rounded-none cursor-pointer"
+              >
+                <option value="">— เลือกทีม —</option>
+                {available.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+                {val && !available.includes(val) && (
+                  <option value={val}>{val}</option>
+                )}
+              </select>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-end pt-1">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving}
+          className={`px-5 py-2 font-bold text-xs uppercase tracking-wide border transition-all cursor-pointer rounded-none flex items-center gap-2 ${
+            saved
+              ? "bg-emerald-600 border-emerald-500 text-white"
+              : "bg-[#00FF66] hover:bg-[#00DD55] border-[#00FF66] text-slate-950"
+          } disabled:opacity-50`}
+        >
+          {isSaving ? "⏳ กำลังบันทึก..." : saved ? "✅ บันทึกสำเร็จ" : "💾 บันทึกผลวิ่ง"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 
 export default function SportTab({
   sport,
@@ -1326,7 +1633,7 @@ export default function SportTab({
                 </button>
               )}
 
-              {isLoggedIn && sport !== "petanque" && (
+              {isLoggedIn && sport !== "petanque" && sport !== "parade" && sport !== "cheerleader" && sport !== "fun_sport" && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1368,8 +1675,8 @@ export default function SportTab({
             </div>
           )}
 
-          {/* 🛠️ Selectable View Options (ซ่อนสำหรับ track และ petanque) */}
-          {sport !== "track" && sport !== "petanque" && (
+          {/* 🛠️ Selectable View Options (ซ่อนสำหรับ track, petanque, parade, cheerleader, fun_sport) */}
+          {sport !== "track" && sport !== "petanque" && sport !== "parade" && sport !== "cheerleader" && sport !== "fun_sport" && (
             <div className="pb-2 border-b border-slate-800/60">
               <span className="block text-[10px] font-bold uppercase text-slate-400 mb-2 flex items-center gap-1.5 font-mono">
                 🖥️ เลือกมุมมองที่ต้องการแสดงผล (Select display section):
@@ -1406,8 +1713,8 @@ export default function SportTab({
 
       {/* Petanque Schedule notice when draw has not been held yet (ซ่อน เนื่องจากแสดงเพียงวันแข่งขัน) */}
 
-      {/* 3. Group Standings Section (ซ่อนสำหรับ track และ petanque) */}
-      {sport !== "track" && sport !== "petanque" && selectedCategory !== "" && (activeView === "all" || activeView === "standings") && (
+      {/* 3. Group Standings Section (ซ่อนสำหรับ track, petanque, parade, cheerleader, fun_sport) */}
+      {sport !== "track" && sport !== "petanque" && sport !== "parade" && sport !== "cheerleader" && sport !== "fun_sport" && selectedCategory !== "" && (activeView === "all" || activeView === "standings") && (
         <div className="space-y-4">
           {(selectedCategory === "all" ? categories.filter(c => c !== "all") : [selectedCategory]).map((cat) => {
             const catMatches = sportMatches.filter(m => m.category === cat);
@@ -1557,6 +1864,250 @@ export default function SportTab({
             )}
 
             {/* ฟอร์มให้ admin เลือก dropdown */}
+            {isLoggedIn && onUpdateDrawLots && (
+              <PetanqueResultForm
+                medals={medals}
+                catTeams={catTeams}
+                onSave={handleSaveResult}
+                currentR1={rank1}
+                currentR2={rank2}
+                currentR3={rank3}
+              />
+            )}
+          </div>
+        );
+      })()}
+
+      {/* 🎺 ผลการแข่งขัน (พาเหรด) — เหมือนเปตอง */}
+      {sport === "parade" && (() => {
+        const cat = selectedCategory && selectedCategory !== "all" ? selectedCategory : "พาเหรด";
+        const resultKey = `parade_result_${cat}`;
+        const savedResult: string[] = drawLots?.[resultKey] || [];
+        const rank1 = savedResult[0] || "";
+        const rank2 = savedResult[1] || "";
+        const rank3 = savedResult[2] || "";
+        const rank4 = savedResult[3] || "";
+
+        const handleSaveResult = async (r1: string, r2: string, r3: string, r4?: string) => {
+          if (!onUpdateDrawLots) return;
+          await onUpdateDrawLots(resultKey, [r1, r2, r3, r4 || ""].filter((_, i) => i < 4));
+        };
+
+        const medals = [
+          { rank: 1, label: "🥇 อันดับที่ 1 (ชนะเลิศ)", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/40", value: rank1, key: "r1" },
+          { rank: 2, label: "🥈 อันดับที่ 2 (รองชนะเลิศ)", color: "text-slate-300", bg: "bg-slate-500/10 border-slate-500/40", value: rank2, key: "r2" },
+          { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศ อันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
+          { rank: 4, label: "🏅 อันดับที่ 4 (รองชนะเลิศ อันดับ 3)", color: "text-amber-700", bg: "bg-amber-800/10 border-amber-800/40", value: rank4, key: "r4" },
+        ];
+
+        return (
+          <div className="border border-emerald-500/30 bg-[#111827] p-5 space-y-4 rounded-none shadow-lg">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Trophy size={18} className="text-yellow-400" />
+              <h3 className="text-sm font-black uppercase text-white">
+                ผลการแข่งขัน 4 อันดับ — <span className="text-emerald-400">{cat}</span>
+              </h3>
+            </div>
+
+            {(rank1 || rank2 || rank3 || rank4) && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {medals.map((m) => (
+                  <div key={m.key} className={`border ${m.bg} p-3 rounded-none flex flex-col items-center gap-1`}>
+                    <span className="text-2xl">{m.rank === 1 ? "🥇" : m.rank === 2 ? "🥈" : m.rank === 3 ? "🥉" : "🏅"}</span>
+                    <span className={`text-[10px] font-mono font-bold uppercase ${m.color}`}>
+                      {m.rank === 1 ? "ชนะเลิศ" : m.rank === 2 ? "รองชนะเลิศ" : m.rank === 3 ? "อันดับสาม" : "อันดับสี่"}
+                    </span>
+                    <span className={`text-sm font-black text-center ${m.value ? "text-white" : "text-slate-600"}`}>
+                      {m.value || "— ยังไม่ระบุ —"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isLoggedIn && onUpdateDrawLots && (
+              <Parade4ResultForm
+                catTeams={TEAM_NAMES}
+                onSave={(r1, r2, r3, r4) => handleSaveResult(r1, r2, r3, r4)}
+                currentR1={rank1}
+                currentR2={rank2}
+                currentR3={rank3}
+                currentR4={rank4}
+              />
+            )}
+          </div>
+        );
+      })()}
+
+      {/* 📣 ผลการแข่งขัน (ประกวดกองเชียร์) — เหมือนเปตอง */}
+      {sport === "cheerleader" && (() => {
+        const cat = selectedCategory && selectedCategory !== "all" ? selectedCategory : "ประกวดกองเชียร์";
+        const resultKey = `cheerleader_result_${cat}`;
+        const savedResult: string[] = drawLots?.[resultKey] || [];
+        const rank1 = savedResult[0] || "";
+        const rank2 = savedResult[1] || "";
+        const rank3 = savedResult[2] || "";
+        const rank4 = savedResult[3] || "";
+
+        const handleSaveResult = async (r1: string, r2: string, r3: string, r4?: string) => {
+          if (!onUpdateDrawLots) return;
+          await onUpdateDrawLots(resultKey, [r1, r2, r3, r4 || ""].filter((_, i) => i < 4));
+        };
+
+        const medals = [
+          { rank: 1, label: "🥇 อันดับที่ 1 (ชนะเลิศ)", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/40", value: rank1, key: "r1" },
+          { rank: 2, label: "🥈 อันดับที่ 2 (รองชนะเลิศ)", color: "text-slate-300", bg: "bg-slate-500/10 border-slate-500/40", value: rank2, key: "r2" },
+          { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศ อันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
+          { rank: 4, label: "🏅 อันดับที่ 4 (รองชนะเลิศ อันดับ 3)", color: "text-amber-700", bg: "bg-amber-800/10 border-amber-800/40", value: rank4, key: "r4" },
+        ];
+
+        return (
+          <div className="border border-emerald-500/30 bg-[#111827] p-5 space-y-4 rounded-none shadow-lg">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Trophy size={18} className="text-yellow-400" />
+              <h3 className="text-sm font-black uppercase text-white">
+                ผลการแข่งขัน 4 อันดับ — <span className="text-emerald-400">{cat}</span>
+              </h3>
+            </div>
+
+            {(rank1 || rank2 || rank3 || rank4) && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {medals.map((m) => (
+                  <div key={m.key} className={`border ${m.bg} p-3 rounded-none flex flex-col items-center gap-1`}>
+                    <span className="text-2xl">{m.rank === 1 ? "🥇" : m.rank === 2 ? "🥈" : m.rank === 3 ? "🥉" : "🏅"}</span>
+                    <span className={`text-[10px] font-mono font-bold uppercase ${m.color}`}>
+                      {m.rank === 1 ? "ชนะเลิศ" : m.rank === 2 ? "รองชนะเลิศ" : m.rank === 3 ? "อันดับสาม" : "อันดับสี่"}
+                    </span>
+                    <span className={`text-sm font-black text-center ${m.value ? "text-white" : "text-slate-600"}`}>
+                      {m.value || "— ยังไม่ระบุ —"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isLoggedIn && onUpdateDrawLots && (
+              <Parade4ResultForm
+                catTeams={TEAM_NAMES}
+                onSave={(r1, r2, r3, r4) => handleSaveResult(r1, r2, r3, r4)}
+                currentR1={rank1}
+                currentR2={rank2}
+                currentR3={rank3}
+                currentR4={rank4}
+              />
+            )}
+          </div>
+        );
+      })()}
+
+      {/* 🎉 ผลการแข่งขัน (กีฬามหาสนุก) — เหมือนเปตอง */}
+      {sport === "fun_sport" && (() => {
+        const cat = selectedCategory && selectedCategory !== "all" ? selectedCategory : "กีฬามหาสนุก";
+        const resultKey = `fun_sport_result_${cat}`;
+        const savedResult: string[] = drawLots?.[resultKey] || [];
+        const rank1 = savedResult[0] || "";
+        const rank2 = savedResult[1] || "";
+        const rank3 = savedResult[2] || "";
+
+        const catTeams = TEAM_NAMES;
+
+        const handleSaveResult = async (r1: string, r2: string, r3: string) => {
+          if (!onUpdateDrawLots) return;
+          await onUpdateDrawLots(resultKey, [r1, r2, r3]);
+        };
+
+        const medals = [
+          { rank: 1, label: "🥇 อันดับที่ 1 (ชนะเลิศ)", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/40", value: rank1, key: "r1" },
+          { rank: 2, label: "🥈 อันดับที่ 2 (รองชนะเลิศ)", color: "text-slate-300", bg: "bg-slate-500/10 border-slate-500/40", value: rank2, key: "r2" },
+          { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศอันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
+        ];
+
+        return (
+          <div className="border border-emerald-500/30 bg-[#111827] p-5 space-y-4 rounded-none shadow-lg">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Trophy size={18} className="text-yellow-400" />
+              <h3 className="text-sm font-black uppercase text-white">
+                ผลการแข่งขัน 3 อันดับ — <span className="text-emerald-400">{cat}</span>
+              </h3>
+            </div>
+
+            {(rank1 || rank2 || rank3) && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {medals.map((m) => (
+                  <div key={m.key} className={`border ${m.bg} p-3 rounded-none flex flex-col items-center gap-1`}>
+                    <span className="text-2xl">{m.rank === 1 ? "🥇" : m.rank === 2 ? "🥈" : "🥉"}</span>
+                    <span className={`text-[10px] font-mono font-bold uppercase ${m.color}`}>
+                      {m.rank === 1 ? "ชนะเลิศ" : m.rank === 2 ? "รองชนะเลิศ" : "รองชนะเลิศ อันดับ 2"}
+                    </span>
+                    <span className={`text-sm font-black text-center ${m.value ? "text-white" : "text-slate-600"}`}>
+                      {m.value || "— ยังไม่ระบุ —"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isLoggedIn && onUpdateDrawLots && (
+              <PetanqueResultForm
+                medals={medals}
+                catTeams={catTeams}
+                onSave={handleSaveResult}
+                currentR1={rank1}
+                currentR2={rank2}
+                currentR3={rank3}
+              />
+            )}
+          </div>
+        );
+      })()}
+
+      {/* 🏃 ผลการแข่งขัน (กรีฑา/วิ่ง) — เหมือนเปตอง */}
+      {sport === "track" && (() => {
+        const cat = selectedCategory && selectedCategory !== "all" ? selectedCategory : "กรีฑา";
+        const resultKey = `track_direct_result_${cat}`;
+        const savedResult: string[] = drawLots?.[resultKey] || [];
+        const rank1 = savedResult[0] || "";
+        const rank2 = savedResult[1] || "";
+        const rank3 = savedResult[2] || "";
+
+        const catTeams = TEAM_NAMES;
+
+        const handleSaveResult = async (r1: string, r2: string, r3: string) => {
+          if (!onUpdateDrawLots) return;
+          await onUpdateDrawLots(resultKey, [r1, r2, r3]);
+        };
+
+        const medals = [
+          { rank: 1, label: "🥇 อันดับที่ 1 (ชนะเลิศ)", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/40", value: rank1, key: "r1" },
+          { rank: 2, label: "🥈 อันดับที่ 2 (รองชนะเลิศ)", color: "text-slate-300", bg: "bg-slate-500/10 border-slate-500/40", value: rank2, key: "r2" },
+          { rank: 3, label: "🥉 อันดับที่ 3 (รองชนะเลิศอันดับ 2)", color: "text-amber-600", bg: "bg-amber-700/10 border-amber-700/40", value: rank3, key: "r3" },
+        ];
+
+        return (
+          <div className="border border-emerald-500/30 bg-[#111827] p-5 space-y-4 rounded-none shadow-lg">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Trophy size={18} className="text-yellow-400" />
+              <h3 className="text-sm font-black uppercase text-white">
+                ผลการแข่งขัน 3 อันดับ — <span className="text-emerald-400">{cat}</span>
+              </h3>
+            </div>
+
+            {(rank1 || rank2 || rank3) && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {medals.map((m) => (
+                  <div key={m.key} className={`border ${m.bg} p-3 rounded-none flex flex-col items-center gap-1`}>
+                    <span className="text-2xl">{m.rank === 1 ? "🥇" : m.rank === 2 ? "🥈" : "🥉"}</span>
+                    <span className={`text-[10px] font-mono font-bold uppercase ${m.color}`}>
+                      {m.rank === 1 ? "ชนะเลิศ" : m.rank === 2 ? "รองชนะเลิศ" : "รองชนะเลิศ อันดับ 2"}
+                    </span>
+                    <span className={`text-sm font-black text-center ${m.value ? "text-white" : "text-slate-600"}`}>
+                      {m.value || "— ยังไม่ระบุ —"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {isLoggedIn && onUpdateDrawLots && (
               <PetanqueResultForm
                 medals={medals}
@@ -1797,8 +2348,8 @@ export default function SportTab({
 
       {/* 3. Add Custom Match Form (Collapsible) placeholder to keep order clear */}
 
-      {/* 4. Match List Grid (ซ่อนสำหรับ petanque) */}
-      {sport !== "petanque" && activeView !== "bracket" && (activeView === "all" || activeView === "matches" || sport === "track" || selectedCategory === "") && (
+      {/* 4. Match List Grid (ซ่อนสำหรับ petanque, parade, cheerleader, fun_sport) */}
+      {sport !== "petanque" && sport !== "parade" && sport !== "cheerleader" && sport !== "fun_sport" && activeView !== "bracket" && (activeView === "all" || activeView === "matches" || sport === "track" || selectedCategory === "") && (
         <div className="space-y-4">
           <h3 className="text-base font-black uppercase text-white tracking-wide">
             📅 รายการแข่งขันและผลลัพธ์ {selectedCategory !== "" ? `(${filteredMatches.length})` : filteredMatches.length > 0 ? `(แสดงเฉพาะ คป.สอ. ${selectedDistrict || teamSearch}) (${filteredMatches.length})` : ""}
@@ -2274,8 +2825,8 @@ export default function SportTab({
         </div>
       )}
 
-      {/* 2. Knockout Bracket Display Card (ซ่อนสำหรับ petanque ด้วย) */}
-      {sport !== "track" && sport !== "petanque" && activeBracketCategory && (activeView === "all" || activeView === "bracket") && (
+      {/* 2. Knockout Bracket Display Card (ซ่อนสำหรับ petanque, track, parade, cheerleader, fun_sport) */}
+      {sport !== "track" && sport !== "petanque" && sport !== "parade" && sport !== "cheerleader" && sport !== "fun_sport" && activeBracketCategory && (activeView === "all" || activeView === "bracket") && (
         <div className="border border-slate-800 bg-[#111827] p-6 space-y-4 rounded-none text-white">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2">
@@ -2748,7 +3299,10 @@ export default function SportTab({
                     sport === "football" ? "ฟุตบอล (Football)" :
                     sport === "volleyball" ? "วอลเลย์บอล (Volleyball)" :
                     sport === "petanque" ? "เปตอง (Petanque)" :
-                    sport === "track" ? "กรีฑา (Track & Field)" : sport
+                    sport === "track" ? "กรีฑา (Track & Field)" :
+                    sport === "parade" ? "พาเหรด" :
+                    sport === "cheerleader" ? "ประกวดกองเชียร์" :
+                    sport === "fun_sport" ? "กีฬามหาสนุก" : sport
                   }</strong></span>
                   {selectedCategory && (
                     <span>ประเภท: <strong className="text-black font-extrabold">{selectedCategory}</strong></span>

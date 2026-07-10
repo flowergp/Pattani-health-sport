@@ -754,5 +754,59 @@ export const getInitialMatches = (): Match[] => {
     order: currentOrder++
   });
 
+  // --- 5. PARADE (พาเหรด) ---
+  // ที่ 1, 2, 3, 4 — บันทึกผลผ่าน drawLots key: "parade_result_พาเหรด"
+  matches.push({
+    id: "parade_result_1",
+    sport: "parade",
+    category: "พาเหรด",
+    gender: "ผสม",
+    group: "",
+    round: "รอบชิงชนะเลิศ",
+    court: "สนามกีฬา",
+    time: "08.00 น.",
+    date: "10 ก.ค. 69",
+    status: "pending",
+    participants: [],
+    ranks: [],
+    order: currentOrder++
+  });
+
+  // --- 6. CHEERLEADER (ประกวดกองเชียร์) ---
+  // ที่ 1, 2, 3, 4 — บันทึกผลผ่าน drawLots key: "cheerleader_result_ประกวดกองเชียร์"
+  matches.push({
+    id: "cheerleader_result_1",
+    sport: "cheerleader",
+    category: "ประกวดกองเชียร์",
+    gender: "ผสม",
+    group: "",
+    round: "รอบชิงชนะเลิศ",
+    court: "สนามกีฬา",
+    time: "10.00 น.",
+    date: "10 ก.ค. 69",
+    status: "pending",
+    participants: [],
+    ranks: [],
+    order: currentOrder++
+  });
+
+  // --- 7. FUN SPORT (กีฬามหาสนุก) ---
+  // ที่ 1, 2, 3 — บันทึกผลผ่าน drawLots key: "fun_sport_result_กีฬามหาสนุก"
+  matches.push({
+    id: "fun_sport_result_1",
+    sport: "fun_sport",
+    category: "กีฬามหาสนุก",
+    gender: "ผสม",
+    group: "",
+    round: "รอบชิงชนะเลิศ",
+    court: "สนามกีฬา",
+    time: "13.00 น.",
+    date: "10 ก.ค. 69",
+    status: "pending",
+    participants: [],
+    ranks: [],
+    order: currentOrder++
+  });
+
   return matches;
 };

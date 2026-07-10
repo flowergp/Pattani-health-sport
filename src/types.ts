@@ -7,7 +7,7 @@ export interface Participant {
 
 export interface Match {
   id: string; // unique ID, e.g., 'track_101', 'petanque_men_1'
-  sport: "track" | "petanque" | "volleyball" | "football";
+  sport: "track" | "petanque" | "volleyball" | "football" | "parade" | "cheerleader" | "fun_sport";
   category: string; // e.g., 'วิ่ง 100 เมตร หญิง', 'ชายคู่', 'ทีมชาย'
   gender: "ชาย" | "หญิง" | "ผสม";
   group: string; // e.g., 'กลุ่ม 1', 'สาย A', or '' for brackets
