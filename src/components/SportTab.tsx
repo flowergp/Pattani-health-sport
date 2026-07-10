@@ -2061,11 +2061,109 @@ export default function SportTab({
         );
       })()}
 
-      {/* 🏃 ผลการแข่งขัน (กรีฑา/วิ่ง) — เหมือนเปตอง */}
+      {/* 🏃 ผลการแข่งขัน (กรีฑา/วิ่ง) */}
       {sport === "track" && (() => {
-        const cat = selectedCategory && selectedCategory !== "all" ? selectedCategory : "กรีฑา";
+        const isShowAll = !selectedCategory || selectedCategory === "" || selectedCategory === "all";
+
+        if (isShowAll) {
+          // ── โหมด "แสดงทั้งหมด": รวมเหรียญวิ่งทุกประเภทจาก drawLots ──
+          const medalScore: Record<string, { gold: number; silver: number; bronze: number }> = {};
+          const trackKeys = Object.keys(drawLots || {}).filter(k => k.startsWith("track_direct_result_"));
+          const categoriesWithResult: { cat: string; r1: string; r2: string; r3: string }[] = [];
+
+          trackKeys.forEach(key => {
+            const catName = key.replace("track_direct_result_", "");
+            const res: string[] = (drawLots as any)[key] || [];
+            const r1 = res[0] || "";
+            const r2 = res[1] || "";
+            const r3 = res[2] || "";
+            if (!r1 && !r2 && !r3) return;
+            categoriesWithResult.push({ cat: catName, r1, r2, r3 });
+            [r1, r2, r3].forEach((team, idx) => {
+              if (!team) return;
+              if (!medalScore[team]) medalScore[team] = { gold: 0, silver: 0, bronze: 0 };
+              if (idx === 0) medalScore[team].gold++;
+              else if (idx === 1) medalScore[team].silver++;
+              else medalScore[team].bronze++;
+            });
+          });
+
+          const ranked = Object.entries(medalScore)
+            .sort(([, a], [, b]) => {
+              if (b.gold !== a.gold) return b.gold - a.gold;
+              if (b.silver !== a.silver) return b.silver - a.silver;
+              return b.bronze - a.bronze;
+            })
+            .slice(0, 3);
+
+          const medalBgs = [
+            "bg-yellow-500/10 border-yellow-500/40",
+            "bg-slate-300/10 border-slate-400/40",
+            "bg-amber-700/10 border-amber-700/40",
+          ];
+          const medalIcons = ["🥇", "🥈", "🥉"];
+          const medalLabels = ["ชนะเลิศรวมสูงสุด", "รองชนะเลิศรวม", "อันดับสามรวม"];
+          const medalColors = ["text-yellow-400", "text-slate-300", "text-amber-600"];
+
+          return (
+            <div className="border border-emerald-500/30 bg-[#111827] p-5 space-y-4 rounded-none shadow-lg">
+              <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+                <Trophy size={18} className="text-yellow-400" />
+                <h3 className="text-sm font-black uppercase text-white">
+                  🏆 สรุปผลการแข่งขันวิ่ง <span className="text-emerald-400">รวมทุกประเภท</span>
+                  <span className="ml-2 text-[10px] font-mono font-bold text-slate-400 normal-case">({categoriesWithResult.length} ประเภทที่มีผล)</span>
+                </h3>
+              </div>
+
+              {ranked.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {ranked.map(([team, score], idx) => (
+                    <div key={team} className={`border ${medalBgs[idx]} p-4 rounded-none flex flex-col items-center gap-1.5`}>
+                      <span className="text-3xl">{medalIcons[idx]}</span>
+                      <span className={`text-[10px] font-mono font-bold uppercase ${medalColors[idx]}`}>
+                        {medalLabels[idx]}
+                      </span>
+                      <span className="text-base font-black text-center text-white mt-1">{team}</span>
+                      <div className="flex gap-2 mt-1 text-[10px] font-mono font-bold">
+                        {score.gold > 0 && <span className="text-yellow-400">🥇×{score.gold}</span>}
+                        {score.silver > 0 && <span className="text-slate-300">🥈×{score.silver}</span>}
+                        {score.bronze > 0 && <span className="text-amber-600">🥉×{score.bronze}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-slate-500 py-8 text-xs font-mono italic">
+                  ⏳ ยังไม่มีผลการแข่งขันวิ่งประเภทใดเลย
+                </div>
+              )}
+
+              {/* รายละเอียดแยกตามประเภท */}
+              {categoriesWithResult.length > 0 && (
+                <div className="border-t border-slate-800 pt-3 space-y-2">
+                  <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block">📋 ผลแยกตามประเภท:</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {categoriesWithResult.map(({ cat, r1, r2, r3 }) => (
+                      <div key={cat} className="bg-slate-900/60 border border-slate-800 p-2.5 space-y-1">
+                        <span className="text-[10px] font-black text-[#00FF66] font-mono block truncate">🏃 {cat}</span>
+                        <div className="space-y-0.5">
+                          {r1 && <div className="text-[10px] font-mono text-slate-300"><span className="text-yellow-400">🥇</span> {r1}</div>}
+                          {r2 && <div className="text-[10px] font-mono text-slate-300"><span className="text-slate-400">🥈</span> {r2}</div>}
+                          {r3 && <div className="text-[10px] font-mono text-slate-300"><span className="text-amber-600">🥉</span> {r3}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // ── โหมดเลือกประเภทเฉพาะ ──
+        const cat = selectedCategory;
         const resultKey = `track_direct_result_${cat}`;
-        const savedResult: string[] = drawLots?.[resultKey] || [];
+        const savedResult: string[] = (drawLots as any)?.[resultKey] || [];
         const rank1 = savedResult[0] || "";
         const rank2 = savedResult[1] || "";
         const rank3 = savedResult[2] || "";
@@ -2348,8 +2446,8 @@ export default function SportTab({
 
       {/* 3. Add Custom Match Form (Collapsible) placeholder to keep order clear */}
 
-      {/* 4. Match List Grid (ซ่อนสำหรับ petanque, parade, cheerleader, fun_sport) */}
-      {sport !== "petanque" && sport !== "parade" && sport !== "cheerleader" && sport !== "fun_sport" && activeView !== "bracket" && (activeView === "all" || activeView === "matches" || sport === "track" || selectedCategory === "") && (
+      {/* 4. Match List Grid (ซ่อนสำหรับ petanque, parade, cheerleader, fun_sport, track) */}
+      {sport !== "petanque" && sport !== "parade" && sport !== "cheerleader" && sport !== "fun_sport" && sport !== "track" && activeView !== "bracket" && (activeView === "all" || activeView === "matches" || selectedCategory === "") && (
         <div className="space-y-4">
           <h3 className="text-base font-black uppercase text-white tracking-wide">
             📅 รายการแข่งขันและผลลัพธ์ {selectedCategory !== "" ? `(${filteredMatches.length})` : filteredMatches.length > 0 ? `(แสดงเฉพาะ คป.สอ. ${selectedDistrict || teamSearch}) (${filteredMatches.length})` : ""}
@@ -2475,45 +2573,36 @@ export default function SportTab({
                                   })}
                               </div>
                             </div>
-                          ) : m.round === "รอบชิงชนะเลิศ" ? (
-                            <div className="space-y-2">
-                              <span className="text-[10px] font-bold text-slate-400 font-mono block uppercase">ผู้มีสิทธิ์ร่วมแข่ง:</span>
-                              <div className="text-xs italic text-slate-400 font-bold font-mono bg-slate-950/40 p-2.5 border border-slate-850/60">
-                                ⏳ รายชื่อทีมเข้ารอบชิงชนะเลิศจะแสดงเมื่อเสร็จสิ้นการแข่งขัน
-                              </div>
-                            </div>
                           ) : (
-                            <div className="space-y-2">
-                              <span className="text-[10px] font-bold text-slate-400 font-mono block uppercase">ผู้มีสิทธิ์ร่วมแข่ง ({m.participants?.length || 0} ทีม):</span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {m.participants && m.participants.length > 0 ? (
-                                  m.participants.map((p) => {
-                                    const rankInfo = m.ranks?.find(r => r.name === p);
-                                    return (
-                                      <span
-                                        key={p}
-                                        className={`px-2 py-1 text-xs font-mono font-bold border rounded-none ${
-                                          rankInfo?.rank === 1
-                                            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                                            : rankInfo?.rank === 2
-                                            ? "bg-slate-300/10 text-slate-300 border-slate-400/30"
-                                            : rankInfo?.rank === 3
-                                            ? "bg-amber-700/10 text-amber-600 border-amber-700/30"
-                                            : "bg-slate-900 border-slate-800 text-slate-400"
-                                        }`}
-                                      >
-                                        {rankInfo?.rank ? `#${rankInfo.rank} ` : "🏃 "}
-                                        {p}
-                                        {rankInfo?.time ? ` (${rankInfo.time})` : ""}
-                                      </span>
-                                    );
-                                  })
-                                ) : (
-                                  <span className="text-xs italic text-red-400 font-bold font-mono">
-                                    ⏳ รอดึงผลอันดับ 1-4 จากรอบคัดเลือกกลุ่ม 1 และ 2
-                                  </span>
-                                )}
-                              </div>
+                            // แสดงผล 3 อันดับอัตโนมัติ (ถ้ายังไม่มีผลให้แสดงข้อความรอ)
+                            <div className="space-y-1.5">
+                              {m.ranks && m.ranks.some(r => r.rank !== undefined) ? (
+                                <>
+                                  <span className="text-[10px] font-bold text-[#FF5722] font-mono block uppercase tracking-wider">🏆 ผลการแข่งขัน 3 อันดับแรก:</span>
+                                  <div className="border border-slate-800/80 divide-y divide-slate-800/60 bg-slate-950">
+                                    {m.ranks
+                                      .filter(r => r.rank !== undefined)
+                                      .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99))
+                                      .slice(0, 3)
+                                      .map((r) => {
+                                        const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : `${r.rank}`;
+                                        return (
+                                          <div key={r.name} className="flex justify-between items-center p-2 text-xs font-mono font-semibold">
+                                            <div className="flex items-center gap-2">
+                                              <span className="w-5 text-center font-bold">{medal}</span>
+                                              <span className="text-white font-bold">{r.name}</span>
+                                            </div>
+                                            <span className="text-slate-400 font-bold">{r.time || "-"}</span>
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="text-xs italic text-slate-500 font-bold font-mono bg-slate-950/40 p-2.5 border border-slate-800/60">
+                                  ⏳ รอผลการแข่งขัน
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

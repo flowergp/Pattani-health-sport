@@ -1527,13 +1527,13 @@ export default function DistrictSchedule({
                                 </div>
                               </div>
                             ) : (
-                              /* Track Athletics Heat / Placement Details */
-                              <div className="space-y-2">
-                                <span className="block text-[10px] font-mono text-slate-500 uppercase font-black">
-                                  📌 ผู้ร่วมเข้าแข่งขันทิศทางลู่:
-                                </span>
+                              /* Track Athletics — ผลการแข่งขัน 3 อันดับ */
+                              <div className="space-y-1">
                                 {match.status === "completed" && match.ranks && match.ranks.length > 0 ? (
-                                  <div className="space-y-1">
+                                  <>
+                                    <span className="block text-[10px] font-mono text-slate-500 uppercase font-black mb-1">
+                                      🏆 ผลการแข่งขัน 3 อันดับแรก:
+                                    </span>
                                     {match.ranks.slice(0, 3).map((r, rIdx) => {
                                       const medalIcon = rIdx === 0 ? "🥇" : rIdx === 1 ? "🥈" : "🥉";
                                       const isSelf = r.name === selectedDistrict;
@@ -1558,31 +1558,10 @@ export default function DistrictSchedule({
                                         </div>
                                       );
                                     })}
-                                    {/* Show other participant names who did not get top 3 but still entered */}
-                                    {match.participants && match.participants.length > 3 && (
-                                      <div className="text-[10px] text-slate-500 font-medium pl-1 pt-1 italic">
-                                        ผู้เข้าร่วมอื่นๆ: {match.participants.filter(p => !match.ranks?.slice(0, 3).some(r => r.name === p)).join(", ")}
-                                      </div>
-                                    )}
-                                  </div>
+                                  </>
                                 ) : (
-                                  /* Athletics Upcoming List */
-                                  <div className="flex flex-wrap gap-1">
-                                    {match.participants?.map((p) => {
-                                      const isSelf = p === selectedDistrict;
-                                      return (
-                                        <span 
-                                          key={p} 
-                                          className={`text-[10px] font-semibold px-2 py-1 border ${
-                                            isSelf 
-                                              ? "bg-[#00FF66]/10 border-[#00FF66] text-[#00FF66] font-bold" 
-                                              : "bg-slate-900 border-slate-800 text-slate-400"
-                                          }`}
-                                        >
-                                          {isSelf ? "⭐ " : ""}{p}
-                                        </span>
-                                      );
-                                    })}
+                                  <div className="text-[10px] text-slate-500 font-mono italic py-2">
+                                    ⏳ รอผลการแข่งขัน
                                   </div>
                                 )}
                               </div>
